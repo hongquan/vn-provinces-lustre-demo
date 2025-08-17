@@ -1,0 +1,33 @@
+import core.{type Msg}
+import gleam/dynamic/decode
+import gleam/int
+import lustre/effect.{type Effect}
+import rsvp
+
+pub fn load_provinces() -> Effect(Msg) {
+  let url = "https://provinces.open-api.vn/api/v2/"
+  let decoder = {
+    use name <- decode.field("name", decode.string)
+    use code <- decode.field("code", decode.int)
+    decode.success(core.Province(name, code))
+  }
+  let handler =
+    rsvp.expect_json(decode.list(decoder), core.ApiReturnedProvinces)
+  rsvp.get(url, handler)
+}
+
+pub fn load_wards(p: Int) -> Effect(Msg) {
+  let url =
+    "https://provinces.open-api.vn/api/v2/p/" <> int.to_string(p) <> "?depth=2"
+  let ward_decoder = {
+    use name <- decode.field("name", decode.string)
+    use code <- decode.field("code", decode.int)
+    decode.success(core.Ward(name, code, p))
+  }
+  let decoder = {
+    use wards <- decode.field("wards", decode.list(ward_decoder))
+    decode.success(wards)
+  }
+  let handler = rsvp.expect_json(decoder, core.ApiReturnedWards)
+  rsvp.get(url, handler)
+}
