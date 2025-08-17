@@ -1,3 +1,5 @@
+import gleam/int
+import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/uri
 import lustre
@@ -47,27 +49,23 @@ fn init(_args) -> #(Model, Effect(Msg)) {
 }
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
-  echo msg
   case msg {
     core.ApiReturnedProvinces(Ok(provinces)) -> {
       echo provinces
-      #(
-        Model(
-          ..model,
-          provinces:,
-          wards: [],
-          selected_province: None,
-          selected_ward: None,
-        ),
-        effect.none(),
-      )
+      handle_loaded_provinces(provinces, model)
     }
+    // User has picked a province from dropdown
     core.ProvinceSelected(p) -> {
       let model =
         Model(..model, wards: [], selected_province: p, selected_ward: None)
       case p {
         None -> #(model, effect.none())
-        Some(p) -> #(model, actions.load_wards(p.code))
+        Some(p) -> {
+          // Reflect to browser URL
+          let query_string =
+            uri.query_to_string([#("p", int.to_string(p.code))])
+          #(model, modem.push("", Some(query_string), None))
+        }
       }
     }
     core.ApiReturnedWards(Ok(wards)) -> {
@@ -86,9 +84,12 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 }
 
 fn view(model: Model) -> Element(Msg) {
+  let Model(provinces:, selected_province:, wards:, ..) = model
+  let selected_province =
+    selected_province |> option.map(fn(p) { p.code }) |> option.unwrap(0)
   let province_dropdown =
-    render_province_list(model.provinces, core.ProvinceSelected)
-  let ward_dropdown = render_ward_list(model.wards, core.WardSelected)
+    render_province_list(provinces, selected_province, core.ProvinceSelected)
+  let ward_dropdown = render_ward_list(wards, core.WardSelected)
   h.div([a.class("p-4 dark:bg-gray-900 antialiased h-screen")], [
     h.h1([a.class("text-xl py-4 text-gray-900 dark:text-gray-300")], [
       h.text("Hello"),
@@ -118,4 +119,32 @@ pub fn on_url_change(uri: uri.Uri) -> Msg {
     |> option.unwrap([])
     |> parse_to_route
   core.OnRouteChange(route)
+}
+
+fn handle_loaded_provinces(
+  provinces: List(core.Province),
+  model: Model,
+) -> #(Model, Effect(Msg)) {
+  // Check the browser URL, if it points to a province, we load the wards for that province
+  let #(selected_province, whatnext) = case model.route {
+    router.Province(i, _v) -> {
+      case list.find(provinces, fn(p) { p.code == i }) {
+        Ok(p) -> {
+          #(Some(p), actions.load_wards(p.code))
+        }
+        _ -> #(None, effect.none())
+      }
+    }
+    _ -> #(None, effect.none())
+  }
+  // Save provinces to model, reset the selection and wards
+  let model =
+    Model(
+      ..model,
+      provinces:,
+      wards: [],
+      selected_province:,
+      selected_ward: None,
+    )
+  #(model, whatnext)
 }

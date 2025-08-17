@@ -1077,6 +1077,14 @@ var Dict = class _Dict {
 };
 var unequalDictSymbol = /* @__PURE__ */ Symbol();
 
+// build/dev/javascript/gleam_stdlib/gleam/order.mjs
+var Lt = class extends CustomType {
+};
+var Eq = class extends CustomType {
+};
+var Gt = class extends CustomType {
+};
+
 // build/dev/javascript/gleam_stdlib/gleam/option.mjs
 var Some = class extends CustomType {
   constructor($0) {
@@ -1134,14 +1142,6 @@ function then$(option2, fun) {
     return option2;
   }
 }
-
-// build/dev/javascript/gleam_stdlib/gleam/order.mjs
-var Lt = class extends CustomType {
-};
-var Eq = class extends CustomType {
-};
-var Gt = class extends CustomType {
-};
 
 // build/dev/javascript/gleam_stdlib/gleam/list.mjs
 var Ascending = class extends CustomType {
@@ -1255,6 +1255,36 @@ function find_map(loop$list, loop$fun) {
         loop$list = rest$1;
         loop$fun = fun;
       }
+    }
+  }
+}
+function intersperse_loop(loop$list, loop$separator, loop$acc) {
+  while (true) {
+    let list4 = loop$list;
+    let separator = loop$separator;
+    let acc = loop$acc;
+    if (list4 instanceof Empty) {
+      return reverse(acc);
+    } else {
+      let first$1 = list4.head;
+      let rest$1 = list4.tail;
+      loop$list = rest$1;
+      loop$separator = separator;
+      loop$acc = prepend(first$1, prepend(separator, acc));
+    }
+  }
+}
+function intersperse(list4, elem) {
+  if (list4 instanceof Empty) {
+    return list4;
+  } else {
+    let $ = list4.tail;
+    if ($ instanceof Empty) {
+      return list4;
+    } else {
+      let first$1 = list4.head;
+      let rest$1 = $;
+      return intersperse_loop(rest$1, elem, toList([first$1]));
     }
   }
 }
@@ -1886,6 +1916,13 @@ function pop_codeunit(str) {
 function lowercase(string5) {
   return string5.toLowerCase();
 }
+function concat(xs) {
+  let result = "";
+  for (const x of xs) {
+    result = result + x;
+  }
+  return result;
+}
 function string_codeunit_slice(str, from2, length4) {
   return str.slice(from2, from2 + length4);
 }
@@ -1924,6 +1961,9 @@ function trim_end(string5) {
 }
 function unsafe_percent_decode_query(string5) {
   return decodeURIComponent((string5 || "").replace("+", " "));
+}
+function percent_encode(string5) {
+  return encodeURIComponent(string5).replace("%2B", "+");
 }
 function parse_query(query) {
   try {
@@ -2698,6 +2738,18 @@ function parse_scheme_loop(loop$original, loop$uri_string, loop$pieces, loop$siz
     }
   }
 }
+function query_pair(pair) {
+  return concat(
+    toList([percent_encode(pair[0]), "=", percent_encode(pair[1])])
+  );
+}
+function query_to_string(query) {
+  let _pipe = query;
+  let _pipe$1 = map2(_pipe, query_pair);
+  let _pipe$2 = intersperse(_pipe$1, identity("&"));
+  let _pipe$3 = concat(_pipe$2);
+  return identity(_pipe$3);
+}
 function to_string2(uri) {
   let _block;
   let $ = uri.fragment;
@@ -2856,6 +2908,9 @@ function identity2(x) {
 }
 
 // build/dev/javascript/gleam_json/gleam_json_ffi.mjs
+function identity3(x) {
+  return x;
+}
 function decode(string5) {
   try {
     const result = JSON.parse(string5);
@@ -2966,6 +3021,9 @@ function do_parse(json2, decoder) {
 }
 function parse2(json2, decoder) {
   return do_parse(json2, decoder);
+}
+function bool(input) {
+  return identity3(input);
 }
 
 // build/dev/javascript/lustre/lustre/internals/constants.ffi.mjs
@@ -3168,6 +3226,9 @@ function attribute(name, value2) {
   return new Attribute(attribute_kind, name, value2);
 }
 var property_kind = 1;
+function property(name, value2) {
+  return new Property(property_kind, name, value2);
+}
 var event_kind = 2;
 function event(name, handler, include, prevent_default, stop_propagation, immediate2, debounce, throttle) {
   return new Event2(
@@ -3190,8 +3251,21 @@ var always_kind = 2;
 function attribute2(name, value2) {
   return attribute(name, value2);
 }
+function property2(name, value2) {
+  return property(name, value2);
+}
+function boolean_attribute(name, value2) {
+  if (value2) {
+    return attribute2(name, "");
+  } else {
+    return property2(name, bool(false));
+  }
+}
 function class$(name) {
   return attribute2("class", name);
+}
+function selected(is_selected) {
+  return boolean_attribute("selected", is_selected);
 }
 function value(control_value) {
   return attribute2("value", control_value);
@@ -5865,6 +5939,15 @@ var do_init = (dispatch, options = defaults) => {
     dispatch(detail);
   });
 };
+var do_push = (uri) => {
+  window.history.pushState({}, "", to_string2(uri));
+  window.requestAnimationFrame(() => {
+    if (uri.fragment[0]) {
+      document.getElementById(uri.fragment[0])?.scrollIntoView();
+    }
+  });
+  window.dispatchEvent(new CustomEvent("modem-push", { detail: uri }));
+};
 var find_anchor = (el) => {
   if (!el || el.tagName === "BODY") {
     return null;
@@ -5907,6 +5990,38 @@ function init(handler) {
               let _pipe$1 = handler(_pipe);
               return dispatch(_pipe$1);
             }
+          );
+        }
+      );
+    }
+  );
+}
+var relative = /* @__PURE__ */ new Uri(
+  /* @__PURE__ */ new None(),
+  /* @__PURE__ */ new None(),
+  /* @__PURE__ */ new None(),
+  /* @__PURE__ */ new None(),
+  "",
+  /* @__PURE__ */ new None(),
+  /* @__PURE__ */ new None()
+);
+function push(path, query, fragment3) {
+  return from(
+    (_) => {
+      return guard(
+        !is_browser(),
+        void 0,
+        () => {
+          return do_push(
+            new Uri(
+              relative.scheme,
+              relative.userinfo,
+              relative.host,
+              relative.port,
+              path,
+              query,
+              fragment3
+            )
           );
         }
       );
@@ -6595,8 +6710,14 @@ function on_change(msg) {
 var css_select = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500";
 
 // build/dev/javascript/demo_api/views.mjs
-function render_province_as_option(p) {
-  return option(toList([value(to_string(p.code))]), p.name);
+function render_province_as_option(p, selected_code) {
+  return option(
+    toList([
+      value(to_string(p.code)),
+      selected(p.code === selected_code)
+    ]),
+    p.name
+  );
 }
 function render_ward_as_option(w) {
   return option(toList([value(to_string(w.code))]), w.name);
@@ -6613,10 +6734,15 @@ function get_ward_from_code(c, wards) {
     return w.code === c;
   });
 }
-function render_province_list(provinces, receiver) {
+function render_province_list(provinces, selected_code, receiver) {
   let options = prepend(
     option(toList([value("")]), "T\u1EC9nh th\xE0nh..."),
-    map2(provinces, render_province_as_option)
+    map2(
+      provinces,
+      (_capture) => {
+        return render_province_as_option(_capture, selected_code);
+      }
+    )
   );
   let on_change_handler = (v) => {
     let _pipe = v;
@@ -6709,77 +6835,29 @@ var Model = class extends CustomType {
     this.selected_ward = selected_ward;
   }
 };
-function update2(model, msg) {
-  echo(msg, void 0, "src/demo_api.gleam", 50);
-  if (msg instanceof ProvinceSelected) {
-    let p = msg[0];
-    let model$1 = new Model(
-      model.route,
-      model.provinces,
-      p,
-      toList([]),
-      new None()
-    );
-    if (p instanceof Some) {
-      let p$1 = p[0];
-      return [model$1, load_wards(p$1.code)];
-    } else {
-      return [model$1, none()];
-    }
-  } else if (msg instanceof WardSelected) {
-    let w = msg[0];
-    let model$1 = new Model(
-      model.route,
-      model.provinces,
-      model.selected_province,
-      model.wards,
-      w
-    );
-    return [model$1, none()];
-  } else if (msg instanceof ApiReturnedProvinces) {
-    let $ = msg[0];
-    if ($ instanceof Ok) {
-      let provinces = $[0];
-      echo(provinces, void 0, "src/demo_api.gleam", 53);
-      return [
-        new Model(model.route, provinces, new None(), toList([]), new None()),
-        none()
-      ];
-    } else {
-      return [model, none()];
-    }
-  } else if (msg instanceof ApiReturnedWards) {
-    let $ = msg[0];
-    if ($ instanceof Ok) {
-      let wards = $[0];
-      return [
-        new Model(
-          model.route,
-          model.provinces,
-          model.selected_province,
-          wards,
-          model.selected_ward
-        ),
-        none()
-      ];
-    } else {
-      let e = $[0];
-      echo(e, void 0, "src/demo_api.gleam", 77);
-      return [model, none()];
-    }
-  } else {
-    return [model, none()];
-  }
-}
 function view2(model) {
+  let provinces;
+  let selected_province;
+  let wards;
+  provinces = model.provinces;
+  selected_province = model.selected_province;
+  wards = model.wards;
+  let _block;
+  let _pipe = selected_province;
+  let _pipe$1 = map(_pipe, (p) => {
+    return p.code;
+  });
+  _block = unwrap(_pipe$1, 0);
+  let selected_province$1 = _block;
   let province_dropdown = render_province_list(
-    model.provinces,
+    provinces,
+    selected_province$1,
     (var0) => {
       return new ProvinceSelected(var0);
     }
   );
   let ward_dropdown = render_ward_list(
-    model.wards,
+    wards,
     (var0) => {
       return new WardSelected(var0);
     }
@@ -6801,9 +6879,9 @@ function view2(model) {
             toList([
               province_dropdown,
               (() => {
-                let _pipe = model.selected_province;
-                let _pipe$1 = map(_pipe, show_brief_info_province);
-                return unwrap(_pipe$1, none2());
+                let _pipe$2 = model.selected_province;
+                let _pipe$3 = map(_pipe$2, show_brief_info_province);
+                return unwrap(_pipe$3, none2());
               })()
             ])
           ),
@@ -6812,9 +6890,9 @@ function view2(model) {
             toList([
               ward_dropdown,
               (() => {
-                let _pipe = model.selected_ward;
-                let _pipe$1 = map(_pipe, show_brief_info_ward);
-                return unwrap(_pipe$1, none2());
+                let _pipe$2 = model.selected_ward;
+                let _pipe$3 = map(_pipe$2, show_brief_info_ward);
+                return unwrap(_pipe$3, none2());
               })()
             ])
           )
@@ -6861,6 +6939,98 @@ function init2(_) {
   );
   return [model, effects];
 }
+function handle_loaded_provinces(provinces, model) {
+  let _block;
+  let $1 = model.route;
+  if ($1 instanceof Province) {
+    let i = $1[0];
+    let $2 = find2(provinces, (p) => {
+      return p.code === i;
+    });
+    if ($2 instanceof Ok) {
+      let p = $2[0];
+      _block = [new Some(p), load_wards(p.code)];
+    } else {
+      _block = [new None(), none()];
+    }
+  } else {
+    _block = [new None(), none()];
+  }
+  let $ = _block;
+  let selected_province;
+  let whatnext;
+  selected_province = $[0];
+  whatnext = $[1];
+  let model$1 = new Model(
+    model.route,
+    provinces,
+    selected_province,
+    toList([]),
+    new None()
+  );
+  return [model$1, whatnext];
+}
+function update2(model, msg) {
+  if (msg instanceof ProvinceSelected) {
+    let p = msg[0];
+    let model$1 = new Model(
+      model.route,
+      model.provinces,
+      p,
+      toList([]),
+      new None()
+    );
+    if (p instanceof Some) {
+      let p$1 = p[0];
+      let query_string = query_to_string(
+        toList([["p", to_string(p$1.code)]])
+      );
+      return [model$1, push("", new Some(query_string), new None())];
+    } else {
+      return [model$1, none()];
+    }
+  } else if (msg instanceof WardSelected) {
+    let w = msg[0];
+    let model$1 = new Model(
+      model.route,
+      model.provinces,
+      model.selected_province,
+      model.wards,
+      w
+    );
+    return [model$1, none()];
+  } else if (msg instanceof ApiReturnedProvinces) {
+    let $ = msg[0];
+    if ($ instanceof Ok) {
+      let provinces = $[0];
+      echo(provinces, void 0, "src/demo_api.gleam", 54);
+      return handle_loaded_provinces(provinces, model);
+    } else {
+      return [model, none()];
+    }
+  } else if (msg instanceof ApiReturnedWards) {
+    let $ = msg[0];
+    if ($ instanceof Ok) {
+      let wards = $[0];
+      return [
+        new Model(
+          model.route,
+          model.provinces,
+          model.selected_province,
+          wards,
+          model.selected_ward
+        ),
+        none()
+      ];
+    } else {
+      let e = $[0];
+      echo(e, void 0, "src/demo_api.gleam", 75);
+      return [model, none()];
+    }
+  } else {
+    return [model, none()];
+  }
+}
 function main() {
   let app = application(init2, update2, view2);
   let $ = start3(app, "#app", void 0);
@@ -6869,10 +7039,10 @@ function main() {
       "let_assert",
       FILEPATH,
       "demo_api",
-      27,
+      29,
       "main",
       "Pattern match failed, no pattern matched the value.",
-      { value: $, start: 667, end: 716, pattern_start: 678, pattern_end: 683 }
+      { value: $, start: 702, end: 751, pattern_start: 713, pattern_end: 718 }
     );
   }
   return void 0;

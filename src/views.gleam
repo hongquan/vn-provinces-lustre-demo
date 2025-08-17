@@ -6,12 +6,18 @@ import gleam/result
 import lustre/attribute as a
 import lustre/element.{type Element}
 import lustre/element/html as h
-import lustre/event
+import lustre/event as ev
 
 import core.{type Province, type Ward}
 
-pub fn render_province_as_option(p: Province) -> Element(msg) {
-  h.option([a.value(int.to_string(p.code))], p.name)
+pub fn render_province_as_option(
+  p: Province,
+  selected_code: Int,
+) -> Element(msg) {
+  h.option(
+    [a.value(int.to_string(p.code)), a.selected(p.code == selected_code)],
+    p.name,
+  )
 }
 
 pub fn render_ward_as_option(w: Ward) -> Element(msg) {
@@ -28,11 +34,12 @@ pub fn get_ward_from_code(c: Int, wards: List(Ward)) {
 
 pub fn render_province_list(
   provinces: List(Province),
+  selected_code: Int,
   receiver: fn(Option(Province)) -> msg,
 ) -> Element(msg) {
   let options = [
     h.option([a.value("")], "Tỉnh thành..."),
-    ..list.map(provinces, render_province_as_option)
+    ..list.map(provinces, render_province_as_option(_, selected_code))
   ]
   let on_change_handler = fn(v: String) {
     v
@@ -44,7 +51,7 @@ pub fn render_province_list(
   h.select(
     [
       a.class(consts.css_select),
-      event.on_change(on_change_handler),
+      ev.on_change(on_change_handler),
     ],
     options,
   )
@@ -92,7 +99,7 @@ pub fn render_ward_list(
   h.select(
     [
       a.class(consts.css_select),
-      event.on_change(on_change_handler),
+      ev.on_change(on_change_handler),
     ],
     options,
   )
