@@ -1,4 +1,4 @@
-name = "demo_api"
+name = "vn_provinces_demo"
 version = "1.0.0"
 target = "javascript"
 
