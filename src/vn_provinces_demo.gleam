@@ -91,8 +91,8 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     core.OnRouteChange(new_route) -> {
       case new_route {
         router.Home -> #(model, effect.none())
-        router.Province(p, w) -> {
-          handle_route_changed(p, w, model)
+        router.Province(p, _w) -> {
+          handle_route_changed(new_route, p, model)
         }
       }
     }
@@ -166,32 +166,28 @@ fn handle_loaded_provinces(
 }
 
 fn handle_route_changed(
+  new_route: Route,
   queried_province: Int,
-  queried_ward: Option(Int),
   model: Model,
 ) -> #(Model, Effect(Msg)) {
   let Model(provinces:, route: current_route, ..) = model
   let queried_province =
-    provinces
-    |> list.find(fn(p) { p.code == queried_province })
-    |> option.from_result
+    list.find(provinces, fn(p) { p.code == queried_province })
   // If queried_province != current_province, we will load new wards
   let current_province = case current_route {
     router.Home -> None
     router.Province(i, _v) -> Some(i)
   }
   let whatnext = case queried_province, current_province {
-    Some(i), Some(j) if i.code != j -> actions.load_wards(i.code)
-    Some(i), None -> actions.load_wards(i.code)
+    Ok(i), Some(j) if i.code != j -> actions.load_wards(i.code)
+    Ok(i), None -> actions.load_wards(i.code)
     _, _ -> effect.none()
   }
-  // The queried_ward only make a choice in dropdown selected,
-  // so we save it to model.
-  let new_route = case queried_province {
-    Some(p) -> router.Province(p.code, queried_ward)
-    None -> router.Home
-  }
   let model =
-    Model(..model, route: new_route, selected_province: queried_province)
+    Model(
+      ..model,
+      route: new_route,
+      selected_province: option.from_result(queried_province),
+    )
   #(model, whatnext)
 }

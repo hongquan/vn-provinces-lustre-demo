@@ -7000,61 +7000,49 @@ function handle_loaded_provinces(provinces, model) {
   let model$1 = new Model(model.route, provinces, selected_province, toList([]));
   return [model$1, whatnext];
 }
-function handle_route_changed(queried_province, queried_ward, model) {
+function handle_route_changed(new_route, queried_province, model) {
   let current_route;
   let provinces;
   current_route = model.route;
   provinces = model.provinces;
-  let _block;
-  let _pipe = provinces;
-  let _pipe$1 = find2(
-    _pipe,
+  let queried_province$1 = find2(
+    provinces,
     (p) => {
       return p.code === queried_province;
     }
   );
-  _block = from_result(_pipe$1);
-  let queried_province$1 = _block;
-  let _block$1;
+  let _block;
   if (current_route instanceof Home) {
-    _block$1 = new None();
+    _block = new None();
   } else {
     let i = current_route[0];
-    _block$1 = new Some(i);
+    _block = new Some(i);
   }
-  let current_province = _block$1;
-  let _block$2;
+  let current_province = _block;
+  let _block$1;
   if (current_province instanceof Some) {
-    if (queried_province$1 instanceof Some) {
+    if (queried_province$1 instanceof Ok) {
       let j = current_province[0];
       let i = queried_province$1[0];
       if (i.code !== j) {
-        _block$2 = load_wards(i.code);
+        _block$1 = load_wards(i.code);
       } else {
-        _block$2 = none();
+        _block$1 = none();
       }
     } else {
-      _block$2 = none();
+      _block$1 = none();
     }
-  } else if (queried_province$1 instanceof Some) {
+  } else if (queried_province$1 instanceof Ok) {
     let i = queried_province$1[0];
-    _block$2 = load_wards(i.code);
+    _block$1 = load_wards(i.code);
   } else {
-    _block$2 = none();
+    _block$1 = none();
   }
-  let whatnext = _block$2;
-  let _block$3;
-  if (queried_province$1 instanceof Some) {
-    let p = queried_province$1[0];
-    _block$3 = new Province(p.code, queried_ward);
-  } else {
-    _block$3 = new Home();
-  }
-  let new_route = _block$3;
+  let whatnext = _block$1;
   let model$1 = new Model(
     new_route,
     model.provinces,
-    queried_province$1,
+    from_result(queried_province$1),
     model.wards
   );
   return [model$1, whatnext];
@@ -7121,8 +7109,7 @@ function update2(model, msg) {
       return [model, none()];
     } else {
       let p = new_route[0];
-      let w = new_route[1];
-      return handle_route_changed(p, w, model);
+      return handle_route_changed(new_route, p, model);
     }
   }
 }
