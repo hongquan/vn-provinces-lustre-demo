@@ -61,8 +61,8 @@ pub fn render_province_list(
 }
 
 pub fn show_brief_info_province(province: Province) {
-  h.dl([a.class("text-sm max-w-xs")], [
-    h.dt([a.class("font-semibold")], [h.text(province.name)]),
+  h.dl([a.class("max-w-md")], [
+    h.dt([a.class("font-semibold text-lg")], [h.text(province.name)]),
     h.dt([a.class("flex")], [
       h.span([a.class("block")], [h.text("Mã số:")]),
       h.span([a.class("block flex-grow text-end")], [
@@ -73,8 +73,8 @@ pub fn show_brief_info_province(province: Province) {
 }
 
 pub fn show_brief_info_ward(ward: Ward) {
-  h.dl([a.class("text-sm max-w-xs")], [
-    h.dt([a.class("font-semibold")], [h.text(ward.name)]),
+  h.dl([a.class("max-w-md")], [
+    h.dt([a.class("font-semibold text-lg")], [h.text(ward.name)]),
     h.dt([a.class("flex")], [
       h.span([a.class("block")], [h.text("Mã số:")]),
       h.span([a.class("block flex-grow text-end")], [

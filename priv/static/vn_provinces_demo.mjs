@@ -6772,10 +6772,10 @@ function render_province_list(provinces, selected_code, receiver) {
 }
 function show_brief_info_province(province) {
   return dl(
-    toList([class$("text-sm max-w-xs")]),
+    toList([class$("max-w-md")]),
     toList([
       dt(
-        toList([class$("font-semibold")]),
+        toList([class$("font-semibold text-lg")]),
         toList([text3(province.name)])
       ),
       dt(
@@ -6793,9 +6793,12 @@ function show_brief_info_province(province) {
 }
 function show_brief_info_ward(ward) {
   return dl(
-    toList([class$("text-sm max-w-xs")]),
+    toList([class$("max-w-md")]),
     toList([
-      dt(toList([class$("font-semibold")]), toList([text3(ward.name)])),
+      dt(
+        toList([class$("font-semibold text-lg")]),
+        toList([text3(ward.name)])
+      ),
       dt(
         toList([class$("flex")]),
         toList([
@@ -6907,7 +6910,7 @@ function view2(model) {
     toList([
       h1(
         toList([class$("text-xl py-4 text-gray-900 dark:text-gray-300")]),
-        toList([text3("Hello")])
+        toList([text3("T\u1EC9nh th\xE0nh Vi\u1EC7t Nam \u{1F1FB}\u{1F1F3}")])
       ),
       div(
         toList([

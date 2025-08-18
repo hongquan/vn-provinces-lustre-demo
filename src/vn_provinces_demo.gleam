@@ -117,7 +117,7 @@ fn view(model: Model) -> Element(Msg) {
   }
   h.div([a.class("p-4 dark:bg-gray-900 antialiased h-screen")], [
     h.h1([a.class("text-xl py-4 text-gray-900 dark:text-gray-300")], [
-      h.text("Hello"),
+      h.text("Tỉnh thành Việt Nam 🇻🇳"),
     ]),
     h.div([a.class("space-y-4 md:flex md:flex-row md:space-x-4 md:space-y-0")], [
       h.div([a.class("text-gray-900 dark:text-gray-300 space-y-4")], [
