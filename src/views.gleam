@@ -20,8 +20,11 @@ pub fn render_province_as_option(
   )
 }
 
-pub fn render_ward_as_option(w: Ward) -> Element(msg) {
-  h.option([a.value(int.to_string(w.code))], w.name)
+pub fn render_ward_as_option(w: Ward, selected_ward: Int) -> Element(msg) {
+  h.option(
+    [a.value(int.to_string(w.code)), a.selected(w.code == selected_ward)],
+    w.name,
+  )
 }
 
 pub fn get_province_from_code(c: Int, provinces: List(Province)) {
@@ -83,11 +86,12 @@ pub fn show_brief_info_ward(ward: Ward) {
 
 pub fn render_ward_list(
   wards: List(Ward),
+  selected_ward: Int,
   receiver: fn(Option(Ward)) -> msg,
 ) -> Element(msg) {
   let options = [
     h.option([a.value("")], "Phường xã..."),
-    ..list.map(wards, render_ward_as_option)
+    ..list.map(wards, render_ward_as_option(_, selected_ward))
   ]
   let on_change_handler = fn(v: String) {
     v

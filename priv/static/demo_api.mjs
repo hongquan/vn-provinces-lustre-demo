@@ -1959,6 +1959,9 @@ function trim_start(string5) {
 function trim_end(string5) {
   return string5.replace(trim_end_regex, "");
 }
+function console_log(term) {
+  console.log(term);
+}
 function unsafe_percent_decode_query(string5) {
   return decodeURIComponent((string5 || "").replace("+", " "));
 }
@@ -6719,8 +6722,14 @@ function render_province_as_option(p, selected_code) {
     p.name
   );
 }
-function render_ward_as_option(w) {
-  return option(toList([value(to_string(w.code))]), w.name);
+function render_ward_as_option(w, selected_ward) {
+  return option(
+    toList([
+      value(to_string(w.code)),
+      selected(w.code === selected_ward)
+    ]),
+    w.name
+  );
 }
 function get_province_from_code(c, provinces) {
   let _pipe = provinces;
@@ -6800,10 +6809,15 @@ function show_brief_info_ward(ward) {
     ])
   );
 }
-function render_ward_list(wards, receiver) {
+function render_ward_list(wards, selected_ward, receiver) {
   let options = prepend(
     option(toList([value("")]), "Ph\u01B0\u1EDDng x\xE3..."),
-    map2(wards, render_ward_as_option)
+    map2(
+      wards,
+      (_capture) => {
+        return render_ward_as_option(_capture, selected_ward);
+      }
+    )
   );
   let on_change_handler = (v) => {
     let _pipe = v;
@@ -6826,19 +6840,20 @@ function render_ward_list(wards, receiver) {
 // build/dev/javascript/demo_api/demo_api.mjs
 var FILEPATH = "src/demo_api.gleam";
 var Model = class extends CustomType {
-  constructor(route, provinces, selected_province, wards, selected_ward) {
+  constructor(route, provinces, selected_province, wards) {
     super();
     this.route = route;
     this.provinces = provinces;
     this.selected_province = selected_province;
     this.wards = wards;
-    this.selected_ward = selected_ward;
   }
 };
 function view2(model) {
+  let route;
   let provinces;
   let selected_province;
   let wards;
+  route = model.route;
   provinces = model.provinces;
   selected_province = model.selected_province;
   wards = model.wards;
@@ -6856,12 +6871,37 @@ function view2(model) {
       return new ProvinceSelected(var0);
     }
   );
+  let _block$1;
+  if (route instanceof Province) {
+    let $2 = route[1];
+    if ($2 instanceof Some) {
+      let w = $2[0];
+      _block$1 = w;
+    } else {
+      _block$1 = 0;
+    }
+  } else {
+    _block$1 = 0;
+  }
+  let selected_ward = _block$1;
   let ward_dropdown = render_ward_list(
     wards,
+    selected_ward,
     (var0) => {
       return new WardSelected(var0);
     }
   );
+  let _block$2;
+  let $ = find2(wards, (w) => {
+    return w.code === selected_ward;
+  });
+  if ($ instanceof Ok) {
+    let ward = $[0];
+    _block$2 = show_brief_info_ward(ward);
+  } else {
+    _block$2 = none2();
+  }
+  let ward_info = _block$2;
   return div(
     toList([class$("p-4 dark:bg-gray-900 antialiased h-screen")]),
     toList([
@@ -6887,14 +6927,7 @@ function view2(model) {
           ),
           div(
             toList([class$("text-gray-900 dark:text-gray-300 space-y-4")]),
-            toList([
-              ward_dropdown,
-              (() => {
-                let _pipe$2 = model.selected_ward;
-                let _pipe$3 = map(_pipe$2, show_brief_info_ward);
-                return unwrap(_pipe$3, none2());
-              })()
-            ])
+            toList([ward_dropdown, ward_info])
           )
         ])
       )
@@ -6933,7 +6966,7 @@ function init2(_) {
   _block = unwrap(_pipe$4, toList([]));
   let query = _block;
   let route = parse_to_route(query);
-  let model = new Model(route, toList([]), new None(), toList([]), new None());
+  let model = new Model(route, toList([]), new None(), toList([]));
   let effects = batch(
     toList([init(on_url_change), load_provinces()])
   );
@@ -6961,25 +6994,72 @@ function handle_loaded_provinces(provinces, model) {
   let whatnext;
   selected_province = $[0];
   whatnext = $[1];
+  let model$1 = new Model(model.route, provinces, selected_province, toList([]));
+  return [model$1, whatnext];
+}
+function handle_route_changed(queried_province, queried_ward, model) {
+  let current_route;
+  let provinces;
+  current_route = model.route;
+  provinces = model.provinces;
+  let _block;
+  let _pipe = provinces;
+  let _pipe$1 = find2(
+    _pipe,
+    (p) => {
+      return p.code === queried_province;
+    }
+  );
+  _block = from_result(_pipe$1);
+  let queried_province$1 = _block;
+  let _block$1;
+  if (current_route instanceof Home) {
+    _block$1 = new None();
+  } else {
+    let i = current_route[0];
+    _block$1 = new Some(i);
+  }
+  let current_province = _block$1;
+  let _block$2;
+  if (current_province instanceof Some) {
+    if (queried_province$1 instanceof Some) {
+      let j = current_province[0];
+      let i = queried_province$1[0];
+      if (i.code !== j) {
+        _block$2 = load_wards(i.code);
+      } else {
+        _block$2 = none();
+      }
+    } else {
+      _block$2 = none();
+    }
+  } else if (queried_province$1 instanceof Some) {
+    let i = queried_province$1[0];
+    _block$2 = load_wards(i.code);
+  } else {
+    _block$2 = none();
+  }
+  let whatnext = _block$2;
+  let _block$3;
+  if (queried_province$1 instanceof Some) {
+    let p = queried_province$1[0];
+    _block$3 = new Province(p.code, queried_ward);
+  } else {
+    _block$3 = new Home();
+  }
+  let new_route = _block$3;
   let model$1 = new Model(
-    model.route,
-    provinces,
-    selected_province,
-    toList([]),
-    new None()
+    new_route,
+    model.provinces,
+    queried_province$1,
+    model.wards
   );
   return [model$1, whatnext];
 }
 function update2(model, msg) {
   if (msg instanceof ProvinceSelected) {
     let p = msg[0];
-    let model$1 = new Model(
-      model.route,
-      model.provinces,
-      p,
-      toList([]),
-      new None()
-    );
+    let model$1 = new Model(model.route, model.provinces, p, toList([]));
     if (p instanceof Some) {
       let p$1 = p[0];
       let query_string = query_to_string(
@@ -6991,19 +7071,29 @@ function update2(model, msg) {
     }
   } else if (msg instanceof WardSelected) {
     let w = msg[0];
-    let model$1 = new Model(
-      model.route,
-      model.provinces,
-      model.selected_province,
-      model.wards,
-      w
-    );
-    return [model$1, none()];
+    if (w instanceof Some) {
+      let w$1 = w[0];
+      let new_append = ["w", to_string(w$1.code)];
+      let _block;
+      let $ = model.route;
+      if ($ instanceof Province) {
+        let p = $[0];
+        _block = toList([["p", to_string(p)], new_append]);
+      } else {
+        _block = toList([new_append]);
+      }
+      let new_query = _block;
+      return [
+        model,
+        push("", new Some(query_to_string(new_query)), new None())
+      ];
+    } else {
+      return [model, none()];
+    }
   } else if (msg instanceof ApiReturnedProvinces) {
     let $ = msg[0];
     if ($ instanceof Ok) {
       let provinces = $[0];
-      echo(provinces, void 0, "src/demo_api.gleam", 54);
       return handle_loaded_provinces(provinces, model);
     } else {
       return [model, none()];
@@ -7012,23 +7102,25 @@ function update2(model, msg) {
     let $ = msg[0];
     if ($ instanceof Ok) {
       let wards = $[0];
+      console_log("Wards loaded");
       return [
-        new Model(
-          model.route,
-          model.provinces,
-          model.selected_province,
-          wards,
-          model.selected_ward
-        ),
+        new Model(model.route, model.provinces, model.selected_province, wards),
         none()
       ];
     } else {
       let e = $[0];
-      echo(e, void 0, "src/demo_api.gleam", 75);
+      echo(e, void 0, "src/demo_api.gleam", 74);
       return [model, none()];
     }
   } else {
-    return [model, none()];
+    let new_route = msg[0];
+    if (new_route instanceof Home) {
+      return [model, none()];
+    } else {
+      let p = new_route[0];
+      let w = new_route[1];
+      return handle_route_changed(p, w, model);
+    }
   }
 }
 function main() {
@@ -7042,7 +7134,7 @@ function main() {
       29,
       "main",
       "Pattern match failed, no pattern matched the value.",
-      { value: $, start: 702, end: 751, pattern_start: 713, pattern_end: 718 }
+      { value: $, start: 685, end: 734, pattern_start: 696, pattern_end: 701 }
     );
   }
   return void 0;

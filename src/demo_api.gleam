@@ -1,4 +1,5 @@
 import gleam/int
+import gleam/io
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/uri
@@ -20,7 +21,6 @@ pub type Model {
     provinces: List(Province),
     selected_province: Option(Province),
     wards: List(Ward),
-    selected_ward: Option(Ward),
   )
 }
 
@@ -39,7 +39,7 @@ fn init(_args) -> #(Model, Effect(Msg)) {
     |> option.flatten
     |> option.unwrap([])
   let route = parse_to_route(query)
-  let model = Model(route, [], None, [], None)
+  let model = Model(route, [], None, [])
   let effects =
     effect.batch([modem.init(on_url_change), actions.load_provinces()])
   // At initial, we will load provinces from API.
@@ -51,13 +51,11 @@ fn init(_args) -> #(Model, Effect(Msg)) {
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     core.ApiReturnedProvinces(Ok(provinces)) -> {
-      echo provinces
       handle_loaded_provinces(provinces, model)
     }
     // User has picked a province from dropdown
     core.ProvinceSelected(p) -> {
-      let model =
-        Model(..model, wards: [], selected_province: p, selected_ward: None)
+      let model = Model(..model, wards: [], selected_province: p)
       case p {
         None -> #(model, effect.none())
         Some(p) -> {
@@ -69,6 +67,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
     }
     core.ApiReturnedWards(Ok(wards)) -> {
+      io.println("Wards loaded")
       #(Model(..model, wards:), effect.none())
     }
     core.ApiReturnedWards(Error(e)) -> {
@@ -76,20 +75,46 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(model, effect.none())
     }
     core.WardSelected(w) -> {
-      let model = Model(..model, selected_ward: w)
-      #(model, effect.none())
+      case w {
+        None -> #(model, effect.none())
+        Some(w) -> {
+          // Reflect to browser URL
+          let new_append = #("w", int.to_string(w.code))
+          let new_query = case model.route {
+            router.Province(p, _w) -> [#("p", int.to_string(p)), new_append]
+            _ -> [new_append]
+          }
+          #(model, modem.push("", Some(uri.query_to_string(new_query)), None))
+        }
+      }
+    }
+    core.OnRouteChange(new_route) -> {
+      case new_route {
+        router.Home -> #(model, effect.none())
+        router.Province(p, w) -> {
+          handle_route_changed(p, w, model)
+        }
+      }
     }
     _ -> #(model, effect.none())
   }
 }
 
 fn view(model: Model) -> Element(Msg) {
-  let Model(provinces:, selected_province:, wards:, ..) = model
+  let Model(route:, provinces:, selected_province:, wards:) = model
   let selected_province =
     selected_province |> option.map(fn(p) { p.code }) |> option.unwrap(0)
   let province_dropdown =
     render_province_list(provinces, selected_province, core.ProvinceSelected)
-  let ward_dropdown = render_ward_list(wards, core.WardSelected)
+  let selected_ward = case route {
+    router.Province(_p, Some(w)) -> w
+    _ -> 0
+  }
+  let ward_dropdown = render_ward_list(wards, selected_ward, core.WardSelected)
+  let ward_info = case list.find(wards, fn(w) { w.code == selected_ward }) {
+    Ok(ward) -> views.show_brief_info_ward(ward)
+    _ -> element.none()
+  }
   h.div([a.class("p-4 dark:bg-gray-900 antialiased h-screen")], [
     h.h1([a.class("text-xl py-4 text-gray-900 dark:text-gray-300")], [
       h.text("Hello"),
@@ -103,9 +128,7 @@ fn view(model: Model) -> Element(Msg) {
       ]),
       h.div([a.class("text-gray-900 dark:text-gray-300 space-y-4")], [
         ward_dropdown,
-        model.selected_ward
-          |> option.map(views.show_brief_info_ward)
-          |> option.unwrap(element.none()),
+        ward_info,
       ]),
     ]),
   ])
@@ -138,13 +161,37 @@ fn handle_loaded_provinces(
     _ -> #(None, effect.none())
   }
   // Save provinces to model, reset the selection and wards
+  let model = Model(..model, provinces:, wards: [], selected_province:)
+  #(model, whatnext)
+}
+
+fn handle_route_changed(
+  queried_province: Int,
+  queried_ward: Option(Int),
+  model: Model,
+) -> #(Model, Effect(Msg)) {
+  let Model(provinces:, route: current_route, ..) = model
+  let queried_province =
+    provinces
+    |> list.find(fn(p) { p.code == queried_province })
+    |> option.from_result
+  // If queried_province != current_province, we will load new wards
+  let current_province = case current_route {
+    router.Home -> None
+    router.Province(i, _v) -> Some(i)
+  }
+  let whatnext = case queried_province, current_province {
+    Some(i), Some(j) if i.code != j -> actions.load_wards(i.code)
+    Some(i), None -> actions.load_wards(i.code)
+    _, _ -> effect.none()
+  }
+  // The queried_ward only make a choice in dropdown selected,
+  // so we save it to model.
+  let new_route = case queried_province {
+    Some(p) -> router.Province(p.code, queried_ward)
+    None -> router.Home
+  }
   let model =
-    Model(
-      ..model,
-      provinces:,
-      wards: [],
-      selected_province:,
-      selected_ward: None,
-    )
+    Model(..model, route: new_route, selected_province: queried_province)
   #(model, whatnext)
 }
