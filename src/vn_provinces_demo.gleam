@@ -115,23 +115,72 @@ fn view(model: Model) -> Element(Msg) {
     Ok(ward) -> views.show_brief_info_ward(ward)
     _ -> element.none()
   }
-  h.div([a.class("p-4 dark:bg-gray-900 antialiased h-screen")], [
-    h.h1([a.class("text-xl py-4 text-gray-900 dark:text-gray-300")], [
-      h.text("Tỉnh thành Việt Nam 🇻🇳"),
-    ]),
-    h.div([a.class("space-y-4 md:flex md:flex-row md:space-x-4 md:space-y-0")], [
-      h.div([a.class("text-gray-900 dark:text-gray-300 space-y-4")], [
-        province_dropdown,
-        model.selected_province
-          |> option.map(show_brief_info_province)
-          |> option.unwrap(element.none()),
+  h.div(
+    [
+      a.class(
+        "p-4 dark:bg-gray-900 text-gray-900 dark:text-gray-300 antialiased h-screen",
+      ),
+    ],
+    [
+      h.header([], [
+        h.h1([a.class("text-xl py-4 text-gray-900 dark:text-gray-300")], [
+          h.text("Tỉnh thành Việt Nam 🇻🇳"),
+        ]),
       ]),
-      h.div([a.class("text-gray-900 dark:text-gray-300 space-y-4")], [
-        ward_dropdown,
-        ward_info,
+      h.main([], [
+        h.div(
+          [a.class("space-y-4 md:flex md:flex-row md:space-x-4 md:space-y-0")],
+          [
+            h.div([a.class("text-gray-900 dark:text-gray-300 space-y-4")], [
+              province_dropdown,
+              model.selected_province
+                |> option.map(show_brief_info_province)
+                |> option.unwrap(element.none()),
+            ]),
+            h.div([a.class("text-gray-900 dark:text-gray-300 space-y-4")], [
+              ward_dropdown,
+              ward_info,
+            ]),
+          ],
+        ),
       ]),
-    ]),
-  ])
+      h.footer([a.class("mt-8 text-sm")], [
+        h.text("Implemented in "),
+        h.a(
+          [
+            a.href("https://gleam.run/"),
+            a.class("underline hover:text-sky-800 dark:hover:text-sky-300"),
+          ],
+          [
+            h.text("Gleam language"),
+          ],
+        ),
+        h.text(" "),
+        h.text("and"),
+        h.text(" "),
+        h.a(
+          [
+            a.href("https://hexdocs.pm/lustre/"),
+            a.class("underline hover:text-sky-800 dark:hover:text-sky-300"),
+          ],
+          [
+            h.text("Lustre framework."),
+          ],
+        ),
+        h.br([]),
+        h.a(
+          [
+            a.href("https://github.com/hongquan/vn-provinces-lustre-demo"),
+            a.class("underline hover:text-sky-800 dark:hover:text-sky-300"),
+          ],
+          [
+            h.text("Source"),
+          ],
+        ),
+        h.text("."),
+      ]),
+    ],
+  )
 }
 
 pub fn on_url_change(uri: uri.Uri) -> Msg {
