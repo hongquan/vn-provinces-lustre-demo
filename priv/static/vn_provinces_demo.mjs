@@ -7046,26 +7046,23 @@ function render_ward_combobox(to_show, wards, filter_text, settled_ward, emit_ms
 // build/dev/javascript/vn_provinces_demo/vn_provinces_demo.mjs
 var FILEPATH = "src/vn_provinces_demo.gleam";
 var Model = class extends CustomType {
-  constructor(route, provinces, province_combobox_state, wards, ward_combobox_shown, ward_filter_text, filtered_wards, selected_ward) {
+  constructor(route, provinces, wards, province_combobox_state, ward_combobox_state) {
     super();
     this.route = route;
     this.provinces = provinces;
-    this.province_combobox_state = province_combobox_state;
     this.wards = wards;
-    this.ward_combobox_shown = ward_combobox_shown;
-    this.ward_filter_text = ward_filter_text;
-    this.filtered_wards = filtered_wards;
-    this.selected_ward = selected_ward;
+    this.province_combobox_state = province_combobox_state;
+    this.ward_combobox_state = ward_combobox_state;
   }
 };
 function view2(model) {
   let route;
   let provinces;
+  let wards;
   let province_combobox_shown;
   let province_filter_text;
   let filtered_provinces;
   let selected_province;
-  let wards;
   let ward_combobox_shown;
   let ward_filter_text;
   let filtered_wards;
@@ -7073,16 +7070,16 @@ function view2(model) {
   route = model.route;
   provinces = model.provinces;
   wards = model.wards;
-  ward_combobox_shown = model.ward_combobox_shown;
-  ward_filter_text = model.ward_filter_text;
-  filtered_wards = model.filtered_wards;
-  selected_ward = model.selected_ward;
+  ward_combobox_shown = model.ward_combobox_state.is_shown;
+  ward_filter_text = model.ward_combobox_state.filter_text;
+  filtered_wards = model.ward_combobox_state.filtered_items;
+  selected_ward = model.ward_combobox_state.selected_item;
   province_combobox_shown = model.province_combobox_state.is_shown;
   province_filter_text = model.province_combobox_state.filter_text;
   filtered_provinces = model.province_combobox_state.filtered_items;
   selected_province = model.province_combobox_state.selected_item;
-  echo(selected_province, void 0, "src/vn_provinces_demo.gleam", 268);
-  echo(selected_ward, void 0, "src/vn_provinces_demo.gleam", 269);
+  echo(selected_province, void 0, "src/vn_provinces_demo.gleam", 281);
+  echo(selected_ward, void 0, "src/vn_provinces_demo.gleam", 282);
   let _block;
   if (province_filter_text === "") {
     _block = provinces;
@@ -7246,12 +7243,9 @@ function init2(_) {
   let model = new Model(
     route,
     toList([]),
+    toList([]),
     create_empty_combobox_state(),
-    toList([]),
-    false,
-    "",
-    toList([]),
-    new None()
+    create_empty_combobox_state()
   );
   let effects = batch(
     toList([init(on_url_change), load_provinces()])
@@ -7283,6 +7277,7 @@ function handle_loaded_provinces(provinces, model) {
   let model$1 = new Model(
     model.route,
     provinces,
+    toList([]),
     (() => {
       let _record = model.province_combobox_state;
       return new ComboboxState(
@@ -7292,11 +7287,7 @@ function handle_loaded_provinces(provinces, model) {
         selected_province
       );
     })(),
-    toList([]),
-    model.ward_combobox_shown,
-    model.ward_filter_text,
-    model.filtered_wards,
-    model.selected_ward
+    model.ward_combobox_state
   );
   return [model$1, whatnext];
 }
@@ -7322,12 +7313,17 @@ function handle_loaded_wards(wards, model) {
   let model$1 = new Model(
     model.route,
     model.provinces,
-    model.province_combobox_state,
     wards,
-    model.ward_combobox_shown,
-    model.ward_filter_text,
-    model.filtered_wards,
-    selected_ward
+    model.province_combobox_state,
+    (() => {
+      let _record = model.ward_combobox_state;
+      return new ComboboxState(
+        _record.is_shown,
+        _record.filter_text,
+        _record.filtered_items,
+        selected_ward
+      );
+    })()
   );
   return [model$1, none2()];
 }
@@ -7373,6 +7369,7 @@ function handle_route_changed(new_route, queried_province, model) {
   let model$1 = new Model(
     new_route,
     model.provinces,
+    model.wards,
     (() => {
       let _record = model.province_combobox_state;
       return new ComboboxState(
@@ -7382,11 +7379,7 @@ function handle_route_changed(new_route, queried_province, model) {
         from_result(queried_province$1)
       );
     })(),
-    model.wards,
-    model.ward_combobox_shown,
-    model.ward_filter_text,
-    model.filtered_wards,
-    model.selected_ward
+    model.ward_combobox_state
   );
   return [model$1, whatnext];
 }
@@ -7396,6 +7389,7 @@ function update2(model, msg) {
     let model$1 = new Model(
       model.route,
       model.provinces,
+      toList([]),
       (() => {
         let _record = model.province_combobox_state;
         return new ComboboxState(
@@ -7405,11 +7399,7 @@ function update2(model, msg) {
           p
         );
       })(),
-      toList([]),
-      model.ward_combobox_shown,
-      model.ward_filter_text,
-      model.filtered_wards,
-      model.selected_ward
+      model.ward_combobox_state
     );
     if (p instanceof Some) {
       let p$1 = p[0];
@@ -7446,6 +7436,7 @@ function update2(model, msg) {
     let model$1 = new Model(
       model.route,
       model.provinces,
+      model.wards,
       (() => {
         let _record = model.province_combobox_state;
         return new ComboboxState(
@@ -7455,11 +7446,7 @@ function update2(model, msg) {
           _record.selected_item
         );
       })(),
-      model.wards,
-      model.ward_combobox_shown,
-      model.ward_filter_text,
-      model.filtered_wards,
-      model.selected_ward
+      model.ward_combobox_state
     );
     return [model$1, none2()];
   } else if (msg instanceof ProvinceComboboxBlur) {
@@ -7483,6 +7470,7 @@ function update2(model, msg) {
       let model$1 = new Model(
         model.route,
         model.provinces,
+        model.wards,
         (() => {
           let _record = model.province_combobox_state;
           return new ComboboxState(
@@ -7492,11 +7480,7 @@ function update2(model, msg) {
             _record.selected_item
           );
         })(),
-        model.wards,
-        model.ward_combobox_shown,
-        model.ward_filter_text,
-        model.filtered_wards,
-        model.selected_ward
+        model.ward_combobox_state
       );
       return [model$1, none2()];
     }
@@ -7505,6 +7489,7 @@ function update2(model, msg) {
     let model$1 = new Model(
       model.route,
       model.provinces,
+      model.wards,
       (() => {
         let _record = model.province_combobox_state;
         return new ComboboxState(
@@ -7514,20 +7499,17 @@ function update2(model, msg) {
           _record.selected_item
         );
       })(),
-      model.wards,
-      model.ward_combobox_shown,
-      model.ward_filter_text,
-      model.filtered_wards,
-      model.selected_ward
+      model.ward_combobox_state
     );
     return [model$1, search_provinces(s)];
   } else if (msg instanceof ProvinceComboboxSelected) {
     let p = msg[0];
     console_log("ProvinceComboboxSelected");
-    echo(p, void 0, "src/vn_provinces_demo.gleam", 158);
+    echo(p, void 0, "src/vn_provinces_demo.gleam", 152);
     let model$1 = new Model(
       model.route,
       model.provinces,
+      model.wards,
       (() => {
         let _record = model.province_combobox_state;
         return new ComboboxState(
@@ -7537,11 +7519,7 @@ function update2(model, msg) {
           new Some(p)
         );
       })(),
-      model.wards,
-      model.ward_combobox_shown,
-      model.ward_filter_text,
-      model.filtered_wards,
-      model.selected_ward
+      model.ward_combobox_state
     );
     let query_string = query_to_string(
       toList([["p", to_string(p.code)]])
@@ -7551,12 +7529,17 @@ function update2(model, msg) {
     let model$1 = new Model(
       model.route,
       model.provinces,
-      model.province_combobox_state,
       model.wards,
-      true,
-      model.ward_filter_text,
-      model.filtered_wards,
-      model.selected_ward
+      model.province_combobox_state,
+      (() => {
+        let _record = model.ward_combobox_state;
+        return new ComboboxState(
+          true,
+          _record.filter_text,
+          _record.filtered_items,
+          _record.selected_item
+        );
+      })()
     );
     return [model$1, none2()];
   } else if (msg instanceof WardComboboxBlur) {
@@ -7580,28 +7563,38 @@ function update2(model, msg) {
       let model$1 = new Model(
         model.route,
         model.provinces,
-        model.province_combobox_state,
         model.wards,
-        false,
-        model.ward_filter_text,
-        model.filtered_wards,
-        model.selected_ward
+        model.province_combobox_state,
+        (() => {
+          let _record = model.ward_combobox_state;
+          return new ComboboxState(
+            false,
+            _record.filter_text,
+            _record.filtered_items,
+            _record.selected_item
+          );
+        })()
       );
       return [model$1, none2()];
     }
   } else if (msg instanceof WardComboboxSelected) {
     let w = msg[0];
     console_log("WardComboboxSelected");
-    echo(w, void 0, "src/vn_provinces_demo.gleam", 232);
+    echo(w, void 0, "src/vn_provinces_demo.gleam", 240);
     let model$1 = new Model(
       model.route,
       model.provinces,
-      model.province_combobox_state,
       model.wards,
-      false,
-      w.name,
-      model.filtered_wards,
-      new Some(w)
+      model.province_combobox_state,
+      (() => {
+        let _record = model.ward_combobox_state;
+        return new ComboboxState(
+          false,
+          w.name,
+          _record.filtered_items,
+          new Some(w)
+        );
+      })()
     );
     let new_append = ["w", to_string(w.code)];
     let _block;
@@ -7630,10 +7623,11 @@ function update2(model, msg) {
     if ($ instanceof Ok) {
       let provinces = $[0];
       console_log("ApiReturnedSearchedProvinces");
-      echo(provinces, void 0, "src/vn_provinces_demo.gleam", 82);
+      echo(provinces, void 0, "src/vn_provinces_demo.gleam", 76);
       let model$1 = new Model(
         model.route,
         model.provinces,
+        model.wards,
         (() => {
           let _record = model.province_combobox_state;
           return new ComboboxState(
@@ -7643,11 +7637,7 @@ function update2(model, msg) {
             _record.selected_item
           );
         })(),
-        model.wards,
-        model.ward_combobox_shown,
-        model.ward_filter_text,
-        model.filtered_wards,
-        model.selected_ward
+        model.ward_combobox_state
       );
       return [model$1, none2()];
     } else {
@@ -7661,7 +7651,7 @@ function update2(model, msg) {
       return handle_loaded_wards(wards, model);
     } else {
       let e = $[0];
-      echo(e, void 0, "src/vn_provinces_demo.gleam", 119);
+      echo(e, void 0, "src/vn_provinces_demo.gleam", 113);
       return [model, none2()];
     }
   } else if (msg instanceof OnRouteChange) {
@@ -7670,7 +7660,7 @@ function update2(model, msg) {
       return [model, none2()];
     } else {
       let p = new_route[0];
-      echo(model, void 0, "src/vn_provinces_demo.gleam", 140);
+      echo(model, void 0, "src/vn_provinces_demo.gleam", 134);
       return handle_route_changed(new_route, p, model);
     }
   } else {
@@ -7685,16 +7675,10 @@ function main() {
       "let_assert",
       FILEPATH,
       "vn_provinces_demo",
-      42,
+      39,
       "main",
       "Pattern match failed, no pattern matched the value.",
-      {
-        value: $,
-        start: 1027,
-        end: 1076,
-        pattern_start: 1038,
-        pattern_end: 1043
-      }
+      { value: $, start: 934, end: 983, pattern_start: 945, pattern_end: 950 }
     );
   }
   return void 0;

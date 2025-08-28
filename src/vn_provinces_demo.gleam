@@ -1,7 +1,7 @@
 import gleam/int
 import gleam/io
 import gleam/list
-import gleam/option.{type Option, None, Some}
+import gleam/option.{None, Some}
 import gleam/result
 import gleam/uri
 import lustre
@@ -27,13 +27,10 @@ pub type Model {
   Model(
     route: Route,
     provinces: List(Province),
+    wards: List(Ward),
     // For province combobox
     province_combobox_state: ComboboxState(Province),
-    wards: List(Ward),
-    ward_combobox_shown: Bool,
-    ward_filter_text: String,
-    filtered_wards: List(Ward),
-    selected_ward: Option(Ward),
+    ward_combobox_state: ComboboxState(Ward),
   )
 }
 
@@ -56,13 +53,10 @@ fn init(_args) -> #(Model, Effect(Msg)) {
     Model(
       route:,
       provinces: [],
+      wards: [],
       // For province combobox
       province_combobox_state: create_empty_combobox_state(),
-      wards: [],
-      ward_combobox_shown: False,
-      ward_filter_text: "",
-      filtered_wards: [],
-      selected_ward: None,
+      ward_combobox_state: create_empty_combobox_state(),
     )
   let effects =
     effect.batch([modem.init(on_url_change), actions.load_provinces()])
@@ -207,7 +201,14 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(model, effect.none())
     }
     core.WardComboboxFocused -> {
-      let model = Model(..model, ward_combobox_shown: True)
+      let model =
+        Model(
+          ..model,
+          ward_combobox_state: ComboboxState(
+            ..model.ward_combobox_state,
+            is_shown: True,
+          ),
+        )
       #(model, effect.none())
     }
     core.WardComboboxBlur(True) -> {
@@ -224,7 +225,14 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
     core.WardComboboxBlur(False) -> {
       io.println("Blur 2")
-      let model = Model(..model, ward_combobox_shown: False)
+      let model =
+        Model(
+          ..model,
+          ward_combobox_state: ComboboxState(
+            ..model.ward_combobox_state,
+            is_shown: False,
+          ),
+        )
       #(model, effect.none())
     }
     core.WardComboboxSelected(w) -> {
@@ -233,9 +241,12 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       let model =
         Model(
           ..model,
-          selected_ward: Some(w),
-          ward_filter_text: w.name,
-          ward_combobox_shown: False,
+          ward_combobox_state: ComboboxState(
+            ..model.ward_combobox_state,
+            is_shown: False,
+            filter_text: w.name,
+            selected_item: Some(w),
+          ),
         )
       // Reflect to browser URL
       let new_append = #("w", int.to_string(w.code))
@@ -260,10 +271,12 @@ fn view(model: Model) -> Element(Msg) {
       filtered_items: filtered_provinces,
       selected_item: selected_province,
     ),
-    ward_combobox_shown:,
-    ward_filter_text:,
-    filtered_wards:,
-    selected_ward:,
+    ward_combobox_state: ComboboxState(
+      filter_text: ward_filter_text,
+      selected_item: selected_ward,
+      filtered_items: filtered_wards,
+      is_shown: ward_combobox_shown,
+    ),
   ) = model
   echo selected_province
   echo selected_ward
@@ -403,7 +416,15 @@ fn handle_loaded_wards(wards: List(Ward), model: Model) {
     _ -> None
   }
   // Save wards to the model
-  let model = Model(..model, wards:, selected_ward:)
+  let model =
+    Model(
+      ..model,
+      wards:,
+      ward_combobox_state: ComboboxState(
+        ..model.ward_combobox_state,
+        selected_item: selected_ward,
+      ),
+    )
   #(model, effect.none())
 }
 
