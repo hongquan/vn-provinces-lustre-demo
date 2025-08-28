@@ -1,4 +1,4 @@
-import gleam/option.{type Option}
+import gleam/option.{type Option, None}
 import rsvp
 
 import router
@@ -28,4 +28,19 @@ pub type Msg {
   ApiReturnedSearchedProvinces(Result(List(Province), rsvp.Error))
   ApiReturnedWards(Result(List(Ward), rsvp.Error))
   OnRouteChange(router.Route)
+}
+
+pub type ComboboxState(obj) {
+  ComboboxState(
+    is_shown: Bool,
+    filter_text: String,
+    filtered_items: List(obj),
+    // Used when the province value has been settled from combobox.
+    // If this value is "Some", the text input should not generate message.
+    selected_item: Option(obj),
+  )
+}
+
+pub fn create_empty_combobox_state() -> ComboboxState(obj) {
+  ComboboxState(False, "", [], None)
 }

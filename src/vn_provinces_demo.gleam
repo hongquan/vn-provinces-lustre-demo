@@ -13,7 +13,10 @@ import modem
 import plinth/javascript/global.{set_timeout}
 
 import actions
-import core.{type Msg, type Province, type Ward}
+import core.{
+  type ComboboxState, type Msg, type Province, type Ward, ComboboxState,
+  create_empty_combobox_state,
+}
 import router.{type Route, parse_to_route}
 import views.{
   render_province_combobox, render_ward_combobox, show_brief_info_province,
@@ -25,12 +28,7 @@ pub type Model {
     route: Route,
     provinces: List(Province),
     // For province combobox
-    province_combobox_shown: Bool,
-    province_filter_text: String,
-    filtered_provinces: List(Province),
-    // Used when the province value has been settled from combobox.
-    // If this value is "Some", the text input should not generate message.
-    selected_province: Option(Province),
+    province_combobox_state: ComboboxState(Province),
     wards: List(Ward),
     ward_combobox_shown: Bool,
     ward_filter_text: String,
@@ -59,12 +57,7 @@ fn init(_args) -> #(Model, Effect(Msg)) {
       route:,
       provinces: [],
       // For province combobox
-      province_combobox_shown: False,
-      province_filter_text: "",
-      filtered_provinces: [],
-      // Used when the province value has been settled from combobox.
-      // If this value is "Some", the text input should not generate message.
-      selected_province: None,
+      province_combobox_state: create_empty_combobox_state(),
       wards: [],
       ward_combobox_shown: False,
       ward_filter_text: "",
@@ -87,12 +80,27 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     core.ApiReturnedSearchedProvinces(Ok(provinces)) -> {
       io.println("ApiReturnedSearchedProvinces")
       echo provinces
-      let model = Model(..model, filtered_provinces: provinces)
+      let model =
+        Model(
+          ..model,
+          province_combobox_state: ComboboxState(
+            ..model.province_combobox_state,
+            filtered_items: provinces,
+          ),
+        )
       #(model, effect.none())
     }
     // User has picked a province from dropdown
     core.ProvinceSelected(p) -> {
-      let model = Model(..model, wards: [], selected_province: p)
+      let model =
+        Model(
+          ..model,
+          wards: [],
+          province_combobox_state: ComboboxState(
+            ..model.province_combobox_state,
+            selected_item: p,
+          ),
+        )
       case p {
         None -> #(model, effect.none())
         Some(p) -> {
@@ -135,8 +143,14 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
     }
     core.ProvinceComboboxTextInput(s) -> {
-      echo s
-      let model = Model(..model, province_filter_text: s)
+      let model =
+        Model(
+          ..model,
+          province_combobox_state: ComboboxState(
+            ..model.province_combobox_state,
+            filter_text: s,
+          ),
+        )
       #(model, actions.search_provinces(s))
     }
     core.ProvinceComboboxSelected(p) -> {
@@ -145,9 +159,12 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       let model =
         Model(
           ..model,
-          selected_province: Some(p),
-          province_filter_text: p.name,
-          province_combobox_shown: False,
+          province_combobox_state: ComboboxState(
+            ..model.province_combobox_state,
+            selected_item: Some(p),
+            filter_text: p.name,
+            is_shown: False,
+          ),
         )
       // Reflect to browser URL
       let query_string = uri.query_to_string([#("p", int.to_string(p.code))])
@@ -155,7 +172,14 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
     core.ProvinceComboboxFocused -> {
       io.println("Focused")
-      let model = Model(..model, province_combobox_shown: True)
+      let model =
+        Model(
+          ..model,
+          province_combobox_state: ComboboxState(
+            ..model.province_combobox_state,
+            is_shown: True,
+          ),
+        )
       #(model, effect.none())
     }
     core.ProvinceComboboxBlur(True) -> {
@@ -172,7 +196,14 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
     core.ProvinceComboboxBlur(False) -> {
       io.println("Blur 2")
-      let model = Model(..model, province_combobox_shown: False)
+      let model =
+        Model(
+          ..model,
+          province_combobox_state: ComboboxState(
+            ..model.province_combobox_state,
+            is_shown: False,
+          ),
+        )
       #(model, effect.none())
     }
     core.WardComboboxFocused -> {
@@ -222,11 +253,13 @@ fn view(model: Model) -> Element(Msg) {
   let Model(
     route:,
     provinces:,
-    province_combobox_shown:,
-    selected_province:,
     wards:,
-    province_filter_text:,
-    filtered_provinces:,
+    province_combobox_state: ComboboxState(
+      is_shown: province_combobox_shown,
+      filter_text: province_filter_text,
+      filtered_items: filtered_provinces,
+      selected_item: selected_province,
+    ),
     ward_combobox_shown:,
     ward_filter_text:,
     filtered_wards:,
@@ -349,7 +382,16 @@ fn handle_loaded_provinces(
     _ -> #(None, effect.none())
   }
   // Save provinces to model, reset the selection and wards
-  let model = Model(..model, provinces:, wards: [], selected_province:)
+  let model =
+    Model(
+      ..model,
+      provinces:,
+      wards: [],
+      province_combobox_state: ComboboxState(
+        ..model.province_combobox_state,
+        selected_item: selected_province,
+      ),
+    )
   #(model, whatnext)
 }
 
@@ -387,7 +429,10 @@ fn handle_route_changed(
     Model(
       ..model,
       route: new_route,
-      selected_province: option.from_result(queried_province),
+      province_combobox_state: ComboboxState(
+        ..model.province_combobox_state,
+        selected_item: option.from_result(queried_province),
+      ),
     )
   #(model, whatnext)
 }
