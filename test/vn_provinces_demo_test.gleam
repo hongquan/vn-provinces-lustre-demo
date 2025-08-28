@@ -2,6 +2,7 @@ import filepath
 import gleam/dynamic/decode
 import gleam/json
 import gleam/option.{None, Some}
+import gleam/string
 import gleeunit
 import simplifile
 
@@ -37,4 +38,10 @@ pub fn parse_query_test() {
     == router.Province(1, Some(9))
   assert parse_to_route([#("w", "9"), #("p", "1"), #("w", "1")])
     == router.Province(1, Some(1))
+}
+
+pub fn split_string_test() {
+  let text = "abc def  ghi"
+  let words = string.split(text, " ")
+  assert words == ["abc", "def", "", "ghi"]
 }

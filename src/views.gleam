@@ -1,14 +1,25 @@
 import consts
+import gleam/dynamic/decode
 import gleam/int
 import gleam/list
-import gleam/option.{type Option}
+import gleam/option.{type Option, is_some}
 import gleam/result
 import lustre/attribute as a
 import lustre/element.{type Element}
 import lustre/element/html as h
+import lustre/element/keyed
 import lustre/event as ev
 
 import core.{type Province, type Ward}
+
+pub type ComboboxEmitMsg(msg, obj) {
+  ComboboxEmitMsg(
+    text_input: fn(String) -> msg,
+    choice_click: fn(obj) -> msg,
+    input_focus: msg,
+    input_blur: msg,
+  )
+}
 
 pub fn render_province_as_option(
   p: Province,
@@ -31,7 +42,7 @@ pub fn get_province_from_code(c: Int, provinces: List(Province)) {
   provinces |> list.find(fn(p) { p.code == c })
 }
 
-pub fn get_ward_from_code(c: Int, wards: List(Ward)) {
+pub fn get_ward_from_code(c: Int, wards: List(Ward)) -> Result(Ward, Nil) {
   wards |> list.find(fn(w) { w.code == c })
 }
 
@@ -107,4 +118,131 @@ pub fn render_ward_list(
     ],
     options,
   )
+}
+
+pub fn render_province_combobox(
+  to_show: Bool,
+  provinces: List(Province),
+  filter_text: String,
+  settled_province: Option(Province),
+  emit_msg: ComboboxEmitMsg(msg, Province),
+) -> Element(msg) {
+  let li_items =
+    provinces
+    |> list.map(fn(p) {
+      let click_handler =
+        ev.on("click", decode.success(emit_msg.choice_click(p)))
+      #(
+        int.to_string(p.code),
+        h.li([], [
+          h.button(
+            [
+              a.class(
+                "w-full hover:bg-gray-200 dark:hover:bg-gray-600 text-start px-2 py-1.5 rounded cursor-pointer",
+              ),
+              click_handler,
+            ],
+            [
+              h.text(p.name),
+            ],
+          ),
+        ]),
+      )
+    })
+  // Event handler for the text input
+  let input_handler = case is_some(settled_province) {
+    True -> ev.debounce(ev.on_input(emit_msg.text_input), 200)
+    False -> a.none()
+  }
+  h.div([a.class("relative")], [
+    // The Text Input of the combobox
+    h.input([
+      a.class(
+        "border focus-visible:outline-none focus-visible:ring-1 px-2 py-1 w-full rounded",
+      ),
+      input_handler,
+      ev.on_focus(emit_msg.input_focus),
+      ev.on_blur(emit_msg.input_blur),
+      a.value(filter_text),
+    ]),
+    // We need some container div elements to make paddings and create scroll view for the dropdown.
+    h.div(
+      [
+        a.class(
+          "absolute z-1 top-10 start-0 -end-4 py-2 ps-2 bg-gray-50 dark:bg-gray-800 shadow",
+        ),
+        a.classes([#("hidden", !to_show)]),
+      ],
+      [
+        h.div([a.class("max-h-40 overflow-y-auto")], [
+          // The dropdown of the combobox
+          keyed.ul([a.class("pe-2")], li_items),
+        ]),
+      ],
+    ),
+  ])
+}
+
+pub fn render_ward_combobox(
+  to_show: Bool,
+  wards: List(Ward),
+  filter_text: String,
+  settled_ward: Option(Ward),
+  emit_msg: ComboboxEmitMsg(msg, Ward),
+) {
+  let li_items =
+    wards
+    |> list.map(fn(w) {
+      let click_handler =
+        ev.on("click", decode.success(emit_msg.choice_click(w)))
+      #(
+        int.to_string(w.code),
+        h.li([], [
+          h.button(
+            [
+              a.class(
+                "w-full hover:bg-gray-200 dark:hover:bg-gray-600 text-start px-2 py-1.5 rounded cursor-pointer",
+              ),
+              click_handler,
+            ],
+            [
+              h.text(w.name),
+            ],
+          ),
+        ]),
+      )
+    })
+  // Event handler for the text input
+  let input_handler = case is_some(settled_ward) {
+    True -> ev.debounce(ev.on_input(emit_msg.text_input), 200)
+    False -> a.none()
+  }
+  h.div([a.class("relative")], [
+    // The Text Input of the combobox
+    h.input([
+      a.class(
+        "border focus-visible:outline-none focus-visible:ring-1 px-2 py-1 w-full rounded",
+      ),
+      input_handler,
+      ev.on_focus(emit_msg.input_focus),
+      ev.on_blur(emit_msg.input_blur),
+      a.value(filter_text),
+      a.value(filter_text),
+    ]),
+    // We need some container div elements to make paddings and create scroll view for the dropdown.
+    h.div(
+      [
+        a.class(
+          "absolute z-1 top-10 start-0 -end-4 py-2 ps-2 bg-gray-50 dark:bg-gray-800 shadow",
+        ),
+        a.classes([#("hidden", !to_show)]),
+      ],
+      [
+        h.div([a.class("max-h-40 overflow-y-auto")], [
+          // The dropdown of the combobox
+          keyed.ul([a.class("pe-2")], li_items),
+        ]),
+      ],
+    ),
+  ])
 }

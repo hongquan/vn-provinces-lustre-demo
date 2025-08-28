@@ -183,15 +183,15 @@ var BitArray = class {
       }
     } else {
       for (let i = 0; i < wholeByteCount; i++) {
-        const a2 = bitArrayByteAt(this.rawBuffer, this.bitOffset, i);
+        const a = bitArrayByteAt(this.rawBuffer, this.bitOffset, i);
         const b = bitArrayByteAt(other.rawBuffer, other.bitOffset, i);
-        if (a2 !== b) {
+        if (a !== b) {
           return false;
         }
       }
       const trailingBitsCount = this.bitSize % 8;
       if (trailingBitsCount) {
-        const a2 = bitArrayByteAt(
+        const a = bitArrayByteAt(
           this.rawBuffer,
           this.bitOffset,
           wholeByteCount
@@ -202,7 +202,7 @@ var BitArray = class {
           wholeByteCount
         );
         const unusedLowBitCount = 8 - trailingBitsCount;
-        if (a2 >> unusedLowBitCount !== b >> unusedLowBitCount) {
+        if (a >> unusedLowBitCount !== b >> unusedLowBitCount) {
           return false;
         }
       }
@@ -252,9 +252,9 @@ function bitArrayByteAt(buffer, bitOffset, index5) {
   if (bitOffset === 0) {
     return buffer[index5] ?? 0;
   } else {
-    const a2 = buffer[index5] << bitOffset & 255;
+    const a = buffer[index5] << bitOffset & 255;
     const b = buffer[index5 + 1] >> 8 - bitOffset;
-    return a2 | b;
+    return a | b;
   }
 }
 var UtfCodepoint = class {
@@ -301,26 +301,26 @@ var Error = class extends Result {
 function isEqual(x, y) {
   let values3 = [x, y];
   while (values3.length) {
-    let a2 = values3.pop();
+    let a = values3.pop();
     let b = values3.pop();
-    if (a2 === b) continue;
-    if (!isObject(a2) || !isObject(b)) return false;
-    let unequal = !structurallyCompatibleObjects(a2, b) || unequalDates(a2, b) || unequalBuffers(a2, b) || unequalArrays(a2, b) || unequalMaps(a2, b) || unequalSets(a2, b) || unequalRegExps(a2, b);
+    if (a === b) continue;
+    if (!isObject(a) || !isObject(b)) return false;
+    let unequal = !structurallyCompatibleObjects(a, b) || unequalDates(a, b) || unequalBuffers(a, b) || unequalArrays(a, b) || unequalMaps(a, b) || unequalSets(a, b) || unequalRegExps(a, b);
     if (unequal) return false;
-    const proto = Object.getPrototypeOf(a2);
+    const proto = Object.getPrototypeOf(a);
     if (proto !== null && typeof proto.equals === "function") {
       try {
-        if (a2.equals(b)) continue;
+        if (a.equals(b)) continue;
         else return false;
       } catch {
       }
     }
-    let [keys2, get3] = getters(a2);
-    const ka = keys2(a2);
+    let [keys2, get3] = getters(a);
+    const ka = keys2(a);
     const kb = keys2(b);
     if (ka.length !== kb.length) return false;
     for (let k of ka) {
-      values3.push(get3(a2, k), get3(b, k));
+      values3.push(get3(a, k), get3(b, k));
     }
   }
   return true;
@@ -333,33 +333,33 @@ function getters(object4) {
     return [(x) => [...extra, ...Object.keys(x)], (x, y) => x[y]];
   }
 }
-function unequalDates(a2, b) {
-  return a2 instanceof Date && (a2 > b || a2 < b);
+function unequalDates(a, b) {
+  return a instanceof Date && (a > b || a < b);
 }
-function unequalBuffers(a2, b) {
-  return !(a2 instanceof BitArray) && a2.buffer instanceof ArrayBuffer && a2.BYTES_PER_ELEMENT && !(a2.byteLength === b.byteLength && a2.every((n, i) => n === b[i]));
+function unequalBuffers(a, b) {
+  return !(a instanceof BitArray) && a.buffer instanceof ArrayBuffer && a.BYTES_PER_ELEMENT && !(a.byteLength === b.byteLength && a.every((n, i) => n === b[i]));
 }
-function unequalArrays(a2, b) {
-  return Array.isArray(a2) && a2.length !== b.length;
+function unequalArrays(a, b) {
+  return Array.isArray(a) && a.length !== b.length;
 }
-function unequalMaps(a2, b) {
-  return a2 instanceof Map && a2.size !== b.size;
+function unequalMaps(a, b) {
+  return a instanceof Map && a.size !== b.size;
 }
-function unequalSets(a2, b) {
-  return a2 instanceof Set && (a2.size != b.size || [...a2].some((e) => !b.has(e)));
+function unequalSets(a, b) {
+  return a instanceof Set && (a.size != b.size || [...a].some((e) => !b.has(e)));
 }
-function unequalRegExps(a2, b) {
-  return a2 instanceof RegExp && (a2.source !== b.source || a2.flags !== b.flags);
+function unequalRegExps(a, b) {
+  return a instanceof RegExp && (a.source !== b.source || a.flags !== b.flags);
 }
-function isObject(a2) {
-  return typeof a2 === "object" && a2 !== null;
+function isObject(a) {
+  return typeof a === "object" && a !== null;
 }
-function structurallyCompatibleObjects(a2, b) {
-  if (typeof a2 !== "object" && typeof b !== "object" && (!a2 || !b))
+function structurallyCompatibleObjects(a, b) {
+  if (typeof a !== "object" && typeof b !== "object" && (!a || !b))
     return false;
   let nonstructural = [Promise, WeakSet, WeakMap, Function];
-  if (nonstructural.some((c) => a2 instanceof c)) return false;
-  return a2.constructor === b.constructor;
+  if (nonstructural.some((c) => a instanceof c)) return false;
+  return a.constructor === b.constructor;
 }
 function makeError(variant, file, module, line, fn, message2, extra) {
   let error = new globalThis.Error(message2);
@@ -391,8 +391,8 @@ function hashByReference(o) {
   referenceMap.set(o, hash);
   return hash;
 }
-function hashMerge(a2, b) {
-  return a2 ^ b + 2654435769 + (a2 << 6) + (a2 >> 2) | 0;
+function hashMerge(a, b) {
+  return a ^ b + 2654435769 + (a << 6) + (a >> 2) | 0;
 }
 function hashString(s) {
   let hash = 0;
@@ -1094,18 +1094,21 @@ var Some = class extends CustomType {
 };
 var None = class extends CustomType {
 };
+function is_some(option2) {
+  return !isEqual(option2, new None());
+}
 function to_result(option2, e) {
   if (option2 instanceof Some) {
-    let a2 = option2[0];
-    return new Ok(a2);
+    let a = option2[0];
+    return new Ok(a);
   } else {
     return new Error(e);
   }
 }
 function from_result(result) {
   if (result instanceof Ok) {
-    let a2 = result[0];
-    return new Some(a2);
+    let a = result[0];
+    return new Some(a);
   } else {
     return new None();
   }
@@ -1971,8 +1974,8 @@ function percent_encode(string5) {
 function parse_query(query) {
   try {
     const pairs = [];
-    for (const section of query.split("&")) {
-      const [key, value2] = section.split("=");
+    for (const section2 of query.split("&")) {
+      const [key, value2] = section2.split("=");
       if (!key) continue;
       const decodedKey = unsafe_percent_decode_query(key);
       const decodedValue = unsafe_percent_decode_query(value2);
@@ -2058,6 +2061,66 @@ function int(data) {
 function string(data) {
   if (typeof data === "string") return new Ok(data);
   return new Error("");
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/int.mjs
+function max(a, b) {
+  let $ = a > b;
+  if ($) {
+    return a;
+  } else {
+    return b;
+  }
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/result.mjs
+function map4(result, fun) {
+  if (result instanceof Ok) {
+    let x = result[0];
+    return new Ok(fun(x));
+  } else {
+    return result;
+  }
+}
+function map_error(result, fun) {
+  if (result instanceof Ok) {
+    return result;
+  } else {
+    let error = result[0];
+    return new Error(fun(error));
+  }
+}
+function try$(result, fun) {
+  if (result instanceof Ok) {
+    let x = result[0];
+    return fun(x);
+  } else {
+    return result;
+  }
+}
+function unwrap2(result, default$) {
+  if (result instanceof Ok) {
+    let v = result[0];
+    return v;
+  } else {
+    return default$;
+  }
+}
+function unwrap_both(result) {
+  if (result instanceof Ok) {
+    let a = result[0];
+    return a;
+  } else {
+    let a = result[0];
+    return a;
+  }
+}
+function replace_error(result, error) {
+  if (result instanceof Ok) {
+    return result;
+  } else {
+    return new Error(error);
+  }
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/uri.mjs
@@ -2854,48 +2917,6 @@ function parse(uri_string) {
   return parse_scheme_loop(uri_string, uri_string, empty, 0);
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/result.mjs
-function map4(result, fun) {
-  if (result instanceof Ok) {
-    let x = result[0];
-    return new Ok(fun(x));
-  } else {
-    return result;
-  }
-}
-function map_error(result, fun) {
-  if (result instanceof Ok) {
-    return result;
-  } else {
-    let error = result[0];
-    return new Error(fun(error));
-  }
-}
-function try$(result, fun) {
-  if (result instanceof Ok) {
-    let x = result[0];
-    return fun(x);
-  } else {
-    return result;
-  }
-}
-function unwrap_both(result) {
-  if (result instanceof Ok) {
-    let a2 = result[0];
-    return a2;
-  } else {
-    let a2 = result[0];
-    return a2;
-  }
-}
-function replace_error(result, error) {
-  if (result instanceof Ok) {
-    return result;
-  } else {
-    return new Error(error);
-  }
-}
-
 // build/dev/javascript/gleam_stdlib/gleam/bool.mjs
 function guard(requirement, consequence, alternative) {
   if (requirement) {
@@ -2911,9 +2932,6 @@ function identity2(x) {
 }
 
 // build/dev/javascript/gleam_json/gleam_json_ffi.mjs
-function identity3(x) {
-  return x;
-}
 function decode(string5) {
   try {
     const result = JSON.parse(string5);
@@ -3025,9 +3043,6 @@ function do_parse(json2, decoder) {
 function parse2(json2, decoder) {
   return do_parse(json2, decoder);
 }
-function bool(input) {
-  return identity3(input);
-}
 
 // build/dev/javascript/lustre/lustre/internals/constants.ffi.mjs
 var document2 = () => globalThis?.document;
@@ -3044,10 +3059,10 @@ var option_none = /* @__PURE__ */ new None();
 var GT = /* @__PURE__ */ new Gt();
 var LT = /* @__PURE__ */ new Lt();
 var EQ = /* @__PURE__ */ new Eq();
-function compare3(a2, b) {
-  if (a2.name === b.name) {
+function compare3(a, b) {
+  if (a.name === b.name) {
     return EQ;
-  } else if (a2.name < b.name) {
+  } else if (a.name < b.name) {
     return LT;
   } else {
     return GT;
@@ -3072,7 +3087,7 @@ var Property = class extends CustomType {
   }
 };
 var Event2 = class extends CustomType {
-  constructor(kind, name, handler, include, prevent_default, stop_propagation, immediate2, debounce, throttle) {
+  constructor(kind, name, handler, include, prevent_default, stop_propagation, immediate2, debounce2, throttle) {
     super();
     this.kind = kind;
     this.name = name;
@@ -3081,7 +3096,7 @@ var Event2 = class extends CustomType {
     this.prevent_default = prevent_default;
     this.stop_propagation = stop_propagation;
     this.immediate = immediate2;
-    this.debounce = debounce;
+    this.debounce = debounce2;
     this.throttle = throttle;
   }
 };
@@ -3217,8 +3232,8 @@ function prepare(attributes) {
       return attributes;
     } else {
       let _pipe = attributes;
-      let _pipe$1 = sort(_pipe, (a2, b) => {
-        return compare3(b, a2);
+      let _pipe$1 = sort(_pipe, (a, b) => {
+        return compare3(b, a);
       });
       return merge(_pipe$1, empty_list);
     }
@@ -3229,11 +3244,8 @@ function attribute(name, value2) {
   return new Attribute(attribute_kind, name, value2);
 }
 var property_kind = 1;
-function property(name, value2) {
-  return new Property(property_kind, name, value2);
-}
 var event_kind = 2;
-function event(name, handler, include, prevent_default, stop_propagation, immediate2, debounce, throttle) {
+function event(name, handler, include, prevent_default, stop_propagation, immediate2, debounce2, throttle) {
   return new Event2(
     event_kind,
     name,
@@ -3242,7 +3254,7 @@ function event(name, handler, include, prevent_default, stop_propagation, immedi
     prevent_default,
     stop_propagation,
     immediate2,
-    debounce,
+    debounce2,
     throttle
   );
 }
@@ -3254,24 +3266,34 @@ var always_kind = 2;
 function attribute2(name, value2) {
   return attribute(name, value2);
 }
-function property2(name, value2) {
-  return property(name, value2);
-}
-function boolean_attribute(name, value2) {
-  if (value2) {
-    return attribute2(name, "");
-  } else {
-    return property2(name, bool(false));
-  }
-}
 function class$(name) {
   return attribute2("class", name);
 }
-function href(url) {
-  return attribute2("href", url);
+function none() {
+  return class$("");
 }
-function selected(is_selected) {
-  return boolean_attribute("selected", is_selected);
+function do_classes(loop$names, loop$class) {
+  while (true) {
+    let names = loop$names;
+    let class$2 = loop$class;
+    if (names instanceof Empty) {
+      return class$2;
+    } else {
+      let $ = names.head[1];
+      if ($) {
+        let rest = names.tail;
+        let name$1 = names.head[0];
+        return class$2 + name$1 + " " + do_classes(rest, class$2);
+      } else {
+        let rest = names.tail;
+        loop$names = rest;
+        loop$class = class$2;
+      }
+    }
+  }
+}
+function classes(names) {
+  return class$(do_classes(names, ""));
 }
 function value(control_value) {
   return attribute2("value", control_value);
@@ -3291,7 +3313,7 @@ var empty2 = /* @__PURE__ */ new Effect(
   /* @__PURE__ */ toList([]),
   /* @__PURE__ */ toList([])
 );
-function none() {
+function none2() {
   return empty2;
 }
 function from(effect) {
@@ -3573,44 +3595,44 @@ function text(key, mapper, content) {
 var unsafe_inner_html_kind = 3;
 
 // build/dev/javascript/lustre/lustre/internals/equals.ffi.mjs
-var isReferenceEqual = (a2, b) => a2 === b;
-var isEqual2 = (a2, b) => {
-  if (a2 === b) {
+var isReferenceEqual = (a, b) => a === b;
+var isEqual2 = (a, b) => {
+  if (a === b) {
     return true;
   }
-  if (a2 == null || b == null) {
+  if (a == null || b == null) {
     return false;
   }
-  const type = typeof a2;
+  const type = typeof a;
   if (type !== typeof b) {
     return false;
   }
   if (type !== "object") {
     return false;
   }
-  const ctor = a2.constructor;
+  const ctor = a.constructor;
   if (ctor !== b.constructor) {
     return false;
   }
-  if (Array.isArray(a2)) {
-    return areArraysEqual(a2, b);
+  if (Array.isArray(a)) {
+    return areArraysEqual(a, b);
   }
-  return areObjectsEqual(a2, b);
+  return areObjectsEqual(a, b);
 };
-var areArraysEqual = (a2, b) => {
-  let index5 = a2.length;
+var areArraysEqual = (a, b) => {
+  let index5 = a.length;
   if (index5 !== b.length) {
     return false;
   }
   while (index5--) {
-    if (!isEqual2(a2[index5], b[index5])) {
+    if (!isEqual2(a[index5], b[index5])) {
       return false;
     }
   }
   return true;
 };
-var areObjectsEqual = (a2, b) => {
-  const properties = Object.keys(a2);
+var areObjectsEqual = (a, b) => {
+  const properties = Object.keys(a);
   let index5 = properties.length;
   if (Object.keys(b).length !== index5) {
     return false;
@@ -3620,7 +3642,7 @@ var areObjectsEqual = (a2, b) => {
     if (!Object.hasOwn(b, property3)) {
       return false;
     }
-    if (!isEqual2(a2[property3], b[property3])) {
+    if (!isEqual2(a[property3], b[property3])) {
       return false;
     }
   }
@@ -3881,7 +3903,7 @@ function element2(tag, attributes, children) {
 function text2(content) {
   return text("", identity2, content);
 }
-function none2() {
+function none3() {
   return text("", identity2, "");
 }
 
@@ -3889,17 +3911,8 @@ function none2() {
 function text3(content) {
   return text2(content);
 }
-function footer(attrs, children) {
-  return element2("footer", attrs, children);
-}
-function header(attrs, children) {
-  return element2("header", attrs, children);
-}
-function h1(attrs, children) {
-  return element2("h1", attrs, children);
-}
-function main(attrs, children) {
-  return element2("main", attrs, children);
+function section(attrs, children) {
+  return element2("section", attrs, children);
 }
 function div(attrs, children) {
   return element2("div", attrs, children);
@@ -3910,20 +3923,17 @@ function dl(attrs, children) {
 function dt(attrs, children) {
   return element2("dt", attrs, children);
 }
-function a(attrs, children) {
-  return element2("a", attrs, children);
-}
-function br(attrs) {
-  return element2("br", attrs, empty_list);
+function li(attrs, children) {
+  return element2("li", attrs, children);
 }
 function span(attrs, children) {
   return element2("span", attrs, children);
 }
-function option(attrs, label) {
-  return element2("option", attrs, toList([text2(label)]));
+function button(attrs, children) {
+  return element2("button", attrs, children);
 }
-function select(attrs, children) {
-  return element2("select", attrs, children);
+function input(attrs) {
+  return element2("input", attrs, empty_list);
 }
 
 // build/dev/javascript/lustre/lustre/vdom/patch.mjs
@@ -5318,15 +5328,15 @@ var Reconciler = class {
         this.#dispatch(data, path, type, immediate2);
       }
     }
-    const debounce = debouncers.get(type);
-    if (debounce) {
-      clearTimeout(debounce.timeout);
-      debounce.timeout = setTimeout(() => {
+    const debounce2 = debouncers.get(type);
+    if (debounce2) {
+      clearTimeout(debounce2.timeout);
+      debounce2.timeout = setTimeout(() => {
         if (event4 === throttles.get(type)?.lastEvent) return;
         this.#dispatch(data, path, type, immediate2);
-      }, debounce.delay);
+      }, debounce2.delay);
     }
-    if (!throttle && !debounce) {
+    if (!throttle && !debounce2) {
       this.#dispatch(data, path, type, immediate2);
     }
   }
@@ -5357,13 +5367,13 @@ var createServerEvent = (event4, include = []) => {
   }
   for (const property3 of include) {
     const path = property3.split(".");
-    for (let i = 0, input = event4, output = data; i < path.length; i++) {
+    for (let i = 0, input2 = event4, output = data; i < path.length; i++) {
       if (i === path.length - 1) {
-        output[path[i]] = input[path[i]];
+        output[path[i]] = input2[path[i]];
         break;
       }
       output = output[path[i]] ??= {};
-      input = input[path[i]];
+      input2 = input2[path[i]];
     }
   }
   return data;
@@ -5485,6 +5495,9 @@ function fragment2(children) {
   children$1 = $[1];
   return fragment("", identity2, children$1, keyed_children);
 }
+function ul(attributes, children) {
+  return element3("ul", attributes, children);
+}
 
 // build/dev/javascript/lustre/lustre/vdom/virtualise.ffi.mjs
 var virtualise = (root3) => {
@@ -5497,7 +5510,7 @@ var virtualise = (root3) => {
     const placeholder = document2().createTextNode("");
     insertMetadataChild(text_kind, rootMeta, placeholder, 0, null);
     root3.replaceChildren(placeholder);
-    return none2();
+    return none3();
   }
   if (virtualisableRootChildren === 1) {
     const children2 = virtualiseChildNodes(rootMeta, root3);
@@ -5771,13 +5784,13 @@ function makeEffect(synchronous) {
     before_paint: empty_list
   };
 }
-function listAppend(a2, b) {
-  if (a2 instanceof Empty) {
+function listAppend(a, b) {
+  if (a instanceof Empty) {
     return b;
   } else if (b instanceof Empty) {
-    return a2;
+    return a;
   } else {
-    return append(a2, b);
+    return append(a, b);
   }
 }
 
@@ -5916,17 +5929,17 @@ var do_initial_uri = () => {
 };
 var do_init = (dispatch, options = defaults) => {
   document.addEventListener("click", (event4) => {
-    const a2 = find_anchor(event4.target);
-    if (!a2) return;
+    const a = find_anchor(event4.target);
+    if (!a) return;
     try {
-      const url = new URL(a2.href);
+      const url = new URL(a.href);
       const uri = uri_from_url(url);
       const is_external = url.host !== window.location.host;
       if (!options.handle_external_links && is_external) return;
       if (!options.handle_internal_links && !is_external) return;
       event4.preventDefault();
       if (!is_external) {
-        window.history.pushState({}, "", a2.href);
+        window.history.pushState({}, "", a.href);
         window.requestAnimationFrame(() => {
           if (url.hash) {
             document.getElementById(url.hash.slice(1))?.scrollIntoView();
@@ -6048,6 +6061,11 @@ function push(path, query, fragment3) {
       );
     }
   );
+}
+
+// build/dev/javascript/plinth/global_ffi.mjs
+function setTimeout2(delay, callback) {
+  return globalThis.setTimeout(callback, delay);
 }
 
 // build/dev/javascript/gleam_http/gleam/http.mjs
@@ -6213,9 +6231,9 @@ function tap(promise, callback) {
   let _pipe = promise;
   return map_promise(
     _pipe,
-    (a2) => {
-      callback(a2);
-      return a2;
+    (a) => {
+      callback(a);
+      return a;
     }
   );
 }
@@ -6225,8 +6243,8 @@ function try_await(promise, callback) {
     _pipe,
     (result) => {
       if (result instanceof Ok) {
-        let a2 = result[0];
-        return callback(a2);
+        let a = result[0];
+        return callback(a);
       } else {
         let e = result[0];
         return resolve(new Error(e));
@@ -6606,7 +6624,53 @@ var WardSelected = class extends CustomType {
     this[0] = $0;
   }
 };
+var ProvinceComboboxFocused = class extends CustomType {
+};
+var ProvinceComboboxBlur = class extends CustomType {
+  constructor(first) {
+    super();
+    this.first = first;
+  }
+};
+var ProvinceComboboxTextInput = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var ProvinceComboboxSelected = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var WardComboboxFocused = class extends CustomType {
+};
+var WardComboboxBlur = class extends CustomType {
+  constructor(first) {
+    super();
+    this.first = first;
+  }
+};
+var WardComboboxTextInput = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var WardComboboxSelected = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
 var ApiReturnedProvinces = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var ApiReturnedSearchedProvinces = class extends CustomType {
   constructor($0) {
     super();
     this[0] = $0;
@@ -6627,7 +6691,7 @@ var OnRouteChange = class extends CustomType {
 
 // build/dev/javascript/vn_provinces_demo/actions.mjs
 function load_provinces() {
-  let url = "https://provinces.open-api.vn/api/v2/";
+  let url = "https://provinces.open-api.vn/api/v2/p/";
   let decoder = field(
     "name",
     string2,
@@ -6645,6 +6709,31 @@ function load_provinces() {
     list2(decoder),
     (var0) => {
       return new ApiReturnedProvinces(var0);
+    }
+  );
+  return get2(url, handler);
+}
+function search_provinces(search) {
+  let url = "https://provinces.open-api.vn/api/v2/p/?" + query_to_string(
+    toList([["search", search]])
+  );
+  let decoder = field(
+    "name",
+    string2,
+    (name) => {
+      return field(
+        "code",
+        int2,
+        (code) => {
+          return success(new Province2(name, code));
+        }
+      );
+    }
+  );
+  let handler = expect_json(
+    list2(decoder),
+    (var0) => {
+      return new ApiReturnedSearchedProvinces(var0);
     }
   );
   return get2(url, handler);
@@ -6714,9 +6803,26 @@ function on(name, handler) {
     0
   );
 }
-function on_change(msg) {
+function debounce(event4, delay) {
+  if (event4 instanceof Event2) {
+    return new Event2(
+      event4.kind,
+      event4.name,
+      event4.handler,
+      event4.include,
+      event4.prevent_default,
+      event4.stop_propagation,
+      event4.immediate,
+      max(0, delay),
+      event4.throttle
+    );
+  } else {
+    return event4;
+  }
+}
+function on_input(msg) {
   return on(
-    "change",
+    "input",
     subfield(
       toList(["target", "value"]),
       string2,
@@ -6726,68 +6832,23 @@ function on_change(msg) {
     )
   );
 }
-
-// build/dev/javascript/vn_provinces_demo/consts.mjs
-var css_select = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500";
+function on_focus(msg) {
+  return on("focus", success(msg));
+}
+function on_blur(msg) {
+  return on("blur", success(msg));
+}
 
 // build/dev/javascript/vn_provinces_demo/views.mjs
-function render_province_as_option(p, selected_code) {
-  return option(
-    toList([
-      value(to_string(p.code)),
-      selected(p.code === selected_code)
-    ]),
-    p.name
-  );
-}
-function render_ward_as_option(w, selected_ward) {
-  return option(
-    toList([
-      value(to_string(w.code)),
-      selected(w.code === selected_ward)
-    ]),
-    w.name
-  );
-}
-function get_province_from_code(c, provinces) {
-  let _pipe = provinces;
-  return find2(_pipe, (p) => {
-    return p.code === c;
-  });
-}
-function get_ward_from_code(c, wards) {
-  let _pipe = wards;
-  return find2(_pipe, (w) => {
-    return w.code === c;
-  });
-}
-function render_province_list(provinces, selected_code, receiver) {
-  let options = prepend(
-    option(toList([value("")]), "T\u1EC9nh th\xE0nh..."),
-    map2(
-      provinces,
-      (_capture) => {
-        return render_province_as_option(_capture, selected_code);
-      }
-    )
-  );
-  let on_change_handler = (v) => {
-    let _pipe = v;
-    let _pipe$1 = parse_int(_pipe);
-    let _pipe$2 = try$(
-      _pipe$1,
-      (_capture) => {
-        return get_province_from_code(_capture, provinces);
-      }
-    );
-    let _pipe$3 = from_result(_pipe$2);
-    return receiver(_pipe$3);
-  };
-  return select(
-    toList([class$(css_select), on_change(on_change_handler)]),
-    options
-  );
-}
+var ComboboxEmitMsg = class extends CustomType {
+  constructor(text_input, choice_click, input_focus, input_blur) {
+    super();
+    this.text_input = text_input;
+    this.choice_click = choice_click;
+    this.input_focus = input_focus;
+    this.input_blur = input_blur;
+  }
+};
 function show_brief_info_province(province) {
   return dl(
     toList([class$("max-w-md")]),
@@ -6830,174 +6891,312 @@ function show_brief_info_ward(ward) {
     ])
   );
 }
-function render_ward_list(wards, selected_ward, receiver) {
-  let options = prepend(
-    option(toList([value("")]), "Ph\u01B0\u1EDDng x\xE3..."),
-    map2(
-      wards,
-      (_capture) => {
-        return render_ward_as_option(_capture, selected_ward);
-      }
-    )
+function render_province_combobox(to_show, provinces, filter_text, settled_province, emit_msg) {
+  let _block;
+  let _pipe = provinces;
+  _block = map2(
+    _pipe,
+    (p) => {
+      let click_handler = on(
+        "click",
+        success(emit_msg.choice_click(p))
+      );
+      return [
+        to_string(p.code),
+        li(
+          toList([]),
+          toList([
+            button(
+              toList([
+                class$(
+                  "w-full hover:bg-gray-200 dark:hover:bg-gray-600 text-start px-2 py-1.5 rounded cursor-pointer"
+                ),
+                click_handler
+              ]),
+              toList([text3(p.name)])
+            )
+          ])
+        )
+      ];
+    }
   );
-  let on_change_handler = (v) => {
-    let _pipe = v;
-    let _pipe$1 = parse_int(_pipe);
-    let _pipe$2 = try$(
-      _pipe$1,
-      (_capture) => {
-        return get_ward_from_code(_capture, wards);
-      }
-    );
-    let _pipe$3 = from_result(_pipe$2);
-    return receiver(_pipe$3);
-  };
-  return select(
-    toList([class$(css_select), on_change(on_change_handler)]),
-    options
+  let li_items = _block;
+  let _block$1;
+  let $ = is_some(settled_province);
+  if ($) {
+    _block$1 = debounce(on_input(emit_msg.text_input), 200);
+  } else {
+    _block$1 = none();
+  }
+  let input_handler = _block$1;
+  return div(
+    toList([class$("relative")]),
+    toList([
+      input(
+        toList([
+          class$(
+            "border focus-visible:outline-none focus-visible:ring-1 px-2 py-1 w-full rounded"
+          ),
+          input_handler,
+          on_focus(emit_msg.input_focus),
+          on_blur(emit_msg.input_blur),
+          value(filter_text)
+        ])
+      ),
+      div(
+        toList([
+          class$(
+            "absolute z-1 top-10 start-0 -end-4 py-2 ps-2 bg-gray-50 dark:bg-gray-800 shadow"
+          ),
+          classes(toList([["hidden", !to_show]]))
+        ]),
+        toList([
+          div(
+            toList([class$("max-h-40 overflow-y-auto")]),
+            toList([ul(toList([class$("pe-2")]), li_items)])
+          )
+        ])
+      )
+    ])
+  );
+}
+function render_ward_combobox(to_show, wards, filter_text, settled_ward, emit_msg) {
+  let _block;
+  let _pipe = wards;
+  _block = map2(
+    _pipe,
+    (w) => {
+      let click_handler = on(
+        "click",
+        success(emit_msg.choice_click(w))
+      );
+      return [
+        to_string(w.code),
+        li(
+          toList([]),
+          toList([
+            button(
+              toList([
+                class$(
+                  "w-full hover:bg-gray-200 dark:hover:bg-gray-600 text-start px-2 py-1.5 rounded cursor-pointer"
+                ),
+                click_handler
+              ]),
+              toList([text3(w.name)])
+            )
+          ])
+        )
+      ];
+    }
+  );
+  let li_items = _block;
+  let _block$1;
+  let $ = is_some(settled_ward);
+  if ($) {
+    _block$1 = debounce(on_input(emit_msg.text_input), 200);
+  } else {
+    _block$1 = none();
+  }
+  let input_handler = _block$1;
+  return div(
+    toList([class$("relative")]),
+    toList([
+      input(
+        toList([
+          class$(
+            "border focus-visible:outline-none focus-visible:ring-1 px-2 py-1 w-full rounded"
+          ),
+          input_handler,
+          on_focus(emit_msg.input_focus),
+          on_blur(emit_msg.input_blur),
+          value(filter_text),
+          value(filter_text)
+        ])
+      ),
+      div(
+        toList([
+          class$(
+            "absolute z-1 top-10 start-0 -end-4 py-2 ps-2 bg-gray-50 dark:bg-gray-800 shadow"
+          ),
+          classes(toList([["hidden", !to_show]]))
+        ]),
+        toList([
+          div(
+            toList([class$("max-h-40 overflow-y-auto")]),
+            toList([ul(toList([class$("pe-2")]), li_items)])
+          )
+        ])
+      )
+    ])
   );
 }
 
 // build/dev/javascript/vn_provinces_demo/vn_provinces_demo.mjs
 var FILEPATH = "src/vn_provinces_demo.gleam";
 var Model = class extends CustomType {
-  constructor(route, provinces, selected_province, wards) {
+  constructor(route, provinces, province_combobox_shown, province_filter_text, filtered_provinces, selected_province, wards, ward_combobox_shown, ward_filter_text, filtered_wards, selected_ward) {
     super();
     this.route = route;
     this.provinces = provinces;
+    this.province_combobox_shown = province_combobox_shown;
+    this.province_filter_text = province_filter_text;
+    this.filtered_provinces = filtered_provinces;
     this.selected_province = selected_province;
     this.wards = wards;
+    this.ward_combobox_shown = ward_combobox_shown;
+    this.ward_filter_text = ward_filter_text;
+    this.filtered_wards = filtered_wards;
+    this.selected_ward = selected_ward;
   }
 };
 function view2(model) {
   let route;
   let provinces;
+  let province_combobox_shown;
+  let province_filter_text;
+  let filtered_provinces;
   let selected_province;
   let wards;
+  let ward_combobox_shown;
+  let ward_filter_text;
+  let filtered_wards;
+  let selected_ward;
   route = model.route;
   provinces = model.provinces;
+  province_combobox_shown = model.province_combobox_shown;
+  province_filter_text = model.province_filter_text;
+  filtered_provinces = model.filtered_provinces;
   selected_province = model.selected_province;
   wards = model.wards;
+  ward_combobox_shown = model.ward_combobox_shown;
+  ward_filter_text = model.ward_filter_text;
+  filtered_wards = model.filtered_wards;
+  selected_ward = model.selected_ward;
+  echo(selected_province, void 0, "src/vn_provinces_demo.gleam", 235);
+  echo(selected_ward, void 0, "src/vn_provinces_demo.gleam", 236);
   let _block;
-  let _pipe = selected_province;
-  let _pipe$1 = map(_pipe, (p) => {
-    return p.code;
-  });
-  _block = unwrap(_pipe$1, 0);
-  let selected_province$1 = _block;
-  let province_dropdown = render_province_list(
-    provinces,
-    selected_province$1,
-    (var0) => {
-      return new ProvinceSelected(var0);
-    }
-  );
-  let _block$1;
-  if (route instanceof Province) {
-    let $2 = route[1];
-    if ($2 instanceof Some) {
-      let w = $2[0];
-      _block$1 = w;
-    } else {
-      _block$1 = 0;
-    }
+  if (province_filter_text === "") {
+    _block = provinces;
   } else {
-    _block$1 = 0;
+    _block = filtered_provinces;
   }
-  let selected_ward = _block$1;
-  let ward_dropdown = render_ward_list(
-    wards,
-    selected_ward,
+  let filtered_provinces$1 = _block;
+  let _block$1;
+  if (route instanceof Province && province_filter_text === "") {
+    let p_code = route[0];
+    let _pipe = provinces;
+    let _pipe$1 = find_map(
+      _pipe,
+      (p) => {
+        let $ = p.code === p_code;
+        if ($) {
+          return new Ok(p.name);
+        } else {
+          return new Error(void 0);
+        }
+      }
+    );
+    _block$1 = unwrap2(_pipe$1, province_filter_text);
+  } else {
+    _block$1 = province_filter_text;
+  }
+  let province_filter_text$1 = _block$1;
+  let cb_msg = new ComboboxEmitMsg(
     (var0) => {
-      return new WardSelected(var0);
-    }
+      return new ProvinceComboboxTextInput(var0);
+    },
+    (var0) => {
+      return new ProvinceComboboxSelected(var0);
+    },
+    new ProvinceComboboxFocused(),
+    new ProvinceComboboxBlur(true)
+  );
+  let province_combobox = render_province_combobox(
+    province_combobox_shown,
+    filtered_provinces$1,
+    province_filter_text$1,
+    selected_province,
+    cb_msg
+  );
+  let cb_msg$1 = new ComboboxEmitMsg(
+    (var0) => {
+      return new WardComboboxTextInput(var0);
+    },
+    (var0) => {
+      return new WardComboboxSelected(var0);
+    },
+    new WardComboboxFocused(),
+    new WardComboboxBlur(true)
   );
   let _block$2;
-  let $ = find2(wards, (w) => {
-    return w.code === selected_ward;
-  });
-  if ($ instanceof Ok) {
-    let ward = $[0];
-    _block$2 = show_brief_info_ward(ward);
+  if (ward_filter_text === "") {
+    _block$2 = wards;
   } else {
-    _block$2 = none2();
+    _block$2 = filtered_wards;
   }
-  let ward_info = _block$2;
-  return div(
+  let filtered_wards$1 = _block$2;
+  let _block$3;
+  if (route instanceof Province) {
+    let $ = route[1];
+    if ($ instanceof Some && ward_filter_text === "") {
+      let w_code = $[0];
+      let _pipe = wards;
+      let _pipe$1 = find_map(
+        _pipe,
+        (w) => {
+          let $1 = w.code === w_code;
+          if ($1) {
+            return new Ok(w.name);
+          } else {
+            return new Error(void 0);
+          }
+        }
+      );
+      _block$3 = unwrap2(_pipe$1, ward_filter_text);
+    } else {
+      _block$3 = ward_filter_text;
+    }
+  } else {
+    _block$3 = ward_filter_text;
+  }
+  let ward_filter_text$1 = _block$3;
+  let ward_combobox = render_ward_combobox(
+    ward_combobox_shown,
+    filtered_wards$1,
+    ward_filter_text$1,
+    selected_ward,
+    cb_msg$1
+  );
+  return section(
+    toList([]),
     toList([
-      class$(
-        "p-4 dark:bg-gray-900 text-gray-900 dark:text-gray-300 antialiased h-screen"
-      )
-    ]),
-    toList([
-      header(
-        toList([]),
+      div(
         toList([
-          h1(
-            toList([class$("text-xl py-4 text-gray-900 dark:text-gray-300")]),
-            toList([text3("T\u1EC9nh th\xE0nh Vi\u1EC7t Nam \u{1F1FB}\u{1F1F3}")])
-          )
-        ])
-      ),
-      main(
-        toList([]),
+          class$("space-y-4 md:flex md:flex-row md:space-x-4 md:space-y-0")
+        ]),
         toList([
           div(
+            toList([]),
             toList([
-              class$(
-                "space-y-4 md:flex md:flex-row md:space-x-4 md:space-y-0"
-              )
-            ]),
+              province_combobox,
+              (() => {
+                let _pipe = selected_province;
+                let _pipe$1 = map(_pipe, show_brief_info_province);
+                return unwrap(_pipe$1, none3());
+              })()
+            ])
+          ),
+          div(
+            toList([]),
             toList([
-              div(
-                toList([class$("text-gray-900 dark:text-gray-300 space-y-4")]),
-                toList([
-                  province_dropdown,
-                  (() => {
-                    let _pipe$2 = model.selected_province;
-                    let _pipe$3 = map(_pipe$2, show_brief_info_province);
-                    return unwrap(_pipe$3, none2());
-                  })()
-                ])
-              ),
-              div(
-                toList([class$("text-gray-900 dark:text-gray-300 space-y-4")]),
-                toList([ward_dropdown, ward_info])
-              )
+              ward_combobox,
+              (() => {
+                let _pipe = selected_ward;
+                let _pipe$1 = map(_pipe, show_brief_info_ward);
+                return unwrap(_pipe$1, none3());
+              })()
             ])
           )
-        ])
-      ),
-      footer(
-        toList([class$("mt-8 text-sm")]),
-        toList([
-          text3("Implemented in "),
-          a(
-            toList([
-              href("https://gleam.run/"),
-              class$("underline hover:text-sky-800 dark:hover:text-sky-300")
-            ]),
-            toList([text3("Gleam language")])
-          ),
-          text3(" "),
-          text3("and"),
-          text3(" "),
-          a(
-            toList([
-              href("https://hexdocs.pm/lustre/"),
-              class$("underline hover:text-sky-800 dark:hover:text-sky-300")
-            ]),
-            toList([text3("Lustre framework.")])
-          ),
-          br(toList([])),
-          a(
-            toList([
-              href("https://github.com/hongquan/vn-provinces-lustre-demo"),
-              class$("underline hover:text-sky-800 dark:hover:text-sky-300")
-            ]),
-            toList([text3("Source")])
-          ),
-          text3(".")
         ])
       )
     ])
@@ -7035,7 +7234,19 @@ function init2(_) {
   _block = unwrap(_pipe$4, toList([]));
   let query = _block;
   let route = parse_to_route(query);
-  let model = new Model(route, toList([]), new None(), toList([]));
+  let model = new Model(
+    route,
+    toList([]),
+    false,
+    "",
+    toList([]),
+    new None(),
+    toList([]),
+    false,
+    "",
+    toList([]),
+    new None()
+  );
   let effects = batch(
     toList([init(on_url_change), load_provinces()])
   );
@@ -7053,18 +7264,64 @@ function handle_loaded_provinces(provinces, model) {
       let p = $2[0];
       _block = [new Some(p), load_wards(p.code)];
     } else {
-      _block = [new None(), none()];
+      _block = [new None(), none2()];
     }
   } else {
-    _block = [new None(), none()];
+    _block = [new None(), none2()];
   }
   let $ = _block;
   let selected_province;
   let whatnext;
   selected_province = $[0];
   whatnext = $[1];
-  let model$1 = new Model(model.route, provinces, selected_province, toList([]));
+  let model$1 = new Model(
+    model.route,
+    provinces,
+    model.province_combobox_shown,
+    model.province_filter_text,
+    model.filtered_provinces,
+    selected_province,
+    toList([]),
+    model.ward_combobox_shown,
+    model.ward_filter_text,
+    model.filtered_wards,
+    model.selected_ward
+  );
   return [model$1, whatnext];
+}
+function handle_loaded_wards(wards, model) {
+  let _block;
+  let $ = model.route;
+  if ($ instanceof Province) {
+    let $1 = $[1];
+    if ($1 instanceof Some) {
+      let w_code = $1[0];
+      let _pipe = wards;
+      let _pipe$1 = find2(_pipe, (w) => {
+        return w.code === w_code;
+      });
+      _block = from_result(_pipe$1);
+    } else {
+      _block = new None();
+    }
+  } else {
+    _block = new None();
+  }
+  let selected_ward = _block;
+  let model$1 = new Model(
+    model.route,
+    model.provinces,
+    model.province_combobox_shown,
+    model.province_filter_text,
+    model.filtered_provinces,
+    model.selected_province,
+    wards,
+    model.ward_combobox_shown,
+    model.ward_filter_text,
+    model.filtered_wards,
+    selected_ward
+  );
+  return [model$1, none2()];
 }
 function handle_route_changed(new_route, queried_province, model) {
   let current_route;
@@ -7093,30 +7350,49 @@ function handle_route_changed(new_route, queried_province, model) {
       if (i.code !== j) {
         _block$1 = load_wards(i.code);
       } else {
-        _block$1 = none();
+        _block$1 = none2();
       }
     } else {
-      _block$1 = none();
+      _block$1 = none2();
     }
   } else if (queried_province$1 instanceof Ok) {
     let i = queried_province$1[0];
     _block$1 = load_wards(i.code);
   } else {
-    _block$1 = none();
+    _block$1 = none2();
   }
   let whatnext = _block$1;
   let model$1 = new Model(
     new_route,
     model.provinces,
+    model.province_combobox_shown,
+    model.province_filter_text,
+    model.filtered_provinces,
     from_result(queried_province$1),
-    model.wards
+    model.wards,
+    model.ward_combobox_shown,
+    model.ward_filter_text,
+    model.filtered_wards,
+    model.selected_ward
   );
   return [model$1, whatnext];
 }
 function update2(model, msg) {
   if (msg instanceof ProvinceSelected) {
     let p = msg[0];
-    let model$1 = new Model(model.route, model.provinces, p, toList([]));
+    let model$1 = new Model(
+      model.route,
+      model.provinces,
+      model.province_combobox_shown,
+      model.province_filter_text,
+      model.filtered_provinces,
+      p,
+      toList([]),
+      model.ward_combobox_shown,
+      model.ward_filter_text,
+      model.filtered_wards,
+      model.selected_ward
+    );
     if (p instanceof Some) {
       let p$1 = p[0];
       let query_string = query_to_string(
@@ -7124,7 +7400,7 @@ function update2(model, msg) {
       );
       return [model$1, push("", new Some(query_string), new None())];
     } else {
-      return [model$1, none()];
+      return [model$1, none2()];
     }
   } else if (msg instanceof WardSelected) {
     let w = msg[0];
@@ -7145,41 +7421,230 @@ function update2(model, msg) {
         push("", new Some(query_to_string(new_query)), new None())
       ];
     } else {
-      return [model, none()];
+      return [model, none2()];
     }
+  } else if (msg instanceof ProvinceComboboxFocused) {
+    console_log("Focused");
+    let model$1 = new Model(
+      model.route,
+      model.provinces,
+      true,
+      model.province_filter_text,
+      model.filtered_provinces,
+      model.selected_province,
+      model.wards,
+      model.ward_combobox_shown,
+      model.ward_filter_text,
+      model.filtered_wards,
+      model.selected_ward
+    );
+    return [model$1, none2()];
+  } else if (msg instanceof ProvinceComboboxBlur) {
+    let $ = msg.first;
+    if ($) {
+      console_log("Blur 1");
+      let what_next = from(
+        (dispatch) => {
+          setTimeout2(
+            1e3,
+            () => {
+              return dispatch(new ProvinceComboboxBlur(false));
+            }
+          );
+          return void 0;
+        }
+      );
+      return [model, what_next];
+    } else {
+      console_log("Blur 2");
+      let model$1 = new Model(
+        model.route,
+        model.provinces,
+        false,
+        model.province_filter_text,
+        model.filtered_provinces,
+        model.selected_province,
+        model.wards,
+        model.ward_combobox_shown,
+        model.ward_filter_text,
+        model.filtered_wards,
+        model.selected_ward
+      );
+      return [model$1, none2()];
+    }
+  } else if (msg instanceof ProvinceComboboxTextInput) {
+    let s = msg[0];
+    echo(s, void 0, "src/vn_provinces_demo.gleam", 138);
+    let model$1 = new Model(
+      model.route,
+      model.provinces,
+      model.province_combobox_shown,
+      s,
+      model.filtered_provinces,
+      model.selected_province,
+      model.wards,
+      model.ward_combobox_shown,
+      model.ward_filter_text,
+      model.filtered_wards,
+      model.selected_ward
+    );
+    return [model$1, search_provinces(s)];
+  } else if (msg instanceof ProvinceComboboxSelected) {
+    let p = msg[0];
+    console_log("ProvinceComboboxSelected");
+    echo(p, void 0, "src/vn_provinces_demo.gleam", 144);
+    let model$1 = new Model(
+      model.route,
+      model.provinces,
+      false,
+      p.name,
+      model.filtered_provinces,
+      new Some(p),
+      model.wards,
+      model.ward_combobox_shown,
+      model.ward_filter_text,
+      model.filtered_wards,
+      model.selected_ward
+    );
+    let query_string = query_to_string(
+      toList([["p", to_string(p.code)]])
+    );
+    return [model$1, push("", new Some(query_string), new None())];
+  } else if (msg instanceof WardComboboxFocused) {
+    let model$1 = new Model(
+      model.route,
+      model.provinces,
+      model.province_combobox_shown,
+      model.province_filter_text,
+      model.filtered_provinces,
+      model.selected_province,
+      model.wards,
+      true,
+      model.ward_filter_text,
+      model.filtered_wards,
+      model.selected_ward
+    );
+    return [model$1, none2()];
+  } else if (msg instanceof WardComboboxBlur) {
+    let $ = msg.first;
+    if ($) {
+      console_log("Blur 1");
+      let what_next = from(
+        (dispatch) => {
+          setTimeout2(
+            1e3,
+            () => {
+              return dispatch(new WardComboboxBlur(false));
+            }
+          );
+          return void 0;
+        }
+      );
+      return [model, what_next];
+    } else {
+      console_log("Blur 2");
+      let model$1 = new Model(
+        model.route,
+        model.provinces,
+        model.province_combobox_shown,
+        model.province_filter_text,
+        model.filtered_provinces,
+        model.selected_province,
+        model.wards,
+        false,
+        model.ward_filter_text,
+        model.filtered_wards,
+        model.selected_ward
+      );
+      return [model$1, none2()];
+    }
+  } else if (msg instanceof WardComboboxSelected) {
+    let w = msg[0];
+    console_log("WardComboboxSelected");
+    echo(w, void 0, "src/vn_provinces_demo.gleam", 201);
+    let model$1 = new Model(
+      model.route,
+      model.provinces,
+      model.province_combobox_shown,
+      model.province_filter_text,
+      model.filtered_provinces,
+      model.selected_province,
+      model.wards,
+      false,
+      w.name,
+      model.filtered_wards,
+      new Some(w)
+    );
+    let new_append = ["w", to_string(w.code)];
+    let _block;
+    let $ = model$1.route;
+    if ($ instanceof Province) {
+      let p = $[0];
+      _block = toList([["p", to_string(p)], new_append]);
+    } else {
+      _block = toList([new_append]);
+    }
+    let new_query = _block;
+    return [
+      model$1,
+      push("", new Some(query_to_string(new_query)), new None())
+    ];
   } else if (msg instanceof ApiReturnedProvinces) {
     let $ = msg[0];
     if ($ instanceof Ok) {
       let provinces = $[0];
       return handle_loaded_provinces(provinces, model);
     } else {
-      return [model, none()];
+      return [model, none2()];
+    }
+  } else if (msg instanceof ApiReturnedSearchedProvinces) {
+    let $ = msg[0];
+    if ($ instanceof Ok) {
+      let provinces = $[0];
+      console_log("ApiReturnedSearchedProvinces");
+      echo(provinces, void 0, "src/vn_provinces_demo.gleam", 89);
+      let model$1 = new Model(
+        model.route,
+        model.provinces,
+        model.province_combobox_shown,
+        model.province_filter_text,
+        provinces,
+        model.selected_province,
+        model.wards,
+        model.ward_combobox_shown,
+        model.ward_filter_text,
+        model.filtered_wards,
+        model.selected_ward
+      );
+      return [model$1, none2()];
+    } else {
+      return [model, none2()];
     }
   } else if (msg instanceof ApiReturnedWards) {
     let $ = msg[0];
     if ($ instanceof Ok) {
       let wards = $[0];
       console_log("Wards loaded");
-      return [
-        new Model(model.route, model.provinces, model.selected_province, wards),
-        none()
-      ];
+      return handle_loaded_wards(wards, model);
     } else {
       let e = $[0];
-      echo(e, void 0, "src/vn_provinces_demo.gleam", 74);
-      return [model, none()];
+      echo(e, void 0, "src/vn_provinces_demo.gleam", 111);
+      return [model, none2()];
     }
-  } else {
+  } else if (msg instanceof OnRouteChange) {
     let new_route = msg[0];
     if (new_route instanceof Home) {
-      return [model, none()];
+      return [model, none2()];
     } else {
       let p = new_route[0];
+      echo(model, void 0, "src/vn_provinces_demo.gleam", 132);
       return handle_route_changed(new_route, p, model);
     }
+  } else {
+    return [model, none2()];
   }
 }
-function main2() {
+function main() {
   let app = application(init2, update2, view2);
   let $ = start3(app, "#app", void 0);
   if (!($ instanceof Ok)) {
@@ -7187,10 +7652,16 @@ function main2() {
       "let_assert",
       FILEPATH,
       "vn_provinces_demo",
-      29,
+      44,
       "main",
       "Pattern match failed, no pattern matched the value.",
-      { value: $, start: 685, end: 734, pattern_start: 696, pattern_end: 701 }
+      {
+        value: $,
+        start: 1196,
+        end: 1245,
+        pattern_start: 1207,
+        pattern_end: 1212
+      }
     );
   }
   return void 0;
@@ -7400,4 +7871,4 @@ var Echo$Inspector = class {
 };
 
 // build/.lustre/entry.mjs
-main2();
+main();

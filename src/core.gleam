@@ -14,7 +14,18 @@ pub type Ward {
 pub type Msg {
   ProvinceSelected(Option(Province))
   WardSelected(Option(Ward))
+  ProvinceComboboxFocused
+  ProvinceComboboxBlur(first: Bool)
+  ProvinceComboboxTextInput(String)
+  ProvinceComboboxSelected(Province)
+  WardComboboxFocused
+  WardComboboxBlur(first: Bool)
+  WardComboboxTextInput(String)
+  WardComboboxSelected(Ward)
+  // This is the API response for all provinces
   ApiReturnedProvinces(Result(List(Province), rsvp.Error))
+  // This is the API response for searched provinces
+  ApiReturnedSearchedProvinces(Result(List(Province), rsvp.Error))
   ApiReturnedWards(Result(List(Ward), rsvp.Error))
   OnRouteChange(router.Route)
 }

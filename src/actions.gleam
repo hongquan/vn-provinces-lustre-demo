@@ -1,11 +1,12 @@
 import core.{type Msg}
 import gleam/dynamic/decode
 import gleam/int
+import gleam/uri
 import lustre/effect.{type Effect}
 import rsvp
 
 pub fn load_provinces() -> Effect(Msg) {
-  let url = "https://provinces.open-api.vn/api/v2/"
+  let url = "https://provinces.open-api.vn/api/v2/p/"
   let decoder = {
     use name <- decode.field("name", decode.string)
     use code <- decode.field("code", decode.int)
@@ -13,6 +14,20 @@ pub fn load_provinces() -> Effect(Msg) {
   }
   let handler =
     rsvp.expect_json(decode.list(decoder), core.ApiReturnedProvinces)
+  rsvp.get(url, handler)
+}
+
+pub fn search_provinces(search: String) {
+  let url =
+    "https://provinces.open-api.vn/api/v2/p/?"
+    <> uri.query_to_string([#("search", search)])
+  let decoder = {
+    use name <- decode.field("name", decode.string)
+    use code <- decode.field("code", decode.int)
+    decode.success(core.Province(name, code))
+  }
+  let handler =
+    rsvp.expect_json(decode.list(decoder), core.ApiReturnedSearchedProvinces)
   rsvp.get(url, handler)
 }
 

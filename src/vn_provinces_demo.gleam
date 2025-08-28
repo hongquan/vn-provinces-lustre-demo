@@ -2,6 +2,7 @@ import gleam/int
 import gleam/io
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/result
 import gleam/uri
 import lustre
 import lustre/attribute as a
@@ -9,18 +10,32 @@ import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html as h
 import modem
+import plinth/javascript/global.{set_timeout}
 
 import actions
 import core.{type Msg, type Province, type Ward}
 import router.{type Route, parse_to_route}
-import views.{render_province_list, render_ward_list, show_brief_info_province}
+import views.{
+  render_province_combobox, render_ward_combobox, show_brief_info_province,
+  show_brief_info_ward,
+}
 
 pub type Model {
   Model(
     route: Route,
     provinces: List(Province),
+    // For province combobox
+    province_combobox_shown: Bool,
+    province_filter_text: String,
+    filtered_provinces: List(Province),
+    // Used when the province value has been settled from combobox.
+    // If this value is "Some", the text input should not generate message.
     selected_province: Option(Province),
     wards: List(Ward),
+    ward_combobox_shown: Bool,
+    ward_filter_text: String,
+    filtered_wards: List(Ward),
+    selected_ward: Option(Ward),
   )
 }
 
@@ -39,7 +54,23 @@ fn init(_args) -> #(Model, Effect(Msg)) {
     |> option.flatten
     |> option.unwrap([])
   let route = parse_to_route(query)
-  let model = Model(route, [], None, [])
+  let model =
+    Model(
+      route:,
+      provinces: [],
+      // For province combobox
+      province_combobox_shown: False,
+      province_filter_text: "",
+      filtered_provinces: [],
+      // Used when the province value has been settled from combobox.
+      // If this value is "Some", the text input should not generate message.
+      selected_province: None,
+      wards: [],
+      ward_combobox_shown: False,
+      ward_filter_text: "",
+      filtered_wards: [],
+      selected_ward: None,
+    )
   let effects =
     effect.batch([modem.init(on_url_change), actions.load_provinces()])
   // At initial, we will load provinces from API.
@@ -52,6 +83,12 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     core.ApiReturnedProvinces(Ok(provinces)) -> {
       handle_loaded_provinces(provinces, model)
+    }
+    core.ApiReturnedSearchedProvinces(Ok(provinces)) -> {
+      io.println("ApiReturnedSearchedProvinces")
+      echo provinces
+      let model = Model(..model, filtered_provinces: provinces)
+      #(model, effect.none())
     }
     // User has picked a province from dropdown
     core.ProvinceSelected(p) -> {
@@ -68,7 +105,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
     core.ApiReturnedWards(Ok(wards)) -> {
       io.println("Wards loaded")
-      #(Model(..model, wards:), effect.none())
+      handle_loaded_wards(wards, model)
     }
     core.ApiReturnedWards(Error(e)) -> {
       echo e
@@ -92,95 +129,197 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       case new_route {
         router.Home -> #(model, effect.none())
         router.Province(p, _w) -> {
+          echo model
           handle_route_changed(new_route, p, model)
         }
       }
+    }
+    core.ProvinceComboboxTextInput(s) -> {
+      echo s
+      let model = Model(..model, province_filter_text: s)
+      #(model, actions.search_provinces(s))
+    }
+    core.ProvinceComboboxSelected(p) -> {
+      io.println("ProvinceComboboxSelected")
+      echo p
+      let model =
+        Model(
+          ..model,
+          selected_province: Some(p),
+          province_filter_text: p.name,
+          province_combobox_shown: False,
+        )
+      // Reflect to browser URL
+      let query_string = uri.query_to_string([#("p", int.to_string(p.code))])
+      #(model, modem.push("", Some(query_string), None))
+    }
+    core.ProvinceComboboxFocused -> {
+      io.println("Focused")
+      let model = Model(..model, province_combobox_shown: True)
+      #(model, effect.none())
+    }
+    core.ProvinceComboboxBlur(True) -> {
+      // When the text input is blur, we should not hide the dropdown right away, because
+      // user may want to click on the dropdown, but this event is emitted earlier
+      // than the dropdown click.
+      io.println("Blur 1")
+      let what_next =
+        effect.from(fn(dispatch) {
+          set_timeout(1000, fn() { dispatch(core.ProvinceComboboxBlur(False)) })
+          Nil
+        })
+      #(model, what_next)
+    }
+    core.ProvinceComboboxBlur(False) -> {
+      io.println("Blur 2")
+      let model = Model(..model, province_combobox_shown: False)
+      #(model, effect.none())
+    }
+    core.WardComboboxFocused -> {
+      let model = Model(..model, ward_combobox_shown: True)
+      #(model, effect.none())
+    }
+    core.WardComboboxBlur(True) -> {
+      // When the text input is blur, we should not hide the dropdown right away, because
+      // user may want to click on the dropdown, but this event is emitted earlier
+      // than the dropdown click.
+      io.println("Blur 1")
+      let what_next =
+        effect.from(fn(dispatch) {
+          set_timeout(1000, fn() { dispatch(core.WardComboboxBlur(False)) })
+          Nil
+        })
+      #(model, what_next)
+    }
+    core.WardComboboxBlur(False) -> {
+      io.println("Blur 2")
+      let model = Model(..model, ward_combobox_shown: False)
+      #(model, effect.none())
+    }
+    core.WardComboboxSelected(w) -> {
+      io.println("WardComboboxSelected")
+      echo w
+      let model =
+        Model(
+          ..model,
+          selected_ward: Some(w),
+          ward_filter_text: w.name,
+          ward_combobox_shown: False,
+        )
+      // Reflect to browser URL
+      let new_append = #("w", int.to_string(w.code))
+      let new_query = case model.route {
+        router.Province(p, _w) -> [#("p", int.to_string(p)), new_append]
+        _ -> [new_append]
+      }
+      #(model, modem.push("", Some(uri.query_to_string(new_query)), None))
     }
     _ -> #(model, effect.none())
   }
 }
 
 fn view(model: Model) -> Element(Msg) {
-  let Model(route:, provinces:, selected_province:, wards:) = model
-  let selected_province =
-    selected_province |> option.map(fn(p) { p.code }) |> option.unwrap(0)
-  let province_dropdown =
-    render_province_list(provinces, selected_province, core.ProvinceSelected)
-  let selected_ward = case route {
-    router.Province(_p, Some(w)) -> w
-    _ -> 0
+  let Model(
+    route:,
+    provinces:,
+    province_combobox_shown:,
+    selected_province:,
+    wards:,
+    province_filter_text:,
+    filtered_provinces:,
+    ward_combobox_shown:,
+    ward_filter_text:,
+    filtered_wards:,
+    selected_ward:,
+  ) = model
+  echo selected_province
+  echo selected_ward
+  let filtered_provinces = case province_filter_text {
+    "" -> provinces
+    _ -> filtered_provinces
   }
-  let ward_dropdown = render_ward_list(wards, selected_ward, core.WardSelected)
-  let ward_info = case list.find(wards, fn(w) { w.code == selected_ward }) {
-    Ok(ward) -> views.show_brief_info_ward(ward)
-    _ -> element.none()
+  // If the filter text is empty and the URL is pointing to a province, we show province name in the text input
+  let province_filter_text = case province_filter_text, route {
+    "", router.Province(p_code, _w) -> {
+      provinces
+      |> list.find_map(fn(p) {
+        case p.code == p_code {
+          True -> Ok(p.name)
+          False -> Error(Nil)
+        }
+      })
+      |> result.unwrap(province_filter_text)
+    }
+    _, _ -> province_filter_text
   }
-  h.div(
-    [
-      a.class(
-        "p-4 dark:bg-gray-900 text-gray-900 dark:text-gray-300 antialiased h-screen",
-      ),
-    ],
-    [
-      h.header([], [
-        h.h1([a.class("text-xl py-4 text-gray-900 dark:text-gray-300")], [
-          h.text("Tỉnh thành Việt Nam 🇻🇳"),
-        ]),
+  let cb_msg =
+    views.ComboboxEmitMsg(
+      core.ProvinceComboboxTextInput,
+      core.ProvinceComboboxSelected,
+      core.ProvinceComboboxFocused,
+      core.ProvinceComboboxBlur(True),
+    )
+
+  let province_combobox =
+    render_province_combobox(
+      province_combobox_shown,
+      filtered_provinces,
+      province_filter_text,
+      selected_province,
+      cb_msg,
+    )
+  let cb_msg =
+    views.ComboboxEmitMsg(
+      core.WardComboboxTextInput,
+      core.WardComboboxSelected,
+      core.WardComboboxFocused,
+      core.WardComboboxBlur(True),
+    )
+
+  let filtered_wards = case ward_filter_text {
+    "" -> wards
+    _ -> filtered_wards
+  }
+  // If the filter text is empty and the URL is pointing to a ward, we show ward name in the text input
+  let ward_filter_text = case ward_filter_text, route {
+    "", router.Province(_p, Some(w_code)) -> {
+      wards
+      |> list.find_map(fn(w) {
+        case w.code == w_code {
+          True -> {
+            Ok(w.name)
+          }
+          False -> Error(Nil)
+        }
+      })
+      |> result.unwrap(ward_filter_text)
+    }
+    _, _ -> ward_filter_text
+  }
+  let ward_combobox =
+    render_ward_combobox(
+      ward_combobox_shown,
+      filtered_wards,
+      ward_filter_text,
+      selected_ward,
+      cb_msg,
+    )
+  h.section([], [
+    h.div([a.class("space-y-4 md:flex md:flex-row md:space-x-4 md:space-y-0")], [
+      h.div([], [
+        province_combobox,
+        selected_province
+          |> option.map(show_brief_info_province)
+          |> option.unwrap(element.none()),
       ]),
-      h.main([], [
-        h.div(
-          [a.class("space-y-4 md:flex md:flex-row md:space-x-4 md:space-y-0")],
-          [
-            h.div([a.class("text-gray-900 dark:text-gray-300 space-y-4")], [
-              province_dropdown,
-              model.selected_province
-                |> option.map(show_brief_info_province)
-                |> option.unwrap(element.none()),
-            ]),
-            h.div([a.class("text-gray-900 dark:text-gray-300 space-y-4")], [
-              ward_dropdown,
-              ward_info,
-            ]),
-          ],
-        ),
+      h.div([], [
+        ward_combobox,
+        selected_ward
+          |> option.map(show_brief_info_ward)
+          |> option.unwrap(element.none()),
       ]),
-      h.footer([a.class("mt-8 text-sm")], [
-        h.text("Implemented in "),
-        h.a(
-          [
-            a.href("https://gleam.run/"),
-            a.class("underline hover:text-sky-800 dark:hover:text-sky-300"),
-          ],
-          [
-            h.text("Gleam language"),
-          ],
-        ),
-        h.text(" "),
-        h.text("and"),
-        h.text(" "),
-        h.a(
-          [
-            a.href("https://hexdocs.pm/lustre/"),
-            a.class("underline hover:text-sky-800 dark:hover:text-sky-300"),
-          ],
-          [
-            h.text("Lustre framework."),
-          ],
-        ),
-        h.br([]),
-        h.a(
-          [
-            a.href("https://github.com/hongquan/vn-provinces-lustre-demo"),
-            a.class("underline hover:text-sky-800 dark:hover:text-sky-300"),
-          ],
-          [
-            h.text("Source"),
-          ],
-        ),
-        h.text("."),
-      ]),
-    ],
-  )
+    ]),
+  ])
 }
 
 pub fn on_url_change(uri: uri.Uri) -> Msg {
@@ -212,6 +351,18 @@ fn handle_loaded_provinces(
   // Save provinces to model, reset the selection and wards
   let model = Model(..model, provinces:, wards: [], selected_province:)
   #(model, whatnext)
+}
+
+fn handle_loaded_wards(wards: List(Ward), model: Model) {
+  let selected_ward = case model.route {
+    router.Province(_p, Some(w_code)) -> {
+      wards |> list.find(fn(w) { w.code == w_code }) |> option.from_result
+    }
+    _ -> None
+  }
+  // Save wards to the model
+  let model = Model(..model, wards:, selected_ward:)
+  #(model, effect.none())
 }
 
 fn handle_route_changed(
