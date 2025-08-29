@@ -15,11 +15,9 @@ pub type Msg {
   ProvinceSelected(Option(Province))
   WardSelected(Option(Ward))
   ProvinceComboboxFocused
-  ProvinceComboboxBlur(first: Bool)
   ProvinceComboboxTextInput(String)
   ProvinceComboboxSelected(Province)
   WardComboboxFocused
-  WardComboboxBlur(first: Bool)
   WardComboboxTextInput(String)
   WardComboboxSelected(Ward)
   // This is the API response for all provinces

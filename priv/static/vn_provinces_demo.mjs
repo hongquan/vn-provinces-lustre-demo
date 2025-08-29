@@ -6063,11 +6063,6 @@ function push(path, query, fragment3) {
   );
 }
 
-// build/dev/javascript/plinth/global_ffi.mjs
-function setTimeout2(delay, callback) {
-  return globalThis.setTimeout(callback, delay);
-}
-
 // build/dev/javascript/gleam_http/gleam/http.mjs
 var Get = class extends CustomType {
 };
@@ -6626,12 +6621,6 @@ var WardSelected = class extends CustomType {
 };
 var ProvinceComboboxFocused = class extends CustomType {
 };
-var ProvinceComboboxBlur = class extends CustomType {
-  constructor(first) {
-    super();
-    this.first = first;
-  }
-};
 var ProvinceComboboxTextInput = class extends CustomType {
   constructor($0) {
     super();
@@ -6645,12 +6634,6 @@ var ProvinceComboboxSelected = class extends CustomType {
   }
 };
 var WardComboboxFocused = class extends CustomType {
-};
-var WardComboboxBlur = class extends CustomType {
-  constructor(first) {
-    super();
-    this.first = first;
-  }
 };
 var WardComboboxTextInput = class extends CustomType {
   constructor($0) {
@@ -6847,18 +6830,14 @@ function on_input(msg) {
 function on_focus(msg) {
   return on("focus", success(msg));
 }
-function on_blur(msg) {
-  return on("blur", success(msg));
-}
 
 // build/dev/javascript/vn_provinces_demo/views.mjs
 var ComboboxEmitMsg = class extends CustomType {
-  constructor(text_input, choice_click, input_focus, input_blur) {
+  constructor(text_input, choice_click, input_focus) {
     super();
     this.text_input = text_input;
     this.choice_click = choice_click;
     this.input_focus = input_focus;
-    this.input_blur = input_blur;
   }
 };
 function show_brief_info_province(province) {
@@ -6951,7 +6930,6 @@ function render_province_combobox(to_show, provinces, filter_text, settled_provi
           ),
           input_handler,
           on_focus(emit_msg.input_focus),
-          on_blur(emit_msg.input_blur),
           value(filter_text)
         ])
       ),
@@ -7020,7 +6998,6 @@ function render_ward_combobox(to_show, wards, filter_text, settled_ward, emit_ms
           ),
           input_handler,
           on_focus(emit_msg.input_focus),
-          on_blur(emit_msg.input_blur),
           value(filter_text),
           value(filter_text)
         ])
@@ -7078,8 +7055,8 @@ function view2(model) {
   province_filter_text = model.province_combobox_state.filter_text;
   filtered_provinces = model.province_combobox_state.filtered_items;
   selected_province = model.province_combobox_state.selected_item;
-  echo(selected_province, void 0, "src/vn_provinces_demo.gleam", 281);
-  echo(selected_ward, void 0, "src/vn_provinces_demo.gleam", 282);
+  echo(selected_province, void 0, "src/vn_provinces_demo.gleam", 236);
+  echo(selected_ward, void 0, "src/vn_provinces_demo.gleam", 237);
   let _block;
   if (province_filter_text === "") {
     _block = provinces;
@@ -7114,8 +7091,7 @@ function view2(model) {
     (var0) => {
       return new ProvinceComboboxSelected(var0);
     },
-    new ProvinceComboboxFocused(),
-    new ProvinceComboboxBlur(true)
+    new ProvinceComboboxFocused()
   );
   let province_combobox = render_province_combobox(
     province_combobox_shown,
@@ -7131,8 +7107,7 @@ function view2(model) {
     (var0) => {
       return new WardComboboxSelected(var0);
     },
-    new WardComboboxFocused(),
-    new WardComboboxBlur(true)
+    new WardComboboxFocused()
   );
   let _block$2;
   if (ward_filter_text === "") {
@@ -7449,41 +7424,6 @@ function update2(model, msg) {
       model.ward_combobox_state
     );
     return [model$1, none2()];
-  } else if (msg instanceof ProvinceComboboxBlur) {
-    let $ = msg.first;
-    if ($) {
-      console_log("Blur 1");
-      let what_next = from(
-        (dispatch) => {
-          setTimeout2(
-            1e3,
-            () => {
-              return dispatch(new ProvinceComboboxBlur(false));
-            }
-          );
-          return void 0;
-        }
-      );
-      return [model, what_next];
-    } else {
-      console_log("Blur 2");
-      let model$1 = new Model(
-        model.route,
-        model.provinces,
-        model.wards,
-        (() => {
-          let _record = model.province_combobox_state;
-          return new ComboboxState(
-            false,
-            _record.filter_text,
-            _record.filtered_items,
-            _record.selected_item
-          );
-        })(),
-        model.ward_combobox_state
-      );
-      return [model$1, none2()];
-    }
   } else if (msg instanceof ProvinceComboboxTextInput) {
     let s = msg[0];
     let model$1 = new Model(
@@ -7505,7 +7445,7 @@ function update2(model, msg) {
   } else if (msg instanceof ProvinceComboboxSelected) {
     let p = msg[0];
     console_log("ProvinceComboboxSelected");
-    echo(p, void 0, "src/vn_provinces_demo.gleam", 152);
+    echo(p, void 0, "src/vn_provinces_demo.gleam", 153);
     let model$1 = new Model(
       model.route,
       model.provinces,
@@ -7542,45 +7482,10 @@ function update2(model, msg) {
       })()
     );
     return [model$1, none2()];
-  } else if (msg instanceof WardComboboxBlur) {
-    let $ = msg.first;
-    if ($) {
-      console_log("Blur 1");
-      let what_next = from(
-        (dispatch) => {
-          setTimeout2(
-            1e3,
-            () => {
-              return dispatch(new WardComboboxBlur(false));
-            }
-          );
-          return void 0;
-        }
-      );
-      return [model, what_next];
-    } else {
-      console_log("Blur 2");
-      let model$1 = new Model(
-        model.route,
-        model.provinces,
-        model.wards,
-        model.province_combobox_state,
-        (() => {
-          let _record = model.ward_combobox_state;
-          return new ComboboxState(
-            false,
-            _record.filter_text,
-            _record.filtered_items,
-            _record.selected_item
-          );
-        })()
-      );
-      return [model$1, none2()];
-    }
   } else if (msg instanceof WardComboboxSelected) {
     let w = msg[0];
     console_log("WardComboboxSelected");
-    echo(w, void 0, "src/vn_provinces_demo.gleam", 240);
+    echo(w, void 0, "src/vn_provinces_demo.gleam", 195);
     let model$1 = new Model(
       model.route,
       model.provinces,
@@ -7623,7 +7528,7 @@ function update2(model, msg) {
     if ($ instanceof Ok) {
       let provinces = $[0];
       console_log("ApiReturnedSearchedProvinces");
-      echo(provinces, void 0, "src/vn_provinces_demo.gleam", 76);
+      echo(provinces, void 0, "src/vn_provinces_demo.gleam", 77);
       let model$1 = new Model(
         model.route,
         model.provinces,
@@ -7651,7 +7556,7 @@ function update2(model, msg) {
       return handle_loaded_wards(wards, model);
     } else {
       let e = $[0];
-      echo(e, void 0, "src/vn_provinces_demo.gleam", 113);
+      echo(e, void 0, "src/vn_provinces_demo.gleam", 114);
       return [model, none2()];
     }
   } else if (msg instanceof OnRouteChange) {
@@ -7660,7 +7565,7 @@ function update2(model, msg) {
       return [model, none2()];
     } else {
       let p = new_route[0];
-      echo(model, void 0, "src/vn_provinces_demo.gleam", 134);
+      echo(model, void 0, "src/vn_provinces_demo.gleam", 135);
       return handle_route_changed(new_route, p, model);
     }
   } else {
@@ -7675,10 +7580,16 @@ function main() {
       "let_assert",
       FILEPATH,
       "vn_provinces_demo",
-      39,
+      40,
       "main",
       "Pattern match failed, no pattern matched the value.",
-      { value: $, start: 934, end: 983, pattern_start: 945, pattern_end: 950 }
+      {
+        value: $,
+        start: 1068,
+        end: 1117,
+        pattern_start: 1079,
+        pattern_end: 1084
+      }
     );
   }
   return void 0;

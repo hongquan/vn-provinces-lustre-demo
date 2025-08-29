@@ -17,7 +17,6 @@ pub type ComboboxEmitMsg(msg, obj) {
     text_input: fn(String) -> msg,
     choice_click: fn(obj) -> msg,
     input_focus: msg,
-    input_blur: msg,
   )
 }
 
@@ -162,7 +161,6 @@ pub fn render_province_combobox(
       ),
       input_handler,
       ev.on_focus(emit_msg.input_focus),
-      ev.on_blur(emit_msg.input_blur),
       a.value(filter_text),
     ]),
     // We need some container div elements to make paddings and create scroll view for the dropdown.
@@ -225,7 +223,6 @@ pub fn render_ward_combobox(
       ),
       input_handler,
       ev.on_focus(emit_msg.input_focus),
-      ev.on_blur(emit_msg.input_blur),
       a.value(filter_text),
       a.value(filter_text),
     ]),

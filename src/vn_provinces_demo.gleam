@@ -10,12 +10,13 @@ import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html as h
 import modem
-import plinth/javascript/global.{set_timeout}
 
 import actions
 import core.{
   type ComboboxState, type Msg, type Province, type Ward, ComboboxState,
-  create_empty_combobox_state,
+  ProvinceComboboxFocused, ProvinceComboboxSelected, ProvinceComboboxTextInput,
+  ProvinceSelected, WardComboboxFocused, WardComboboxSelected,
+  WardComboboxTextInput, WardSelected, create_empty_combobox_state,
 }
 import router.{type Route, parse_to_route}
 import views.{
@@ -85,7 +86,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(model, effect.none())
     }
     // User has picked a province from dropdown
-    core.ProvinceSelected(p) -> {
+    ProvinceSelected(p) -> {
       let model =
         Model(
           ..model,
@@ -113,7 +114,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       echo e
       #(model, effect.none())
     }
-    core.WardSelected(w) -> {
+    WardSelected(w) -> {
       case w {
         None -> #(model, effect.none())
         Some(w) -> {
@@ -136,7 +137,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         }
       }
     }
-    core.ProvinceComboboxTextInput(s) -> {
+    ProvinceComboboxTextInput(s) -> {
       let model =
         Model(
           ..model,
@@ -147,7 +148,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         )
       #(model, actions.search_provinces(s))
     }
-    core.ProvinceComboboxSelected(p) -> {
+    ProvinceComboboxSelected(p) -> {
       io.println("ProvinceComboboxSelected")
       echo p
       let model =
@@ -164,7 +165,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       let query_string = uri.query_to_string([#("p", int.to_string(p.code))])
       #(model, modem.push("", Some(query_string), None))
     }
-    core.ProvinceComboboxFocused -> {
+    ProvinceComboboxFocused -> {
       io.println("Focused")
       let model =
         Model(
@@ -176,31 +177,8 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         )
       #(model, effect.none())
     }
-    core.ProvinceComboboxBlur(True) -> {
-      // When the text input is blur, we should not hide the dropdown right away, because
-      // user may want to click on the dropdown, but this event is emitted earlier
-      // than the dropdown click.
-      io.println("Blur 1")
-      let what_next =
-        effect.from(fn(dispatch) {
-          set_timeout(1000, fn() { dispatch(core.ProvinceComboboxBlur(False)) })
-          Nil
-        })
-      #(model, what_next)
-    }
-    core.ProvinceComboboxBlur(False) -> {
-      io.println("Blur 2")
-      let model =
-        Model(
-          ..model,
-          province_combobox_state: ComboboxState(
-            ..model.province_combobox_state,
-            is_shown: False,
-          ),
-        )
-      #(model, effect.none())
-    }
-    core.WardComboboxFocused -> {
+
+    WardComboboxFocused -> {
       let model =
         Model(
           ..model,
@@ -211,31 +189,8 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         )
       #(model, effect.none())
     }
-    core.WardComboboxBlur(True) -> {
-      // When the text input is blur, we should not hide the dropdown right away, because
-      // user may want to click on the dropdown, but this event is emitted earlier
-      // than the dropdown click.
-      io.println("Blur 1")
-      let what_next =
-        effect.from(fn(dispatch) {
-          set_timeout(1000, fn() { dispatch(core.WardComboboxBlur(False)) })
-          Nil
-        })
-      #(model, what_next)
-    }
-    core.WardComboboxBlur(False) -> {
-      io.println("Blur 2")
-      let model =
-        Model(
-          ..model,
-          ward_combobox_state: ComboboxState(
-            ..model.ward_combobox_state,
-            is_shown: False,
-          ),
-        )
-      #(model, effect.none())
-    }
-    core.WardComboboxSelected(w) -> {
+
+    WardComboboxSelected(w) -> {
       io.println("WardComboboxSelected")
       echo w
       let model =
@@ -300,10 +255,9 @@ fn view(model: Model) -> Element(Msg) {
   }
   let cb_msg =
     views.ComboboxEmitMsg(
-      core.ProvinceComboboxTextInput,
-      core.ProvinceComboboxSelected,
-      core.ProvinceComboboxFocused,
-      core.ProvinceComboboxBlur(True),
+      ProvinceComboboxTextInput,
+      ProvinceComboboxSelected,
+      ProvinceComboboxFocused,
     )
 
   let province_combobox =
@@ -316,10 +270,9 @@ fn view(model: Model) -> Element(Msg) {
     )
   let cb_msg =
     views.ComboboxEmitMsg(
-      core.WardComboboxTextInput,
-      core.WardComboboxSelected,
-      core.WardComboboxFocused,
-      core.WardComboboxBlur(True),
+      WardComboboxTextInput,
+      WardComboboxSelected,
+      WardComboboxFocused,
     )
 
   let filtered_wards = case ward_filter_text {
