@@ -257,11 +257,6 @@ function bitArrayByteAt(buffer, bitOffset, index5) {
     return a | b;
   }
 }
-var UtfCodepoint = class {
-  constructor(value2) {
-    this.value = value2;
-  }
-};
 var isBitArrayDeprecationMessagePrinted = {};
 function bitArrayPrintDeprecationWarning(name, message2) {
   if (isBitArrayDeprecationMessagePrinted[name]) {
@@ -279,9 +274,9 @@ var Result = class _Result extends CustomType {
   }
 };
 var Ok = class extends Result {
-  constructor(value2) {
+  constructor(value3) {
     super();
-    this[0] = value2;
+    this[0] = value3;
   }
   // @internal
   isOk() {
@@ -373,6 +368,75 @@ function makeError(variant, file, module, line, fn, message2, extra) {
   return error;
 }
 
+// build/dev/javascript/gleam_stdlib/gleam/order.mjs
+var Lt = class extends CustomType {
+};
+var Eq = class extends CustomType {
+};
+var Gt = class extends CustomType {
+};
+
+// build/dev/javascript/gleam_stdlib/gleam/option.mjs
+var Some = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var None = class extends CustomType {
+};
+function is_some(option2) {
+  return !isEqual(option2, new None());
+}
+function to_result(option2, e) {
+  if (option2 instanceof Some) {
+    let a = option2[0];
+    return new Ok(a);
+  } else {
+    return new Error(e);
+  }
+}
+function from_result(result) {
+  if (result instanceof Ok) {
+    let a = result[0];
+    return new Some(a);
+  } else {
+    return new None();
+  }
+}
+function unwrap(option2, default$) {
+  if (option2 instanceof Some) {
+    let x = option2[0];
+    return x;
+  } else {
+    return default$;
+  }
+}
+function map(option2, fun) {
+  if (option2 instanceof Some) {
+    let x = option2[0];
+    return new Some(fun(x));
+  } else {
+    return option2;
+  }
+}
+function flatten(option2) {
+  if (option2 instanceof Some) {
+    let x = option2[0];
+    return x;
+  } else {
+    return option2;
+  }
+}
+function then$(option2, fun) {
+  if (option2 instanceof Some) {
+    let x = option2[0];
+    return fun(x);
+  } else {
+    return option2;
+  }
+}
+
 // build/dev/javascript/gleam_stdlib/dict.mjs
 var referenceMap = /* @__PURE__ */ new WeakMap();
 var tempDataView = /* @__PURE__ */ new DataView(
@@ -415,9 +479,9 @@ function hashObject(o) {
   const proto = Object.getPrototypeOf(o);
   if (proto !== null && typeof proto.hashCode === "function") {
     try {
-      const code = o.hashCode(o);
-      if (typeof code === "number") {
-        return code;
+      const code2 = o.hashCode(o);
+      if (typeof code2 === "number") {
+        return code2;
       }
     } catch {
     }
@@ -566,17 +630,17 @@ function createNode(shift, key1, val1, key2hash, key2, val2) {
     addedLeaf
   );
 }
-function assoc(root3, shift, hash, key, val, addedLeaf) {
+function assoc(root3, shift, hash, key2, val, addedLeaf) {
   switch (root3.type) {
     case ARRAY_NODE:
-      return assocArray(root3, shift, hash, key, val, addedLeaf);
+      return assocArray(root3, shift, hash, key2, val, addedLeaf);
     case INDEX_NODE:
-      return assocIndex(root3, shift, hash, key, val, addedLeaf);
+      return assocIndex(root3, shift, hash, key2, val, addedLeaf);
     case COLLISION_NODE:
-      return assocCollision(root3, shift, hash, key, val, addedLeaf);
+      return assocCollision(root3, shift, hash, key2, val, addedLeaf);
   }
 }
-function assocArray(root3, shift, hash, key, val, addedLeaf) {
+function assocArray(root3, shift, hash, key2, val, addedLeaf) {
   const idx = mask(hash, shift);
   const node = root3.array[idx];
   if (node === void 0) {
@@ -584,11 +648,11 @@ function assocArray(root3, shift, hash, key, val, addedLeaf) {
     return {
       type: ARRAY_NODE,
       size: root3.size + 1,
-      array: cloneAndSet(root3.array, idx, { type: ENTRY, k: key, v: val })
+      array: cloneAndSet(root3.array, idx, { type: ENTRY, k: key2, v: val })
     };
   }
   if (node.type === ENTRY) {
-    if (isEqual(key, node.k)) {
+    if (isEqual(key2, node.k)) {
       if (val === node.v) {
         return root3;
       }
@@ -597,7 +661,7 @@ function assocArray(root3, shift, hash, key, val, addedLeaf) {
         size: root3.size,
         array: cloneAndSet(root3.array, idx, {
           type: ENTRY,
-          k: key,
+          k: key2,
           v: val
         })
       };
@@ -609,11 +673,11 @@ function assocArray(root3, shift, hash, key, val, addedLeaf) {
       array: cloneAndSet(
         root3.array,
         idx,
-        createNode(shift + SHIFT, node.k, node.v, hash, key, val)
+        createNode(shift + SHIFT, node.k, node.v, hash, key2, val)
       )
     };
   }
-  const n = assoc(node, shift + SHIFT, hash, key, val, addedLeaf);
+  const n = assoc(node, shift + SHIFT, hash, key2, val, addedLeaf);
   if (n === node) {
     return root3;
   }
@@ -623,13 +687,13 @@ function assocArray(root3, shift, hash, key, val, addedLeaf) {
     array: cloneAndSet(root3.array, idx, n)
   };
 }
-function assocIndex(root3, shift, hash, key, val, addedLeaf) {
+function assocIndex(root3, shift, hash, key2, val, addedLeaf) {
   const bit = bitpos(hash, shift);
   const idx = index(root3.bitmap, bit);
   if ((root3.bitmap & bit) !== 0) {
     const node = root3.array[idx];
     if (node.type !== ENTRY) {
-      const n = assoc(node, shift + SHIFT, hash, key, val, addedLeaf);
+      const n = assoc(node, shift + SHIFT, hash, key2, val, addedLeaf);
       if (n === node) {
         return root3;
       }
@@ -640,7 +704,7 @@ function assocIndex(root3, shift, hash, key, val, addedLeaf) {
       };
     }
     const nodeKey = node.k;
-    if (isEqual(key, nodeKey)) {
+    if (isEqual(key2, nodeKey)) {
       if (val === node.v) {
         return root3;
       }
@@ -649,7 +713,7 @@ function assocIndex(root3, shift, hash, key, val, addedLeaf) {
         bitmap: root3.bitmap,
         array: cloneAndSet(root3.array, idx, {
           type: ENTRY,
-          k: key,
+          k: key2,
           v: val
         })
       };
@@ -661,7 +725,7 @@ function assocIndex(root3, shift, hash, key, val, addedLeaf) {
       array: cloneAndSet(
         root3.array,
         idx,
-        createNode(shift + SHIFT, nodeKey, node.v, hash, key, val)
+        createNode(shift + SHIFT, nodeKey, node.v, hash, key2, val)
       )
     };
   } else {
@@ -669,7 +733,7 @@ function assocIndex(root3, shift, hash, key, val, addedLeaf) {
     if (n >= MAX_INDEX_NODE) {
       const nodes = new Array(32);
       const jdx = mask(hash, shift);
-      nodes[jdx] = assocIndex(EMPTY, shift + SHIFT, hash, key, val, addedLeaf);
+      nodes[jdx] = assocIndex(EMPTY, shift + SHIFT, hash, key2, val, addedLeaf);
       let j = 0;
       let bitmap = root3.bitmap;
       for (let i = 0; i < 32; i++) {
@@ -687,7 +751,7 @@ function assocIndex(root3, shift, hash, key, val, addedLeaf) {
     } else {
       const newArray = spliceIn(root3.array, idx, {
         type: ENTRY,
-        k: key,
+        k: key2,
         v: val
       });
       addedLeaf.val = true;
@@ -699,9 +763,9 @@ function assocIndex(root3, shift, hash, key, val, addedLeaf) {
     }
   }
 }
-function assocCollision(root3, shift, hash, key, val, addedLeaf) {
+function assocCollision(root3, shift, hash, key2, val, addedLeaf) {
   if (hash === root3.hash) {
-    const idx = collisionIndexOf(root3, key);
+    const idx = collisionIndexOf(root3, key2);
     if (idx !== -1) {
       const entry = root3.array[idx];
       if (entry.v === val) {
@@ -710,7 +774,7 @@ function assocCollision(root3, shift, hash, key, val, addedLeaf) {
       return {
         type: COLLISION_NODE,
         hash,
-        array: cloneAndSet(root3.array, idx, { type: ENTRY, k: key, v: val })
+        array: cloneAndSet(root3.array, idx, { type: ENTRY, k: key2, v: val })
       };
     }
     const size2 = root3.array.length;
@@ -718,7 +782,7 @@ function assocCollision(root3, shift, hash, key, val, addedLeaf) {
     return {
       type: COLLISION_NODE,
       hash,
-      array: cloneAndSet(root3.array, size2, { type: ENTRY, k: key, v: val })
+      array: cloneAndSet(root3.array, size2, { type: ENTRY, k: key2, v: val })
     };
   }
   return assoc(
@@ -729,45 +793,45 @@ function assocCollision(root3, shift, hash, key, val, addedLeaf) {
     },
     shift,
     hash,
-    key,
+    key2,
     val,
     addedLeaf
   );
 }
-function collisionIndexOf(root3, key) {
+function collisionIndexOf(root3, key2) {
   const size2 = root3.array.length;
   for (let i = 0; i < size2; i++) {
-    if (isEqual(key, root3.array[i].k)) {
+    if (isEqual(key2, root3.array[i].k)) {
       return i;
     }
   }
   return -1;
 }
-function find(root3, shift, hash, key) {
+function find(root3, shift, hash, key2) {
   switch (root3.type) {
     case ARRAY_NODE:
-      return findArray(root3, shift, hash, key);
+      return findArray(root3, shift, hash, key2);
     case INDEX_NODE:
-      return findIndex(root3, shift, hash, key);
+      return findIndex(root3, shift, hash, key2);
     case COLLISION_NODE:
-      return findCollision(root3, key);
+      return findCollision(root3, key2);
   }
 }
-function findArray(root3, shift, hash, key) {
+function findArray(root3, shift, hash, key2) {
   const idx = mask(hash, shift);
   const node = root3.array[idx];
   if (node === void 0) {
     return void 0;
   }
   if (node.type !== ENTRY) {
-    return find(node, shift + SHIFT, hash, key);
+    return find(node, shift + SHIFT, hash, key2);
   }
-  if (isEqual(key, node.k)) {
+  if (isEqual(key2, node.k)) {
     return node;
   }
   return void 0;
 }
-function findIndex(root3, shift, hash, key) {
+function findIndex(root3, shift, hash, key2) {
   const bit = bitpos(hash, shift);
   if ((root3.bitmap & bit) === 0) {
     return void 0;
@@ -775,31 +839,31 @@ function findIndex(root3, shift, hash, key) {
   const idx = index(root3.bitmap, bit);
   const node = root3.array[idx];
   if (node.type !== ENTRY) {
-    return find(node, shift + SHIFT, hash, key);
+    return find(node, shift + SHIFT, hash, key2);
   }
-  if (isEqual(key, node.k)) {
+  if (isEqual(key2, node.k)) {
     return node;
   }
   return void 0;
 }
-function findCollision(root3, key) {
-  const idx = collisionIndexOf(root3, key);
+function findCollision(root3, key2) {
+  const idx = collisionIndexOf(root3, key2);
   if (idx < 0) {
     return void 0;
   }
   return root3.array[idx];
 }
-function without(root3, shift, hash, key) {
+function without(root3, shift, hash, key2) {
   switch (root3.type) {
     case ARRAY_NODE:
-      return withoutArray(root3, shift, hash, key);
+      return withoutArray(root3, shift, hash, key2);
     case INDEX_NODE:
-      return withoutIndex(root3, shift, hash, key);
+      return withoutIndex(root3, shift, hash, key2);
     case COLLISION_NODE:
-      return withoutCollision(root3, key);
+      return withoutCollision(root3, key2);
   }
 }
-function withoutArray(root3, shift, hash, key) {
+function withoutArray(root3, shift, hash, key2) {
   const idx = mask(hash, shift);
   const node = root3.array[idx];
   if (node === void 0) {
@@ -807,11 +871,11 @@ function withoutArray(root3, shift, hash, key) {
   }
   let n = void 0;
   if (node.type === ENTRY) {
-    if (!isEqual(node.k, key)) {
+    if (!isEqual(node.k, key2)) {
       return root3;
     }
   } else {
-    n = without(node, shift + SHIFT, hash, key);
+    n = without(node, shift + SHIFT, hash, key2);
     if (n === node) {
       return root3;
     }
@@ -860,7 +924,7 @@ function withoutArray(root3, shift, hash, key) {
     array: cloneAndSet(root3.array, idx, n)
   };
 }
-function withoutIndex(root3, shift, hash, key) {
+function withoutIndex(root3, shift, hash, key2) {
   const bit = bitpos(hash, shift);
   if ((root3.bitmap & bit) === 0) {
     return root3;
@@ -868,7 +932,7 @@ function withoutIndex(root3, shift, hash, key) {
   const idx = index(root3.bitmap, bit);
   const node = root3.array[idx];
   if (node.type !== ENTRY) {
-    const n = without(node, shift + SHIFT, hash, key);
+    const n = without(node, shift + SHIFT, hash, key2);
     if (n === node) {
       return root3;
     }
@@ -888,7 +952,7 @@ function withoutIndex(root3, shift, hash, key) {
       array: spliceOut(root3.array, idx)
     };
   }
-  if (isEqual(key, node.k)) {
+  if (isEqual(key2, node.k)) {
     if (root3.bitmap === bit) {
       return void 0;
     }
@@ -900,8 +964,8 @@ function withoutIndex(root3, shift, hash, key) {
   }
   return root3;
 }
-function withoutCollision(root3, key) {
-  const idx = collisionIndexOf(root3, key);
+function withoutCollision(root3, key2) {
+  const idx = collisionIndexOf(root3, key2);
   if (idx < 0) {
     return root3;
   }
@@ -976,11 +1040,11 @@ var Dict = class _Dict {
    * @param {NotFound} notFound
    * @returns {NotFound | V}
    */
-  get(key, notFound) {
+  get(key2, notFound) {
     if (this.root === void 0) {
       return notFound;
     }
-    const found = find(this.root, 0, getHash(key), key);
+    const found = find(this.root, 0, getHash(key2), key2);
     if (found === void 0) {
       return notFound;
     }
@@ -991,10 +1055,10 @@ var Dict = class _Dict {
    * @param {V} val
    * @returns {Dict<K,V>}
    */
-  set(key, val) {
+  set(key2, val) {
     const addedLeaf = { val: false };
     const root3 = this.root === void 0 ? EMPTY : this.root;
-    const newRoot = assoc(root3, 0, getHash(key), key, val, addedLeaf);
+    const newRoot = assoc(root3, 0, getHash(key2), key2, val, addedLeaf);
     if (newRoot === this.root) {
       return this;
     }
@@ -1004,11 +1068,11 @@ var Dict = class _Dict {
    * @param {K} key
    * @returns {Dict<K,V>}
    */
-  delete(key) {
+  delete(key2) {
     if (this.root === void 0) {
       return this;
     }
-    const newRoot = without(this.root, 0, getHash(key), key);
+    const newRoot = without(this.root, 0, getHash(key2), key2);
     if (newRoot === this.root) {
       return this;
     }
@@ -1021,11 +1085,11 @@ var Dict = class _Dict {
    * @param {K} key
    * @returns {boolean}
    */
-  has(key) {
+  has(key2) {
     if (this.root === void 0) {
       return false;
     }
-    return find(this.root, 0, getHash(key), key) !== void 0;
+    return find(this.root, 0, getHash(key2), key2) !== void 0;
   }
   /**
    * @returns {[K,V][]}
@@ -1077,72 +1141,178 @@ var Dict = class _Dict {
 };
 var unequalDictSymbol = /* @__PURE__ */ Symbol();
 
-// build/dev/javascript/gleam_stdlib/gleam/order.mjs
-var Lt = class extends CustomType {
-};
-var Eq = class extends CustomType {
-};
-var Gt = class extends CustomType {
-};
+// build/dev/javascript/gleam_stdlib/gleam_stdlib.mjs
+var Nil = void 0;
+function identity(x) {
+  return x;
+}
+function parse_int(value3) {
+  if (/^[-+]?(\d+)$/.test(value3)) {
+    return new Ok(parseInt(value3));
+  } else {
+    return new Error(Nil);
+  }
+}
+function to_string(term) {
+  return term.toString();
+}
+function pop_codeunit(str) {
+  return [str.charCodeAt(0) | 0, str.slice(1)];
+}
+function lowercase(string5) {
+  return string5.toLowerCase();
+}
+function concat(xs) {
+  let result = "";
+  for (const x of xs) {
+    result = result + x;
+  }
+  return result;
+}
+function string_codeunit_slice(str, from2, length4) {
+  return str.slice(from2, from2 + length4);
+}
+function starts_with(haystack, needle) {
+  return haystack.startsWith(needle);
+}
+var unicode_whitespaces = [
+  " ",
+  // Space
+  "	",
+  // Horizontal tab
+  "\n",
+  // Line feed
+  "\v",
+  // Vertical tab
+  "\f",
+  // Form feed
+  "\r",
+  // Carriage return
+  "\x85",
+  // Next line
+  "\u2028",
+  // Line separator
+  "\u2029"
+  // Paragraph separator
+].join("");
+var trim_start_regex = /* @__PURE__ */ new RegExp(
+  `^[${unicode_whitespaces}]*`
+);
+var trim_end_regex = /* @__PURE__ */ new RegExp(`[${unicode_whitespaces}]*$`);
+function trim_start(string5) {
+  return string5.replace(trim_start_regex, "");
+}
+function trim_end(string5) {
+  return string5.replace(trim_end_regex, "");
+}
+function console_log(term) {
+  console.log(term);
+}
+function unsafe_percent_decode_query(string5) {
+  return decodeURIComponent((string5 || "").replace("+", " "));
+}
+function percent_encode(string5) {
+  return encodeURIComponent(string5).replace("%2B", "+");
+}
+function parse_query(query) {
+  try {
+    const pairs = [];
+    for (const section2 of query.split("&")) {
+      const [key2, value3] = section2.split("=");
+      if (!key2) continue;
+      const decodedKey = unsafe_percent_decode_query(key2);
+      const decodedValue = unsafe_percent_decode_query(value3);
+      pairs.push([decodedKey, decodedValue]);
+    }
+    return new Ok(List.fromArray(pairs));
+  } catch {
+    return new Error(Nil);
+  }
+}
+function classify_dynamic(data) {
+  if (typeof data === "string") {
+    return "String";
+  } else if (typeof data === "boolean") {
+    return "Bool";
+  } else if (data instanceof Result) {
+    return "Result";
+  } else if (data instanceof List) {
+    return "List";
+  } else if (data instanceof BitArray) {
+    return "BitArray";
+  } else if (data instanceof Dict) {
+    return "Dict";
+  } else if (Number.isInteger(data)) {
+    return "Int";
+  } else if (Array.isArray(data)) {
+    return `Array`;
+  } else if (typeof data === "number") {
+    return "Float";
+  } else if (data === null) {
+    return "Nil";
+  } else if (data === void 0) {
+    return "Nil";
+  } else {
+    const type = typeof data;
+    return type.charAt(0).toUpperCase() + type.slice(1);
+  }
+}
+function index2(data, key2) {
+  if (data instanceof Dict || data instanceof WeakMap || data instanceof Map) {
+    const token = {};
+    const entry = data.get(key2, token);
+    if (entry === token) return new Ok(new None());
+    return new Ok(new Some(entry));
+  }
+  const key_is_int = Number.isInteger(key2);
+  if (key_is_int && key2 >= 0 && key2 < 8 && data instanceof List) {
+    let i = 0;
+    for (const value3 of data) {
+      if (i === key2) return new Ok(new Some(value3));
+      i++;
+    }
+    return new Error("Indexable");
+  }
+  if (key_is_int && Array.isArray(data) || data && typeof data === "object" || data && Object.getPrototypeOf(data) === Object.prototype) {
+    if (key2 in data) return new Ok(new Some(data[key2]));
+    return new Ok(new None());
+  }
+  return new Error(key_is_int ? "Indexable" : "Dict");
+}
+function list(data, decode2, pushPath, index5, emptyList) {
+  if (!(data instanceof List || Array.isArray(data))) {
+    const error = new DecodeError("List", classify_dynamic(data), emptyList);
+    return [emptyList, List.fromArray([error])];
+  }
+  const decoded = [];
+  for (const element4 of data) {
+    const layer = decode2(element4);
+    const [out, errors] = layer;
+    if (errors instanceof NonEmpty) {
+      const [_, errors2] = pushPath(layer, index5.toString());
+      return [emptyList, errors2];
+    }
+    decoded.push(out);
+    index5++;
+  }
+  return [List.fromArray(decoded), emptyList];
+}
+function int(data) {
+  if (Number.isInteger(data)) return new Ok(data);
+  return new Error(0);
+}
+function string(data) {
+  if (typeof data === "string") return new Ok(data);
+  return new Error("");
+}
 
-// build/dev/javascript/gleam_stdlib/gleam/option.mjs
-var Some = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var None = class extends CustomType {
-};
-function is_some(option2) {
-  return !isEqual(option2, new None());
-}
-function to_result(option2, e) {
-  if (option2 instanceof Some) {
-    let a = option2[0];
-    return new Ok(a);
+// build/dev/javascript/gleam_stdlib/gleam/int.mjs
+function max(a, b) {
+  let $ = a > b;
+  if ($) {
+    return a;
   } else {
-    return new Error(e);
-  }
-}
-function from_result(result) {
-  if (result instanceof Ok) {
-    let a = result[0];
-    return new Some(a);
-  } else {
-    return new None();
-  }
-}
-function unwrap(option2, default$) {
-  if (option2 instanceof Some) {
-    let x = option2[0];
-    return x;
-  } else {
-    return default$;
-  }
-}
-function map(option2, fun) {
-  if (option2 instanceof Some) {
-    let x = option2[0];
-    return new Some(fun(x));
-  } else {
-    return option2;
-  }
-}
-function flatten(option2) {
-  if (option2 instanceof Some) {
-    let x = option2[0];
-    return x;
-  } else {
-    return option2;
-  }
-}
-function then$(option2, fun) {
-  if (option2 instanceof Some) {
-    let x = option2[0];
-    return fun(x);
-  } else {
-    return option2;
+    return b;
   }
 }
 
@@ -1628,13 +1798,13 @@ function key_find(keyword_list, desired_key) {
   return find_map(
     keyword_list,
     (keyword) => {
-      let key;
-      let value2;
-      key = keyword[0];
-      value2 = keyword[1];
-      let $ = isEqual(key, desired_key);
+      let key2;
+      let value3;
+      key2 = keyword[0];
+      value3 = keyword[1];
+      let $ = isEqual(key2, desired_key);
       if ($) {
-        return new Ok(value2);
+        return new Ok(value3);
       } else {
         return new Error(void 0);
       }
@@ -1751,6 +1921,11 @@ function one_of(first, alternatives) {
     }
   );
 }
+function decode_error(expected, found) {
+  return toList([
+    new DecodeError(expected, classify_dynamic(found), toList([]))
+  ]);
+}
 function run_dynamic_function(data, name, f) {
   let $ = f(data);
   if ($ instanceof Ok) {
@@ -1766,6 +1941,28 @@ function run_dynamic_function(data, name, f) {
 }
 function decode_int(data) {
   return run_dynamic_function(data, "Int", int);
+}
+function failure(zero, expected) {
+  return new Decoder((d) => {
+    return [zero, decode_error(expected, d)];
+  });
+}
+function new_primitive_decoder(name, decoding_function) {
+  return new Decoder(
+    (d) => {
+      let $ = decoding_function(d);
+      if ($ instanceof Ok) {
+        let t = $[0];
+        return [t, toList([])];
+      } else {
+        let zero = $[0];
+        return [
+          zero,
+          toList([new DecodeError(name, classify_dynamic(d), toList([]))])
+        ];
+      }
+    }
+  );
 }
 var int2 = /* @__PURE__ */ new Decoder(decode_int);
 function decode_string(data) {
@@ -1799,8 +1996,8 @@ function push_path(layer, path) {
   );
   let path$1 = map2(
     path,
-    (key) => {
-      let key$1 = identity(key);
+    (key2) => {
+      let key$1 = identity(key2);
       let $ = run(key$1, decoder);
       if ($ instanceof Ok) {
         let key$2 = $[0];
@@ -1833,20 +2030,20 @@ function index3(loop$path, loop$position, loop$inner, loop$data, loop$handle_mis
       let _pipe = inner(data);
       return push_path(_pipe, reverse(position));
     } else {
-      let key = path.head;
+      let key2 = path.head;
       let path$1 = path.tail;
-      let $ = index2(data, key);
+      let $ = index2(data, key2);
       if ($ instanceof Ok) {
         let $1 = $[0];
         if ($1 instanceof Some) {
           let data$1 = $1[0];
           loop$path = path$1;
-          loop$position = prepend(key, position);
+          loop$position = prepend(key2, position);
           loop$inner = inner;
           loop$data = data$1;
           loop$handle_miss = handle_miss;
         } else {
-          return handle_miss(data, prepend(key, position));
+          return handle_miss(data, prepend(key2, position));
         }
       } else {
         let kind = $[0];
@@ -1896,181 +2093,6 @@ function subfield(field_path, field_decoder, next) {
 }
 function field(field_name, field_decoder, next) {
   return subfield(toList([field_name]), field_decoder, next);
-}
-
-// build/dev/javascript/gleam_stdlib/gleam_stdlib.mjs
-var Nil = void 0;
-function identity(x) {
-  return x;
-}
-function parse_int(value2) {
-  if (/^[-+]?(\d+)$/.test(value2)) {
-    return new Ok(parseInt(value2));
-  } else {
-    return new Error(Nil);
-  }
-}
-function to_string(term) {
-  return term.toString();
-}
-function pop_codeunit(str) {
-  return [str.charCodeAt(0) | 0, str.slice(1)];
-}
-function lowercase(string5) {
-  return string5.toLowerCase();
-}
-function concat(xs) {
-  let result = "";
-  for (const x of xs) {
-    result = result + x;
-  }
-  return result;
-}
-function string_codeunit_slice(str, from2, length4) {
-  return str.slice(from2, from2 + length4);
-}
-function starts_with(haystack, needle) {
-  return haystack.startsWith(needle);
-}
-var unicode_whitespaces = [
-  " ",
-  // Space
-  "	",
-  // Horizontal tab
-  "\n",
-  // Line feed
-  "\v",
-  // Vertical tab
-  "\f",
-  // Form feed
-  "\r",
-  // Carriage return
-  "\x85",
-  // Next line
-  "\u2028",
-  // Line separator
-  "\u2029"
-  // Paragraph separator
-].join("");
-var trim_start_regex = /* @__PURE__ */ new RegExp(
-  `^[${unicode_whitespaces}]*`
-);
-var trim_end_regex = /* @__PURE__ */ new RegExp(`[${unicode_whitespaces}]*$`);
-function trim_start(string5) {
-  return string5.replace(trim_start_regex, "");
-}
-function trim_end(string5) {
-  return string5.replace(trim_end_regex, "");
-}
-function console_log(term) {
-  console.log(term);
-}
-function unsafe_percent_decode_query(string5) {
-  return decodeURIComponent((string5 || "").replace("+", " "));
-}
-function percent_encode(string5) {
-  return encodeURIComponent(string5).replace("%2B", "+");
-}
-function parse_query(query) {
-  try {
-    const pairs = [];
-    for (const section2 of query.split("&")) {
-      const [key, value2] = section2.split("=");
-      if (!key) continue;
-      const decodedKey = unsafe_percent_decode_query(key);
-      const decodedValue = unsafe_percent_decode_query(value2);
-      pairs.push([decodedKey, decodedValue]);
-    }
-    return new Ok(List.fromArray(pairs));
-  } catch {
-    return new Error(Nil);
-  }
-}
-function classify_dynamic(data) {
-  if (typeof data === "string") {
-    return "String";
-  } else if (typeof data === "boolean") {
-    return "Bool";
-  } else if (data instanceof Result) {
-    return "Result";
-  } else if (data instanceof List) {
-    return "List";
-  } else if (data instanceof BitArray) {
-    return "BitArray";
-  } else if (data instanceof Dict) {
-    return "Dict";
-  } else if (Number.isInteger(data)) {
-    return "Int";
-  } else if (Array.isArray(data)) {
-    return `Array`;
-  } else if (typeof data === "number") {
-    return "Float";
-  } else if (data === null) {
-    return "Nil";
-  } else if (data === void 0) {
-    return "Nil";
-  } else {
-    const type = typeof data;
-    return type.charAt(0).toUpperCase() + type.slice(1);
-  }
-}
-function index2(data, key) {
-  if (data instanceof Dict || data instanceof WeakMap || data instanceof Map) {
-    const token = {};
-    const entry = data.get(key, token);
-    if (entry === token) return new Ok(new None());
-    return new Ok(new Some(entry));
-  }
-  const key_is_int = Number.isInteger(key);
-  if (key_is_int && key >= 0 && key < 8 && data instanceof List) {
-    let i = 0;
-    for (const value2 of data) {
-      if (i === key) return new Ok(new Some(value2));
-      i++;
-    }
-    return new Error("Indexable");
-  }
-  if (key_is_int && Array.isArray(data) || data && typeof data === "object" || data && Object.getPrototypeOf(data) === Object.prototype) {
-    if (key in data) return new Ok(new Some(data[key]));
-    return new Ok(new None());
-  }
-  return new Error(key_is_int ? "Indexable" : "Dict");
-}
-function list(data, decode2, pushPath, index5, emptyList) {
-  if (!(data instanceof List || Array.isArray(data))) {
-    const error = new DecodeError("List", classify_dynamic(data), emptyList);
-    return [emptyList, List.fromArray([error])];
-  }
-  const decoded = [];
-  for (const element4 of data) {
-    const layer = decode2(element4);
-    const [out, errors] = layer;
-    if (errors instanceof NonEmpty) {
-      const [_, errors2] = pushPath(layer, index5.toString());
-      return [emptyList, errors2];
-    }
-    decoded.push(out);
-    index5++;
-  }
-  return [List.fromArray(decoded), emptyList];
-}
-function int(data) {
-  if (Number.isInteger(data)) return new Ok(data);
-  return new Error(0);
-}
-function string(data) {
-  if (typeof data === "string") return new Ok(data);
-  return new Error("");
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/int.mjs
-function max(a, b) {
-  let $ = a > b;
-  if ($) {
-    return a;
-  } else {
-    return b;
-  }
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/result.mjs
@@ -3071,19 +3093,19 @@ function compare3(a, b) {
 
 // build/dev/javascript/lustre/lustre/vdom/vattr.mjs
 var Attribute = class extends CustomType {
-  constructor(kind, name, value2) {
+  constructor(kind, name, value3) {
     super();
     this.kind = kind;
     this.name = name;
-    this.value = value2;
+    this.value = value3;
   }
 };
 var Property = class extends CustomType {
-  constructor(kind, name, value2) {
+  constructor(kind, name, value3) {
     super();
     this.kind = kind;
     this.name = name;
-    this.value = value2;
+    this.value = value3;
   }
 };
 var Event2 = class extends CustomType {
@@ -3150,8 +3172,8 @@ function merge(loop$attributes, loop$merged) {
                   let class1 = $2;
                   let rest = $3.tail;
                   let class2 = $4.value;
-                  let value2 = class1 + " " + class2;
-                  let attribute$1 = new Attribute(kind, "class", value2);
+                  let value3 = class1 + " " + class2;
+                  let attribute$1 = new Attribute(kind, "class", value3);
                   loop$attributes = prepend(attribute$1, rest);
                   loop$merged = merged;
                 } else {
@@ -3190,8 +3212,8 @@ function merge(loop$attributes, loop$merged) {
                   let style1 = $2;
                   let rest = $3.tail;
                   let style2 = $4.value;
-                  let value2 = style1 + ";" + style2;
-                  let attribute$1 = new Attribute(kind, "style", value2);
+                  let value3 = style1 + ";" + style2;
+                  let attribute$1 = new Attribute(kind, "style", value3);
                   loop$attributes = prepend(attribute$1, rest);
                   loop$merged = merged;
                 } else {
@@ -3240,8 +3262,8 @@ function prepare(attributes) {
   }
 }
 var attribute_kind = 0;
-function attribute(name, value2) {
-  return new Attribute(attribute_kind, name, value2);
+function attribute(name, value3) {
+  return new Attribute(attribute_kind, name, value3);
 }
 var property_kind = 1;
 var event_kind = 2;
@@ -3263,8 +3285,8 @@ var never = /* @__PURE__ */ new Never(never_kind);
 var always_kind = 2;
 
 // build/dev/javascript/lustre/lustre/attribute.mjs
-function attribute2(name, value2) {
-  return attribute(name, value2);
+function attribute2(name, value3) {
+  return attribute(name, value3);
 }
 function class$(name) {
   return attribute2("class", name);
@@ -3294,6 +3316,9 @@ function do_classes(loop$names, loop$class) {
 }
 function classes(names) {
   return class$(do_classes(names, ""));
+}
+function id(value3) {
+  return attribute2("id", value3);
 }
 function value(control_value) {
   return attribute2("value", control_value);
@@ -3341,24 +3366,24 @@ function batch(effects) {
 function empty3() {
   return null;
 }
-function get(map6, key) {
-  const value2 = map6?.get(key);
-  if (value2 != null) {
-    return new Ok(value2);
+function get(map6, key2) {
+  const value3 = map6?.get(key2);
+  if (value3 != null) {
+    return new Ok(value3);
   } else {
     return new Error(void 0);
   }
 }
-function has_key2(map6, key) {
-  return map6 && map6.has(key);
+function has_key2(map6, key2) {
+  return map6 && map6.has(key2);
 }
-function insert2(map6, key, value2) {
+function insert2(map6, key2, value3) {
   map6 ??= /* @__PURE__ */ new Map();
-  map6.set(key, value2);
+  map6.set(key2, value3);
   return map6;
 }
-function remove(map6, key) {
-  map6?.delete(key);
+function remove(map6, key2) {
+  map6?.delete(key2);
   return map6;
 }
 
@@ -3366,9 +3391,9 @@ function remove(map6, key) {
 var Root = class extends CustomType {
 };
 var Key = class extends CustomType {
-  constructor(key, parent) {
+  constructor(key2, parent) {
     super();
-    this.key = key;
+    this.key = key2;
     this.parent = parent;
   }
 };
@@ -3398,11 +3423,11 @@ function do_matches(loop$path, loop$candidates) {
     }
   }
 }
-function add2(parent, index5, key) {
-  if (key === "") {
+function add2(parent, index5, key2) {
+  if (key2 === "") {
     return new Index(index5, parent);
   } else {
-    return new Key(key, parent);
+    return new Key(key2, parent);
   }
 }
 var root2 = /* @__PURE__ */ new Root();
@@ -3419,10 +3444,10 @@ function do_to_string(loop$path, loop$acc) {
         return concat2(segments);
       }
     } else if (path instanceof Key) {
-      let key = path.key;
+      let key2 = path.key;
       let parent = path.parent;
       loop$path = parent;
-      loop$acc = prepend(separator_element, prepend(key, acc));
+      loop$acc = prepend(separator_element, prepend(key2, acc));
     } else {
       let index5 = path.index;
       let parent = path.parent;
@@ -3451,20 +3476,20 @@ function event2(path, event4) {
 
 // build/dev/javascript/lustre/lustre/vdom/vnode.mjs
 var Fragment = class extends CustomType {
-  constructor(kind, key, mapper, children, keyed_children) {
+  constructor(kind, key2, mapper, children, keyed_children) {
     super();
     this.kind = kind;
-    this.key = key;
+    this.key = key2;
     this.mapper = mapper;
     this.children = children;
     this.keyed_children = keyed_children;
   }
 };
-var Element = class extends CustomType {
-  constructor(kind, key, mapper, namespace, tag, attributes, children, keyed_children, self_closing, void$) {
+var Element2 = class extends CustomType {
+  constructor(kind, key2, mapper, namespace, tag, attributes, children, keyed_children, self_closing, void$) {
     super();
     this.kind = kind;
-    this.key = key;
+    this.key = key2;
     this.mapper = mapper;
     this.namespace = namespace;
     this.tag = tag;
@@ -3476,19 +3501,19 @@ var Element = class extends CustomType {
   }
 };
 var Text = class extends CustomType {
-  constructor(kind, key, mapper, content) {
+  constructor(kind, key2, mapper, content) {
     super();
     this.kind = kind;
-    this.key = key;
+    this.key = key2;
     this.mapper = mapper;
     this.content = content;
   }
 };
 var UnsafeInnerHtml = class extends CustomType {
-  constructor(kind, key, mapper, namespace, tag, attributes, inner_html) {
+  constructor(kind, key2, mapper, namespace, tag, attributes, inner_html) {
     super();
     this.kind = kind;
-    this.key = key;
+    this.key = key2;
     this.mapper = mapper;
     this.namespace = namespace;
     this.tag = tag;
@@ -3533,19 +3558,19 @@ function is_void_element(tag, namespace) {
     return false;
   }
 }
-function to_keyed(key, node) {
+function to_keyed(key2, node) {
   if (node instanceof Fragment) {
     return new Fragment(
       node.kind,
-      key,
+      key2,
       node.mapper,
       node.children,
       node.keyed_children
     );
-  } else if (node instanceof Element) {
-    return new Element(
+  } else if (node instanceof Element2) {
+    return new Element2(
       node.kind,
-      key,
+      key2,
       node.mapper,
       node.namespace,
       node.tag,
@@ -3556,11 +3581,11 @@ function to_keyed(key, node) {
       node.void
     );
   } else if (node instanceof Text) {
-    return new Text(node.kind, key, node.mapper, node.content);
+    return new Text(node.kind, key2, node.mapper, node.content);
   } else {
     return new UnsafeInnerHtml(
       node.kind,
-      key,
+      key2,
       node.mapper,
       node.namespace,
       node.tag,
@@ -3570,14 +3595,14 @@ function to_keyed(key, node) {
   }
 }
 var fragment_kind = 0;
-function fragment(key, mapper, children, keyed_children) {
-  return new Fragment(fragment_kind, key, mapper, children, keyed_children);
+function fragment(key2, mapper, children, keyed_children) {
+  return new Fragment(fragment_kind, key2, mapper, children, keyed_children);
 }
 var element_kind = 1;
-function element(key, mapper, namespace, tag, attributes, children, keyed_children, self_closing, void$) {
-  return new Element(
+function element(key2, mapper, namespace, tag, attributes, children, keyed_children, self_closing, void$) {
+  return new Element2(
     element_kind,
-    key,
+    key2,
     mapper,
     namespace,
     tag,
@@ -3589,8 +3614,8 @@ function element(key, mapper, namespace, tag, attributes, children, keyed_childr
   );
 }
 var text_kind = 2;
-function text(key, mapper, content) {
-  return new Text(text_kind, key, mapper, content);
+function text(key2, mapper, content) {
+  return new Text(text_kind, key2, mapper, content);
 }
 var unsafe_inner_html_kind = 3;
 
@@ -3795,7 +3820,7 @@ function do_remove_child(handlers, parent, child_index, child) {
     let children = child.children;
     let path = add2(parent, child_index, child.key);
     return do_remove_children(handlers, path, 0, children);
-  } else if (child instanceof Element) {
+  } else if (child instanceof Element2) {
     let attributes = child.attributes;
     let children = child.children;
     let path = add2(parent, child_index, child.key);
@@ -3846,7 +3871,7 @@ function do_add_child(handlers, mapper, parent, child_index, child) {
     let path = add2(parent, child_index, child.key);
     let composed_mapper = compose_mapper(mapper, child.mapper);
     return do_add_children(handlers, composed_mapper, path, 0, children);
-  } else if (child instanceof Element) {
+  } else if (child instanceof Element2) {
     let attributes = child.attributes;
     let children = child.children;
     let path = add2(parent, child_index, child.key);
@@ -3969,10 +3994,10 @@ var Update = class extends CustomType {
   }
 };
 var Move = class extends CustomType {
-  constructor(kind, key, before) {
+  constructor(kind, key2, before) {
     super();
     this.kind = kind;
-    this.key = key;
+    this.key = key2;
     this.before = before;
   }
 };
@@ -4015,8 +4040,8 @@ function update(added, removed) {
   return new Update(update_kind, added, removed);
 }
 var move_kind = 3;
-function move(key, before) {
-  return new Move(move_kind, key, before);
+function move(key2, before) {
+  return new Move(move_kind, key2, before);
 }
 var remove_kind = 4;
 function remove2(index5) {
@@ -4617,9 +4642,9 @@ function do_diff(loop$old, loop$old_keyed, loop$new, loop$new_keyed, loop$moved,
             loop$mapper = mapper;
             loop$events = events$1;
           }
-        } else if ($ instanceof Element) {
+        } else if ($ instanceof Element2) {
           let $1 = new$8.head;
-          if ($1 instanceof Element) {
+          if ($1 instanceof Element2) {
             let next$1 = $1;
             let prev$1 = $;
             if (prev$1.namespace === next$1.namespace && prev$1.tag === next$1.tag) {
@@ -4989,7 +5014,7 @@ var insertBefore = (parent, node, reference) => parent.insertBefore(node, refere
 var moveBefore = SUPPORTS_MOVE_BEFORE ? (parent, node, reference) => parent.moveBefore(node, reference) : insertBefore;
 var removeChild = (parent, child) => parent.removeChild(child);
 var getAttribute = (node, name) => node.getAttribute(name);
-var setAttribute = (node, name, value2) => node.setAttribute(name, value2);
+var setAttribute = (node, name, value3) => node.setAttribute(name, value3);
 var removeAttribute = (node, name) => node.removeAttribute(name);
 var addEventListener = (node, name, handler, options) => node.addEventListener(name, handler, options);
 var removeEventListener = (node, name, handler) => node.removeEventListener(name, handler);
@@ -4997,9 +5022,9 @@ var setInnerHtml = (node, innerHtml) => node.innerHTML = innerHtml;
 var setData = (node, data) => node.data = data;
 var meta = Symbol("lustre");
 var MetadataNode = class {
-  constructor(kind, parent, node, key) {
+  constructor(kind, parent, node, key2) {
     this.kind = kind;
-    this.key = key;
+    this.key = key2;
     this.parent = parent;
     this.children = [];
     this.node = node;
@@ -5011,8 +5036,8 @@ var MetadataNode = class {
     return this.kind === fragment_kind ? this.node.parentNode : this.node;
   }
 };
-var insertMetadataChild = (kind, parent, node, index5, key) => {
-  const child = new MetadataNode(kind, parent, node, key);
+var insertMetadataChild = (kind, parent, node, index5, key2) => {
+  const child = new MetadataNode(kind, parent, node, key2);
   node[meta] = child;
   parent?.children.splice(index5, 0, child);
   return child;
@@ -5119,7 +5144,7 @@ var Reconciler = class {
     }
     return lastChild.node.nextSibling;
   }
-  #move(parent, { key, before }) {
+  #move(parent, { key: key2, before }) {
     before = before | 0;
     const { children, parentNode } = parent;
     const beforeEl = children[before].node;
@@ -5128,7 +5153,7 @@ var Reconciler = class {
       const next = children[i];
       children[i] = prev;
       prev = next;
-      if (next.key === key) {
+      if (next.key === key2) {
         children[before] = next;
         break;
       }
@@ -5232,18 +5257,18 @@ var Reconciler = class {
       }
     }
   }
-  #createElement(parent, index5, { kind, key, tag, namespace, attributes }) {
+  #createElement(parent, index5, { kind, key: key2, tag, namespace, attributes }) {
     const node = createElementNS(namespace || NAMESPACE_HTML, tag);
-    insertMetadataChild(kind, parent, node, index5, key);
-    if (this.#exposeKeys && key) {
-      setAttribute(node, "data-lustre-key", key);
+    insertMetadataChild(kind, parent, node, index5, key2);
+    if (this.#exposeKeys && key2) {
+      setAttribute(node, "data-lustre-key", key2);
     }
     iterate(attributes, (attribute3) => this.#createAttribute(node, attribute3));
     return node;
   }
-  #createTextNode(parent, index5, { kind, key, content }) {
+  #createTextNode(parent, index5, { kind, key: key2, content }) {
     const node = createTextNode(content ?? "");
-    insertMetadataChild(kind, parent, node, index5, key);
+    insertMetadataChild(kind, parent, node, index5, key2);
     return node;
   }
   #createAttribute(node, attribute3) {
@@ -5251,14 +5276,14 @@ var Reconciler = class {
     const {
       kind,
       name,
-      value: value2,
+      value: value3,
       prevent_default: prevent,
       debounce: debounceDelay,
       throttle: throttleDelay
     } = attribute3;
     switch (kind) {
       case attribute_kind: {
-        const valueOrDefault = value2 ?? "";
+        const valueOrDefault = value3 ?? "";
         if (name === "virtual:defaultValue") {
           node.defaultValue = valueOrDefault;
           return;
@@ -5270,7 +5295,7 @@ var Reconciler = class {
         break;
       }
       case property_kind:
-        node[name] = value2;
+        node[name] = value3;
         break;
       case event_kind: {
         if (handlers.has(name)) {
@@ -5302,9 +5327,9 @@ var Reconciler = class {
     }
   }
   #handleEvent(attribute3, event4) {
-    const { currentTarget, type } = event4;
-    const { debouncers, throttles } = currentTarget[meta];
-    const path = getPath(currentTarget);
+    const { currentTarget: currentTarget2, type } = event4;
+    const { debouncers, throttles } = currentTarget2[meta];
+    const path = getPath(currentTarget2);
     const {
       prevent_default: prevent,
       stop_propagation: stop,
@@ -5353,8 +5378,8 @@ var iterate = (list4, callback) => {
   }
 };
 var handleEvent = (event4) => {
-  const { currentTarget, type } = event4;
-  const handler = currentTarget[meta].handlers.get(type);
+  const { currentTarget: currentTarget2, type } = event4;
+  const handler = currentTarget2[meta].handlers.get(type);
   handler(event4);
 };
 var createServerEvent = (event4, include = []) => {
@@ -5390,8 +5415,8 @@ var syncedBooleanAttribute = /* @__NO_SIDE_EFFECTS__ */ (name) => {
 };
 var syncedAttribute = /* @__NO_SIDE_EFFECTS__ */ (name) => {
   return {
-    added(node, value2) {
-      node[name] = value2;
+    added(node, value3) {
+      node[name] = value3;
     }
   };
 };
@@ -5427,14 +5452,14 @@ function do_extract_keyed_children(loop$key_children_pairs, loop$keyed_children,
       return [keyed_children, reverse(children)];
     } else {
       let rest = key_children_pairs.tail;
-      let key = key_children_pairs.head[0];
+      let key2 = key_children_pairs.head[0];
       let element$1 = key_children_pairs.head[1];
-      let keyed_element = to_keyed(key, element$1);
+      let keyed_element = to_keyed(key2, element$1);
       let _block;
-      if (key === "") {
+      if (key2 === "") {
         _block = keyed_children;
       } else {
-        _block = insert2(keyed_children, key, keyed_element);
+        _block = insert2(keyed_children, key2, keyed_element);
       }
       let keyed_children$1 = _block;
       let children$1 = prepend(keyed_element, children);
@@ -5532,13 +5557,13 @@ var canVirtualiseNode = (node) => {
       return false;
   }
 };
-var virtualiseNode = (meta2, node, key, index5) => {
+var virtualiseNode = (meta2, node, key2, index5) => {
   if (!canVirtualiseNode(node)) {
     return null;
   }
   switch (node.nodeType) {
     case ELEMENT_NODE: {
-      const childMeta = insertMetadataChild(element_kind, meta2, node, index5, key);
+      const childMeta = insertMetadataChild(element_kind, meta2, node, index5, key2);
       const tag = node.localName;
       const namespace = node.namespaceURI;
       const isHtmlElement = !namespace || namespace === NAMESPACE_HTML;
@@ -5559,13 +5584,13 @@ var virtualiseNode = (meta2, node, key, index5) => {
 };
 var INPUT_ELEMENTS = ["input", "select", "textarea"];
 var virtualiseInputEvents = (tag, node) => {
-  const value2 = node.value;
+  const value3 = node.value;
   const checked = node.checked;
   if (tag === "input" && node.type === "checkbox" && !checked) return;
   if (tag === "input" && node.type === "radio" && !checked) return;
-  if (node.type !== "checkbox" && node.type !== "radio" && !value2) return;
+  if (node.type !== "checkbox" && node.type !== "radio" && !value3) return;
   queueMicrotask(() => {
-    node.value = value2;
+    node.value = value3;
     node.checked = checked;
     node.dispatchEvent(new Event("input", { bubbles: true }));
     node.dispatchEvent(new Event("change", { bubbles: true }));
@@ -5580,14 +5605,14 @@ var virtualiseChildNodes = (meta2, node) => {
   let ptr = null;
   let index5 = 0;
   while (child) {
-    const key = child.nodeType === ELEMENT_NODE ? child.getAttribute("data-lustre-key") : null;
-    if (key != null) {
+    const key2 = child.nodeType === ELEMENT_NODE ? child.getAttribute("data-lustre-key") : null;
+    if (key2 != null) {
       child.removeAttribute("data-lustre-key");
     }
-    const vnode = virtualiseNode(meta2, child, key, index5);
+    const vnode = virtualiseNode(meta2, child, key2, index5);
     const next = child.nextSibling;
     if (vnode) {
-      const list_node = new NonEmpty([key ?? "", vnode], null);
+      const list_node = new NonEmpty([key2 ?? "", vnode], null);
       if (ptr) {
         ptr = ptr.tail = list_node;
       } else {
@@ -5617,8 +5642,8 @@ var virtualiseAttributes = (node) => {
 };
 var virtualiseAttribute = (attr) => {
   const name = attr.localName;
-  const value2 = attr.value;
-  return attribute2(name, value2);
+  const value3 = attr.value;
+  return attribute2(name, value3);
 };
 
 // build/dev/javascript/lustre/lustre/runtime/client/runtime.ffi.mjs
@@ -5675,8 +5700,8 @@ var Runtime = class {
     }
   }
   emit(event4, data) {
-    const target = this.root.host ?? this.root;
-    target.dispatchEvent(
+    const target2 = this.root.host ?? this.root;
+    target2.dispatchEvent(
       new CustomEvent(event4, {
         detail: data,
         bubbles: true,
@@ -5688,12 +5713,12 @@ var Runtime = class {
   // key. If the key already exists, any existing subscribers will be notified
   // of the change. Otherwise, we store the value and wait for any `context-request`
   // events to come in.
-  provide(key, value2) {
-    if (!this.#contexts.has(key)) {
-      this.#contexts.set(key, { value: value2, subscribers: [] });
+  provide(key2, value3) {
+    if (!this.#contexts.has(key2)) {
+      this.#contexts.set(key2, { value: value3, subscribers: [] });
     } else {
-      const context = this.#contexts.get(key);
-      context.value = value2;
+      const context = this.#contexts.get(key2);
+      context.value = value3;
       for (let i = context.subscribers.length - 1; i >= 0; i--) {
         const [subscriberRef, unsubscribe] = context.subscribers[i];
         const subscriber = subscriberRef.deref();
@@ -5701,7 +5726,7 @@ var Runtime = class {
           context.subscribers.splice(i, 1);
           continue;
         }
-        subscriber(value2, unsubscribe);
+        subscriber(value3, unsubscribe);
       }
     }
   }
@@ -5725,7 +5750,7 @@ var Runtime = class {
     select: () => {
     },
     root: () => this.root,
-    provide: (key, value2) => this.provide(key, value2)
+    provide: (key2, value3) => this.provide(key2, value3)
   };
   // A `#tick` is where we process effects and trigger any synchronous updates.
   // Once a tick has been processed a render will be scheduled if none is already.
@@ -5914,6 +5939,73 @@ function start3(app, selector, start_args) {
   );
 }
 
+// build/dev/javascript/lustre/lustre/event.mjs
+function is_immediate_event(name) {
+  if (name === "input") {
+    return true;
+  } else if (name === "change") {
+    return true;
+  } else if (name === "focus") {
+    return true;
+  } else if (name === "focusin") {
+    return true;
+  } else if (name === "focusout") {
+    return true;
+  } else if (name === "blur") {
+    return true;
+  } else if (name === "select") {
+    return true;
+  } else {
+    return false;
+  }
+}
+function on(name, handler) {
+  return event(
+    name,
+    map3(handler, (msg) => {
+      return new Handler(false, false, msg);
+    }),
+    empty_list,
+    never,
+    never,
+    is_immediate_event(name),
+    0,
+    0
+  );
+}
+function debounce(event4, delay) {
+  if (event4 instanceof Event2) {
+    return new Event2(
+      event4.kind,
+      event4.name,
+      event4.handler,
+      event4.include,
+      event4.prevent_default,
+      event4.stop_propagation,
+      event4.immediate,
+      max(0, delay),
+      event4.throttle
+    );
+  } else {
+    return event4;
+  }
+}
+function on_input(msg) {
+  return on(
+    "input",
+    subfield(
+      toList(["target", "value"]),
+      string2,
+      (value3) => {
+        return success(msg(value3));
+      }
+    )
+  );
+}
+function on_focus(msg) {
+  return on("focus", success(msg));
+}
+
 // build/dev/javascript/modem/modem.ffi.mjs
 var defaults = {
   handle_external_links: false,
@@ -6063,6 +6155,93 @@ function push(path, query, fragment3) {
   );
 }
 
+// build/dev/javascript/gleam_javascript/gleam_javascript_ffi.mjs
+var PromiseLayer = class _PromiseLayer {
+  constructor(promise) {
+    this.promise = promise;
+  }
+  static wrap(value3) {
+    return value3 instanceof Promise ? new _PromiseLayer(value3) : value3;
+  }
+  static unwrap(value3) {
+    return value3 instanceof _PromiseLayer ? value3.promise : value3;
+  }
+};
+function resolve(value3) {
+  return Promise.resolve(PromiseLayer.wrap(value3));
+}
+function then_await(promise, fn) {
+  return promise.then((value3) => fn(PromiseLayer.unwrap(value3)));
+}
+function map_promise(promise, fn) {
+  return promise.then(
+    (value3) => PromiseLayer.wrap(fn(PromiseLayer.unwrap(value3)))
+  );
+}
+
+// build/dev/javascript/gleam_javascript/gleam/javascript/promise.mjs
+function tap(promise, callback) {
+  let _pipe = promise;
+  return map_promise(
+    _pipe,
+    (a) => {
+      callback(a);
+      return a;
+    }
+  );
+}
+function try_await(promise, callback) {
+  let _pipe = promise;
+  return then_await(
+    _pipe,
+    (result) => {
+      if (result instanceof Ok) {
+        let a = result[0];
+        return callback(a);
+      } else {
+        let e = result[0];
+        return resolve(new Error(e));
+      }
+    }
+  );
+}
+
+// build/dev/javascript/plinth/document_ffi.mjs
+function createTextNode2(content) {
+  return document.createTextNode(content);
+}
+function getElementById(id2) {
+  let found = document.getElementById(id2);
+  if (!found) {
+    return new Error();
+  }
+  return new Ok(found);
+}
+
+// build/dev/javascript/plinth/element_ffi.mjs
+function cast(raw) {
+  if (raw instanceof Element) {
+    return new Ok(raw);
+  } else {
+    return new Error();
+  }
+}
+function contains2(element4, other) {
+  return element4.contains(other);
+}
+
+// build/dev/javascript/plinth/plinth/browser/element.mjs
+function cast2(raw) {
+  let $ = cast(raw);
+  if ($ instanceof Ok) {
+    return $;
+  } else {
+    return new Error(
+      new DecodeError("Element", classify_dynamic(raw), toList([]))
+    );
+  }
+}
+
 // build/dev/javascript/gleam_http/gleam/http.mjs
 var Get = class extends CustomType {
 };
@@ -6130,11 +6309,11 @@ function scheme_from_string(scheme) {
 
 // build/dev/javascript/gleam_http/gleam/http/request.mjs
 var Request = class extends CustomType {
-  constructor(method, headers, body, scheme, host, port, path, query) {
+  constructor(method, headers, body2, scheme, host, port, path, query) {
     super();
     this.method = method;
     this.headers = headers;
-    this.body = body;
+    this.body = body2;
     this.scheme = scheme;
     this.host = host;
     this.port = port;
@@ -6186,66 +6365,15 @@ function from_uri(uri) {
 
 // build/dev/javascript/gleam_http/gleam/http/response.mjs
 var Response = class extends CustomType {
-  constructor(status, headers, body) {
+  constructor(status, headers, body2) {
     super();
     this.status = status;
     this.headers = headers;
-    this.body = body;
+    this.body = body2;
   }
 };
-function get_header(response, key) {
-  return key_find(response.headers, lowercase(key));
-}
-
-// build/dev/javascript/gleam_javascript/gleam_javascript_ffi.mjs
-var PromiseLayer = class _PromiseLayer {
-  constructor(promise) {
-    this.promise = promise;
-  }
-  static wrap(value2) {
-    return value2 instanceof Promise ? new _PromiseLayer(value2) : value2;
-  }
-  static unwrap(value2) {
-    return value2 instanceof _PromiseLayer ? value2.promise : value2;
-  }
-};
-function resolve(value2) {
-  return Promise.resolve(PromiseLayer.wrap(value2));
-}
-function then_await(promise, fn) {
-  return promise.then((value2) => fn(PromiseLayer.unwrap(value2)));
-}
-function map_promise(promise, fn) {
-  return promise.then(
-    (value2) => PromiseLayer.wrap(fn(PromiseLayer.unwrap(value2)))
-  );
-}
-
-// build/dev/javascript/gleam_javascript/gleam/javascript/promise.mjs
-function tap(promise, callback) {
-  let _pipe = promise;
-  return map_promise(
-    _pipe,
-    (a) => {
-      callback(a);
-      return a;
-    }
-  );
-}
-function try_await(promise, callback) {
-  let _pipe = promise;
-  return then_await(
-    _pipe,
-    (result) => {
-      if (result instanceof Ok) {
-        let a = result[0];
-        return callback(a);
-      } else {
-        let e = result[0];
-        return resolve(new Error(e));
-      }
-    }
-  );
+function get_header(response, key2) {
+  return key_find(response.headers, lowercase(key2));
 }
 
 // build/dev/javascript/gleam_fetch/gleam_fetch_ffi.mjs
@@ -6283,13 +6411,13 @@ function make_headers(headersList) {
   return headers;
 }
 async function read_text_body(response) {
-  let body;
+  let body2;
   try {
-    body = await response.body.text();
+    body2 = await response.body.text();
   } catch (error) {
     return new Error(new UnableToReadBody());
   }
-  return new Ok(response.withFields({ body }));
+  return new Ok(response.withFields({ body: body2 }));
 }
 
 // build/dev/javascript/gleam_fetch/gleam/fetch.mjs
@@ -6321,7 +6449,7 @@ var from_relative_url = (url_string) => {
   return new Ok(uri);
 };
 var uri_from_url2 = (url) => {
-  const optional = (value2) => value2 ? new Some(value2) : new None();
+  const optional = (value3) => value3 ? new Some(value3) : new None();
   return new Uri(
     /* scheme   */
     optional(url.protocol?.slice(0, -1)),
@@ -6383,8 +6511,8 @@ function expect_ok_response(handler) {
           result,
           (response) => {
             let $ = response.status;
-            let code = $;
-            if (code >= 200 && code < 300) {
+            let code2 = $;
+            if (code2 >= 200 && code2 < 300) {
               return new Ok(response);
             } else {
               let code$1 = $;
@@ -6542,11 +6670,11 @@ function parse_to_route(query) {
     (q) => {
       let $ = q[0];
       if ($ === "p") {
-        let value3 = q[1];
+        let value4 = q[1];
         return try$(
-          parse_int(trim(value3)),
-          (value4) => {
-            return new Ok(new Province(value4, new None()));
+          parse_int(trim(value4)),
+          (value5) => {
+            return new Ok(new Province(value5, new None()));
           }
         );
       } else {
@@ -6554,9 +6682,9 @@ function parse_to_route(query) {
       }
     }
   );
-  let value2 = _block;
-  if (value2 instanceof Ok) {
-    let $ = value2[0];
+  let value3 = _block;
+  if (value3 instanceof Ok) {
+    let $ = value3[0];
     if ($ instanceof Province) {
       let $1 = $[1];
       if ($1 instanceof None) {
@@ -6593,17 +6721,17 @@ function parse_to_route(query) {
 
 // build/dev/javascript/vn_provinces_demo/core.mjs
 var Province2 = class extends CustomType {
-  constructor(name, code) {
+  constructor(name, code2) {
     super();
     this.name = name;
-    this.code = code;
+    this.code = code2;
   }
 };
 var Ward = class extends CustomType {
-  constructor(name, code, province_code) {
+  constructor(name, code2, province_code) {
     super();
     this.name = name;
-    this.code = code;
+    this.code = code2;
     this.province_code = province_code;
   }
 };
@@ -6671,6 +6799,8 @@ var OnRouteChange = class extends CustomType {
     this[0] = $0;
   }
 };
+var UserClickedOutside = class extends CustomType {
+};
 var ComboboxState = class extends CustomType {
   constructor(is_shown, filter_text, filtered_items, selected_item) {
     super();
@@ -6694,8 +6824,8 @@ function load_provinces() {
       return field(
         "code",
         int2,
-        (code) => {
-          return success(new Province2(name, code));
+        (code2) => {
+          return success(new Province2(name, code2));
         }
       );
     }
@@ -6719,8 +6849,8 @@ function search_provinces(search) {
       return field(
         "code",
         int2,
-        (code) => {
-          return success(new Province2(name, code));
+        (code2) => {
+          return success(new Province2(name, code2));
         }
       );
     }
@@ -6742,8 +6872,8 @@ function load_wards(p) {
       return field(
         "code",
         int2,
-        (code) => {
-          return success(new Ward(name, code, p));
+        (code2) => {
+          return success(new Ward(name, code2, p));
         }
       );
     }
@@ -6762,73 +6892,6 @@ function load_wards(p) {
     }
   );
   return get2(url, handler);
-}
-
-// build/dev/javascript/lustre/lustre/event.mjs
-function is_immediate_event(name) {
-  if (name === "input") {
-    return true;
-  } else if (name === "change") {
-    return true;
-  } else if (name === "focus") {
-    return true;
-  } else if (name === "focusin") {
-    return true;
-  } else if (name === "focusout") {
-    return true;
-  } else if (name === "blur") {
-    return true;
-  } else if (name === "select") {
-    return true;
-  } else {
-    return false;
-  }
-}
-function on(name, handler) {
-  return event(
-    name,
-    map3(handler, (msg) => {
-      return new Handler(false, false, msg);
-    }),
-    empty_list,
-    never,
-    never,
-    is_immediate_event(name),
-    0,
-    0
-  );
-}
-function debounce(event4, delay) {
-  if (event4 instanceof Event2) {
-    return new Event2(
-      event4.kind,
-      event4.name,
-      event4.handler,
-      event4.include,
-      event4.prevent_default,
-      event4.stop_propagation,
-      event4.immediate,
-      max(0, delay),
-      event4.throttle
-    );
-  } else {
-    return event4;
-  }
-}
-function on_input(msg) {
-  return on(
-    "input",
-    subfield(
-      toList(["target", "value"]),
-      string2,
-      (value2) => {
-        return success(msg(value2));
-      }
-    )
-  );
-}
-function on_focus(msg) {
-  return on("focus", success(msg));
 }
 
 // build/dev/javascript/vn_provinces_demo/views.mjs
@@ -6882,7 +6945,7 @@ function show_brief_info_ward(ward) {
     ])
   );
 }
-function render_province_combobox(to_show, provinces, filter_text, settled_province, emit_msg) {
+function render_province_combobox(id2, to_show, provinces, filter_text, settled_province, emit_msg) {
   let _block;
   let _pipe = provinces;
   _block = map2(
@@ -6921,7 +6984,7 @@ function render_province_combobox(to_show, provinces, filter_text, settled_provi
   }
   let input_handler = _block$1;
   return div(
-    toList([class$("relative")]),
+    toList([id(id2), class$("relative")]),
     toList([
       input(
         toList([
@@ -6950,7 +7013,7 @@ function render_province_combobox(to_show, provinces, filter_text, settled_provi
     ])
   );
 }
-function render_ward_combobox(to_show, wards, filter_text, settled_ward, emit_msg) {
+function render_ward_combobox(id2, to_show, wards, filter_text, settled_ward, emit_msg) {
   let _block;
   let _pipe = wards;
   _block = map2(
@@ -6989,7 +7052,7 @@ function render_ward_combobox(to_show, wards, filter_text, settled_ward, emit_ms
   }
   let input_handler = _block$1;
   return div(
-    toList([class$("relative")]),
+    toList([id(id2), class$("relative")]),
     toList([
       input(
         toList([
@@ -7032,157 +7095,6 @@ var Model = class extends CustomType {
     this.ward_combobox_state = ward_combobox_state;
   }
 };
-function view2(model) {
-  let route;
-  let provinces;
-  let wards;
-  let province_combobox_shown;
-  let province_filter_text;
-  let filtered_provinces;
-  let selected_province;
-  let ward_combobox_shown;
-  let ward_filter_text;
-  let filtered_wards;
-  let selected_ward;
-  route = model.route;
-  provinces = model.provinces;
-  wards = model.wards;
-  ward_combobox_shown = model.ward_combobox_state.is_shown;
-  ward_filter_text = model.ward_combobox_state.filter_text;
-  filtered_wards = model.ward_combobox_state.filtered_items;
-  selected_ward = model.ward_combobox_state.selected_item;
-  province_combobox_shown = model.province_combobox_state.is_shown;
-  province_filter_text = model.province_combobox_state.filter_text;
-  filtered_provinces = model.province_combobox_state.filtered_items;
-  selected_province = model.province_combobox_state.selected_item;
-  echo(selected_province, void 0, "src/vn_provinces_demo.gleam", 236);
-  echo(selected_ward, void 0, "src/vn_provinces_demo.gleam", 237);
-  let _block;
-  if (province_filter_text === "") {
-    _block = provinces;
-  } else {
-    _block = filtered_provinces;
-  }
-  let filtered_provinces$1 = _block;
-  let _block$1;
-  if (route instanceof Province && province_filter_text === "") {
-    let p_code = route[0];
-    let _pipe = provinces;
-    let _pipe$1 = find_map(
-      _pipe,
-      (p) => {
-        let $ = p.code === p_code;
-        if ($) {
-          return new Ok(p.name);
-        } else {
-          return new Error(void 0);
-        }
-      }
-    );
-    _block$1 = unwrap2(_pipe$1, province_filter_text);
-  } else {
-    _block$1 = province_filter_text;
-  }
-  let province_filter_text$1 = _block$1;
-  let cb_msg = new ComboboxEmitMsg(
-    (var0) => {
-      return new ProvinceComboboxTextInput(var0);
-    },
-    (var0) => {
-      return new ProvinceComboboxSelected(var0);
-    },
-    new ProvinceComboboxFocused()
-  );
-  let province_combobox = render_province_combobox(
-    province_combobox_shown,
-    filtered_provinces$1,
-    province_filter_text$1,
-    selected_province,
-    cb_msg
-  );
-  let cb_msg$1 = new ComboboxEmitMsg(
-    (var0) => {
-      return new WardComboboxTextInput(var0);
-    },
-    (var0) => {
-      return new WardComboboxSelected(var0);
-    },
-    new WardComboboxFocused()
-  );
-  let _block$2;
-  if (ward_filter_text === "") {
-    _block$2 = wards;
-  } else {
-    _block$2 = filtered_wards;
-  }
-  let filtered_wards$1 = _block$2;
-  let _block$3;
-  if (route instanceof Province) {
-    let $ = route[1];
-    if ($ instanceof Some && ward_filter_text === "") {
-      let w_code = $[0];
-      let _pipe = wards;
-      let _pipe$1 = find_map(
-        _pipe,
-        (w) => {
-          let $1 = w.code === w_code;
-          if ($1) {
-            return new Ok(w.name);
-          } else {
-            return new Error(void 0);
-          }
-        }
-      );
-      _block$3 = unwrap2(_pipe$1, ward_filter_text);
-    } else {
-      _block$3 = ward_filter_text;
-    }
-  } else {
-    _block$3 = ward_filter_text;
-  }
-  let ward_filter_text$1 = _block$3;
-  let ward_combobox = render_ward_combobox(
-    ward_combobox_shown,
-    filtered_wards$1,
-    ward_filter_text$1,
-    selected_ward,
-    cb_msg$1
-  );
-  return section(
-    toList([]),
-    toList([
-      div(
-        toList([
-          class$("space-y-4 md:flex md:flex-row md:space-x-4 md:space-y-0")
-        ]),
-        toList([
-          div(
-            toList([]),
-            toList([
-              province_combobox,
-              (() => {
-                let _pipe = selected_province;
-                let _pipe$1 = map(_pipe, show_brief_info_province);
-                return unwrap(_pipe$1, none3());
-              })()
-            ])
-          ),
-          div(
-            toList([]),
-            toList([
-              ward_combobox,
-              (() => {
-                let _pipe = selected_ward;
-                let _pipe$1 = map(_pipe, show_brief_info_ward);
-                return unwrap(_pipe$1, none3());
-              })()
-            ])
-          )
-        ])
-      )
-    ])
-  );
-}
 function on_url_change(uri) {
   let _block;
   let _pipe = uri.query;
@@ -7445,7 +7357,6 @@ function update2(model, msg) {
   } else if (msg instanceof ProvinceComboboxSelected) {
     let p = msg[0];
     console_log("ProvinceComboboxSelected");
-    echo(p, void 0, "src/vn_provinces_demo.gleam", 153);
     let model$1 = new Model(
       model.route,
       model.provinces,
@@ -7484,8 +7395,6 @@ function update2(model, msg) {
     return [model$1, none2()];
   } else if (msg instanceof WardComboboxSelected) {
     let w = msg[0];
-    console_log("WardComboboxSelected");
-    echo(w, void 0, "src/vn_provinces_demo.gleam", 195);
     let model$1 = new Model(
       model.route,
       model.provinces,
@@ -7527,8 +7436,6 @@ function update2(model, msg) {
     let $ = msg[0];
     if ($ instanceof Ok) {
       let provinces = $[0];
-      console_log("ApiReturnedSearchedProvinces");
-      echo(provinces, void 0, "src/vn_provinces_demo.gleam", 77);
       let model$1 = new Model(
         model.route,
         model.provinces,
@@ -7555,8 +7462,6 @@ function update2(model, msg) {
       console_log("Wards loaded");
       return handle_loaded_wards(wards, model);
     } else {
-      let e = $[0];
-      echo(e, void 0, "src/vn_provinces_demo.gleam", 114);
       return [model, none2()];
     }
   } else if (msg instanceof OnRouteChange) {
@@ -7565,12 +7470,238 @@ function update2(model, msg) {
       return [model, none2()];
     } else {
       let p = new_route[0];
-      echo(model, void 0, "src/vn_provinces_demo.gleam", 135);
       return handle_route_changed(new_route, p, model);
     }
+  } else if (msg instanceof UserClickedOutside) {
+    let model$1 = new Model(
+      model.route,
+      model.provinces,
+      model.wards,
+      (() => {
+        let _record = model.province_combobox_state;
+        return new ComboboxState(
+          false,
+          _record.filter_text,
+          _record.filtered_items,
+          _record.selected_item
+        );
+      })(),
+      (() => {
+        let _record = model.ward_combobox_state;
+        return new ComboboxState(
+          false,
+          _record.filter_text,
+          _record.filtered_items,
+          _record.selected_item
+        );
+      })()
+    );
+    return [model$1, none2()];
   } else {
     return [model, none2()];
   }
+}
+function get_htmlelement_decoder() {
+  return new_primitive_decoder(
+    "HTMLElement",
+    (data) => {
+      let $ = cast2(data);
+      if ($ instanceof Ok) {
+        return $;
+      } else {
+        return new Error(createTextNode2(""));
+      }
+    }
+  );
+}
+var id_province_combobox = "province-combobox";
+var id_ward_combobox = "ward-combobox";
+function view2(model) {
+  let route;
+  let provinces;
+  let wards;
+  let province_combobox_shown;
+  let province_filter_text;
+  let filtered_provinces;
+  let selected_province;
+  let ward_combobox_shown;
+  let ward_filter_text;
+  let filtered_wards;
+  let selected_ward;
+  route = model.route;
+  provinces = model.provinces;
+  wards = model.wards;
+  ward_combobox_shown = model.ward_combobox_state.is_shown;
+  ward_filter_text = model.ward_combobox_state.filter_text;
+  filtered_wards = model.ward_combobox_state.filtered_items;
+  selected_ward = model.ward_combobox_state.selected_item;
+  province_combobox_shown = model.province_combobox_state.is_shown;
+  province_filter_text = model.province_combobox_state.filter_text;
+  filtered_provinces = model.province_combobox_state.filtered_items;
+  selected_province = model.province_combobox_state.selected_item;
+  let _block;
+  if (province_filter_text === "") {
+    _block = provinces;
+  } else {
+    _block = filtered_provinces;
+  }
+  let filtered_provinces$1 = _block;
+  let _block$1;
+  if (route instanceof Province && province_filter_text === "") {
+    let p_code = route[0];
+    let _pipe = provinces;
+    let _pipe$1 = find_map(
+      _pipe,
+      (p) => {
+        let $ = p.code === p_code;
+        if ($) {
+          return new Ok(p.name);
+        } else {
+          return new Error(void 0);
+        }
+      }
+    );
+    _block$1 = unwrap2(_pipe$1, province_filter_text);
+  } else {
+    _block$1 = province_filter_text;
+  }
+  let province_filter_text$1 = _block$1;
+  let cb_msg = new ComboboxEmitMsg(
+    (var0) => {
+      return new ProvinceComboboxTextInput(var0);
+    },
+    (var0) => {
+      return new ProvinceComboboxSelected(var0);
+    },
+    new ProvinceComboboxFocused()
+  );
+  let province_combobox = render_province_combobox(
+    id_province_combobox,
+    province_combobox_shown,
+    filtered_provinces$1,
+    province_filter_text$1,
+    selected_province,
+    cb_msg
+  );
+  let cb_msg$1 = new ComboboxEmitMsg(
+    (var0) => {
+      return new WardComboboxTextInput(var0);
+    },
+    (var0) => {
+      return new WardComboboxSelected(var0);
+    },
+    new WardComboboxFocused()
+  );
+  let _block$2;
+  if (ward_filter_text === "") {
+    _block$2 = wards;
+  } else {
+    _block$2 = filtered_wards;
+  }
+  let filtered_wards$1 = _block$2;
+  let _block$3;
+  if (route instanceof Province) {
+    let $ = route[1];
+    if ($ instanceof Some && ward_filter_text === "") {
+      let w_code = $[0];
+      let _pipe = wards;
+      let _pipe$1 = find_map(
+        _pipe,
+        (w) => {
+          let $1 = w.code === w_code;
+          if ($1) {
+            return new Ok(w.name);
+          } else {
+            return new Error(void 0);
+          }
+        }
+      );
+      _block$3 = unwrap2(_pipe$1, ward_filter_text);
+    } else {
+      _block$3 = ward_filter_text;
+    }
+  } else {
+    _block$3 = ward_filter_text;
+  }
+  let ward_filter_text$1 = _block$3;
+  let ward_combobox = render_ward_combobox(
+    id_ward_combobox,
+    ward_combobox_shown,
+    filtered_wards$1,
+    ward_filter_text$1,
+    selected_ward,
+    cb_msg$1
+  );
+  let click_handler = on(
+    "click",
+    (() => {
+      let html_element_decoder = get_htmlelement_decoder();
+      return field(
+        "target",
+        html_element_decoder,
+        (clicked_node) => {
+          let _block$4;
+          let $ = getElementById(id_province_combobox);
+          if ($ instanceof Ok) {
+            let box = $[0];
+            _block$4 = contains2(clicked_node, box);
+          } else {
+            _block$4 = true;
+          }
+          let outside_province = _block$4;
+          let _block$5;
+          let $1 = getElementById(id_ward_combobox);
+          if ($1 instanceof Ok) {
+            let box = $1[0];
+            _block$5 = contains2(clicked_node, box);
+          } else {
+            _block$5 = true;
+          }
+          let outside_ward = _block$5;
+          let $2 = outside_province || outside_ward;
+          if ($2) {
+            return success(new UserClickedOutside());
+          } else {
+            return failure(new UserClickedOutside(), "Not outsise");
+          }
+        }
+      );
+    })()
+  );
+  return section(
+    toList([class$("grow"), click_handler]),
+    toList([
+      div(
+        toList([
+          class$("space-y-4 md:flex md:flex-row md:space-x-4 md:space-y-0")
+        ]),
+        toList([
+          div(
+            toList([]),
+            toList([
+              province_combobox,
+              (() => {
+                let _pipe = selected_province;
+                let _pipe$1 = map(_pipe, show_brief_info_province);
+                return unwrap(_pipe$1, none3());
+              })()
+            ])
+          ),
+          div(
+            toList([]),
+            toList([
+              ward_combobox,
+              (() => {
+                let _pipe = selected_ward;
+                let _pipe$1 = map(_pipe, show_brief_info_ward);
+                return unwrap(_pipe$1, none3());
+              })()
+            ])
+          )
+        ])
+      )
+    ])
+  );
 }
 function main() {
   let app = application(init2, update2, view2);
@@ -7580,223 +7711,20 @@ function main() {
       "let_assert",
       FILEPATH,
       "vn_provinces_demo",
-      40,
+      49,
       "main",
       "Pattern match failed, no pattern matched the value.",
       {
         value: $,
-        start: 1068,
-        end: 1117,
-        pattern_start: 1079,
-        pattern_end: 1084
+        start: 1355,
+        end: 1404,
+        pattern_start: 1366,
+        pattern_end: 1371
       }
     );
   }
   return void 0;
 }
-function echo(value2, message2, file, line) {
-  const grey = "\x1B[90m";
-  const reset_color = "\x1B[39m";
-  const file_line = `${file}:${line}`;
-  const inspector = new Echo$Inspector();
-  const string_value = inspector.inspect(value2);
-  const string_message = message2 === void 0 ? "" : " " + message2;
-  if (globalThis.process?.stderr?.write) {
-    const string5 = `${grey}${file_line}${reset_color}${string_message}
-${string_value}
-`;
-    globalThis.process.stderr.write(string5);
-  } else if (globalThis.Deno) {
-    const string5 = `${grey}${file_line}${reset_color}${string_message}
-${string_value}
-`;
-    globalThis.Deno.stderr.writeSync(new TextEncoder().encode(string5));
-  } else {
-    const string5 = `${file_line}
-${string_value}`;
-    globalThis.console.log(string5);
-  }
-  return value2;
-}
-var Echo$Inspector = class {
-  #references = /* @__PURE__ */ new Set();
-  #isDict(value2) {
-    try {
-      return value2 instanceof Dict;
-    } catch {
-      return false;
-    }
-  }
-  #float(float2) {
-    const string5 = float2.toString().replace("+", "");
-    if (string5.indexOf(".") >= 0) {
-      return string5;
-    } else {
-      const index5 = string5.indexOf("e");
-      if (index5 >= 0) {
-        return string5.slice(0, index5) + ".0" + string5.slice(index5);
-      } else {
-        return string5 + ".0";
-      }
-    }
-  }
-  inspect(v) {
-    const t = typeof v;
-    if (v === true) return "True";
-    if (v === false) return "False";
-    if (v === null) return "//js(null)";
-    if (v === void 0) return "Nil";
-    if (t === "string") return this.#string(v);
-    if (t === "bigint" || Number.isInteger(v)) return v.toString();
-    if (t === "number") return this.#float(v);
-    if (v instanceof UtfCodepoint) return this.#utfCodepoint(v);
-    if (v instanceof BitArray) return this.#bit_array(v);
-    if (v instanceof RegExp) return `//js(${v})`;
-    if (v instanceof Date) return `//js(Date("${v.toISOString()}"))`;
-    if (v instanceof globalThis.Error) return `//js(${v.toString()})`;
-    if (v instanceof Function) {
-      const args = [];
-      for (const i of Array(v.length).keys())
-        args.push(String.fromCharCode(i + 97));
-      return `//fn(${args.join(", ")}) { ... }`;
-    }
-    if (this.#references.size === this.#references.add(v).size) {
-      return "//js(circular reference)";
-    }
-    let printed;
-    if (Array.isArray(v)) {
-      printed = `#(${v.map((v2) => this.inspect(v2)).join(", ")})`;
-    } else if (v instanceof List) {
-      printed = this.#list(v);
-    } else if (v instanceof CustomType) {
-      printed = this.#customType(v);
-    } else if (this.#isDict(v)) {
-      printed = this.#dict(v);
-    } else if (v instanceof Set) {
-      return `//js(Set(${[...v].map((v2) => this.inspect(v2)).join(", ")}))`;
-    } else {
-      printed = this.#object(v);
-    }
-    this.#references.delete(v);
-    return printed;
-  }
-  #object(v) {
-    const name = Object.getPrototypeOf(v)?.constructor?.name || "Object";
-    const props = [];
-    for (const k of Object.keys(v)) {
-      props.push(`${this.inspect(k)}: ${this.inspect(v[k])}`);
-    }
-    const body = props.length ? " " + props.join(", ") + " " : "";
-    const head = name === "Object" ? "" : name + " ";
-    return `//js(${head}{${body}})`;
-  }
-  #dict(map6) {
-    let body = "dict.from_list([";
-    let first = true;
-    let key_value_pairs = [];
-    map6.forEach((value2, key) => {
-      key_value_pairs.push([key, value2]);
-    });
-    key_value_pairs.sort();
-    key_value_pairs.forEach(([key, value2]) => {
-      if (!first) body = body + ", ";
-      body = body + "#(" + this.inspect(key) + ", " + this.inspect(value2) + ")";
-      first = false;
-    });
-    return body + "])";
-  }
-  #customType(record) {
-    const props = Object.keys(record).map((label) => {
-      const value2 = this.inspect(record[label]);
-      return isNaN(parseInt(label)) ? `${label}: ${value2}` : value2;
-    }).join(", ");
-    return props ? `${record.constructor.name}(${props})` : record.constructor.name;
-  }
-  #list(list4) {
-    if (list4 instanceof Empty) {
-      return "[]";
-    }
-    let char_out = 'charlist.from_string("';
-    let list_out = "[";
-    let current = list4;
-    while (current instanceof NonEmpty) {
-      let element4 = current.head;
-      current = current.tail;
-      if (list_out !== "[") {
-        list_out += ", ";
-      }
-      list_out += this.inspect(element4);
-      if (char_out) {
-        if (Number.isInteger(element4) && element4 >= 32 && element4 <= 126) {
-          char_out += String.fromCharCode(element4);
-        } else {
-          char_out = null;
-        }
-      }
-    }
-    if (char_out) {
-      return char_out + '")';
-    } else {
-      return list_out + "]";
-    }
-  }
-  #string(str) {
-    let new_str = '"';
-    for (let i = 0; i < str.length; i++) {
-      const char = str[i];
-      switch (char) {
-        case "\n":
-          new_str += "\\n";
-          break;
-        case "\r":
-          new_str += "\\r";
-          break;
-        case "	":
-          new_str += "\\t";
-          break;
-        case "\f":
-          new_str += "\\f";
-          break;
-        case "\\":
-          new_str += "\\\\";
-          break;
-        case '"':
-          new_str += '\\"';
-          break;
-        default:
-          if (char < " " || char > "~" && char < "\xA0") {
-            new_str += "\\u{" + char.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0") + "}";
-          } else {
-            new_str += char;
-          }
-      }
-    }
-    new_str += '"';
-    return new_str;
-  }
-  #utfCodepoint(codepoint2) {
-    return `//utfcodepoint(${String.fromCodePoint(codepoint2.value)})`;
-  }
-  #bit_array(bits) {
-    if (bits.bitSize === 0) {
-      return "<<>>";
-    }
-    let acc = "<<";
-    for (let i = 0; i < bits.byteSize - 1; i++) {
-      acc += bits.byteAt(i).toString();
-      acc += ", ";
-    }
-    if (bits.byteSize * 8 === bits.bitSize) {
-      acc += bits.byteAt(bits.byteSize - 1).toString();
-    } else {
-      const trailingBitsCount = bits.bitSize % 8;
-      acc += bits.byteAt(bits.byteSize - 1) >> 8 - trailingBitsCount;
-      acc += `:size(${trailingBitsCount})`;
-    }
-    acc += ">>";
-    return acc;
-  }
-};
 
 // build/.lustre/entry.mjs
 main();

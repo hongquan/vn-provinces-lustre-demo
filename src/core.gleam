@@ -26,6 +26,7 @@ pub type Msg {
   ApiReturnedSearchedProvinces(Result(List(Province), rsvp.Error))
   ApiReturnedWards(Result(List(Ward), rsvp.Error))
   OnRouteChange(router.Route)
+  UserClickedOutside
 }
 
 pub type ComboboxState(obj) {

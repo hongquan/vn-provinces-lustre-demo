@@ -1,3 +1,4 @@
+import gleam/dynamic/decode.{new_primitive_decoder}
 import gleam/int
 import gleam/io
 import gleam/list
@@ -9,20 +10,28 @@ import lustre/attribute as a
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html as h
+import lustre/event as ev
 import modem
+import plinth/browser/document.{create_text_node}
+import plinth/browser/element as web_element
 
 import actions
 import core.{
   type ComboboxState, type Msg, type Province, type Ward, ComboboxState,
   ProvinceComboboxFocused, ProvinceComboboxSelected, ProvinceComboboxTextInput,
-  ProvinceSelected, WardComboboxFocused, WardComboboxSelected,
-  WardComboboxTextInput, WardSelected, create_empty_combobox_state,
+  ProvinceSelected, UserClickedOutside, WardComboboxFocused,
+  WardComboboxSelected, WardComboboxTextInput, WardSelected,
+  create_empty_combobox_state,
 }
 import router.{type Route, parse_to_route}
 import views.{
   render_province_combobox, render_ward_combobox, show_brief_info_province,
   show_brief_info_ward,
 }
+
+const id_province_combobox = "province-combobox"
+
+const id_ward_combobox = "ward-combobox"
 
 pub type Model {
   Model(
@@ -73,8 +82,6 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       handle_loaded_provinces(provinces, model)
     }
     core.ApiReturnedSearchedProvinces(Ok(provinces)) -> {
-      io.println("ApiReturnedSearchedProvinces")
-      echo provinces
       let model =
         Model(
           ..model,
@@ -110,10 +117,6 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       io.println("Wards loaded")
       handle_loaded_wards(wards, model)
     }
-    core.ApiReturnedWards(Error(e)) -> {
-      echo e
-      #(model, effect.none())
-    }
     WardSelected(w) -> {
       case w {
         None -> #(model, effect.none())
@@ -132,7 +135,6 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       case new_route {
         router.Home -> #(model, effect.none())
         router.Province(p, _w) -> {
-          echo model
           handle_route_changed(new_route, p, model)
         }
       }
@@ -150,7 +152,6 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
     ProvinceComboboxSelected(p) -> {
       io.println("ProvinceComboboxSelected")
-      echo p
       let model =
         Model(
           ..model,
@@ -191,8 +192,6 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
 
     WardComboboxSelected(w) -> {
-      io.println("WardComboboxSelected")
-      echo w
       let model =
         Model(
           ..model,
@@ -210,6 +209,21 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         _ -> [new_append]
       }
       #(model, modem.push("", Some(uri.query_to_string(new_query)), None))
+    }
+    UserClickedOutside -> {
+      let model =
+        Model(
+          ..model,
+          province_combobox_state: ComboboxState(
+            ..model.province_combobox_state,
+            is_shown: False,
+          ),
+          ward_combobox_state: ComboboxState(
+            ..model.ward_combobox_state,
+            is_shown: False,
+          ),
+        )
+      #(model, effect.none())
     }
     _ -> #(model, effect.none())
   }
@@ -233,8 +247,6 @@ fn view(model: Model) -> Element(Msg) {
       is_shown: ward_combobox_shown,
     ),
   ) = model
-  echo selected_province
-  echo selected_ward
   let filtered_provinces = case province_filter_text {
     "" -> provinces
     _ -> filtered_provinces
@@ -262,6 +274,7 @@ fn view(model: Model) -> Element(Msg) {
 
   let province_combobox =
     render_province_combobox(
+      id_province_combobox,
       province_combobox_shown,
       filtered_provinces,
       province_filter_text,
@@ -297,13 +310,34 @@ fn view(model: Model) -> Element(Msg) {
   }
   let ward_combobox =
     render_ward_combobox(
+      id_ward_combobox,
       ward_combobox_shown,
       filtered_wards,
       ward_filter_text,
       selected_ward,
       cb_msg,
     )
-  h.section([], [
+  // Handle "click outside" for our combobox
+  let click_handler =
+    ev.on("click", {
+      let html_element_decoder = get_htmlelement_decoder()
+      use clicked_node <- decode.field("target", html_element_decoder)
+      let outside_province = case
+        document.get_element_by_id(id_province_combobox)
+      {
+        Ok(box) -> web_element.contains(clicked_node, box)
+        Error(_) -> True
+      }
+      let outside_ward = case document.get_element_by_id(id_ward_combobox) {
+        Ok(box) -> web_element.contains(clicked_node, box)
+        Error(_) -> True
+      }
+      case outside_province || outside_ward {
+        True -> decode.success(UserClickedOutside)
+        False -> decode.failure(UserClickedOutside, "Not outsise")
+      }
+    })
+  h.section([a.class("grow"), click_handler], [
     h.div([a.class("space-y-4 md:flex md:flex-row md:space-x-4 md:space-y-0")], [
       h.div([], [
         province_combobox,
@@ -409,4 +443,13 @@ fn handle_route_changed(
       ),
     )
   #(model, whatnext)
+}
+
+fn get_htmlelement_decoder() -> decode.Decoder(web_element.Element) {
+  new_primitive_decoder("HTMLElement", fn(data) {
+    case web_element.cast(data) {
+      Ok(x) -> Ok(x)
+      Error(_) -> Error(create_text_node(""))
+    }
+  })
 }

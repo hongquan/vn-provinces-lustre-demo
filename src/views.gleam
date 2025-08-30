@@ -120,6 +120,7 @@ pub fn render_ward_list(
 }
 
 pub fn render_province_combobox(
+  id: String,
   to_show: Bool,
   provinces: List(Province),
   filter_text: String,
@@ -153,7 +154,8 @@ pub fn render_province_combobox(
     True -> ev.debounce(ev.on_input(emit_msg.text_input), 200)
     False -> a.none()
   }
-  h.div([a.class("relative")], [
+  // Handle "click outside"
+  h.div([a.id(id), a.class("relative")], [
     // The Text Input of the combobox
     h.input([
       a.class(
@@ -182,6 +184,7 @@ pub fn render_province_combobox(
 }
 
 pub fn render_ward_combobox(
+  id: String,
   to_show: Bool,
   wards: List(Ward),
   filter_text: String,
@@ -215,7 +218,7 @@ pub fn render_ward_combobox(
     True -> ev.debounce(ev.on_input(emit_msg.text_input), 200)
     False -> a.none()
   }
-  h.div([a.class("relative")], [
+  h.div([a.id(id), a.class("relative")], [
     // The Text Input of the combobox
     h.input([
       a.class(
