@@ -385,9 +385,6 @@ var Some = class extends CustomType {
 };
 var None = class extends CustomType {
 };
-function is_some(option) {
-  return !isEqual(option, new None());
-}
 function to_result(option, e) {
   if (option instanceof Some) {
     let a = option[0];
@@ -1957,9 +1954,6 @@ function trim_start(string5) {
 function trim_end(string5) {
   return string5.replace(trim_end_regex, "");
 }
-function console_log(term) {
-  console.log(term);
-}
 function unsafe_percent_decode_query(string5) {
   return decodeURIComponent((string5 || "").replace("+", " "));
 }
@@ -3264,9 +3258,6 @@ function attribute2(name, value3) {
 function class$(name) {
   return attribute2("class", name);
 }
-function none() {
-  return class$("");
-}
 function do_classes(loop$names, loop$class) {
   while (true) {
     let names = loop$names;
@@ -3335,7 +3326,7 @@ var empty2 = /* @__PURE__ */ new Effect(
   /* @__PURE__ */ toList([]),
   /* @__PURE__ */ toList([])
 );
-function none2() {
+function none() {
   return empty2;
 }
 function from(effect) {
@@ -3925,7 +3916,7 @@ function element2(tag, attributes, children) {
 function text2(content) {
   return text("", identity2, content);
 }
-function none3() {
+function none2() {
   return text("", identity2, "");
 }
 
@@ -5535,7 +5526,7 @@ var virtualise = (root3) => {
     const placeholder = document2().createTextNode("");
     insertMetadataChild(text_kind, rootMeta, placeholder, 0, null);
     root3.replaceChildren(placeholder);
-    return none3();
+    return none2();
   }
   if (virtualisableRootChildren === 1) {
     const children2 = virtualiseChildNodes(rootMeta, root3);
@@ -7041,12 +7032,8 @@ function render_province_combobox(id2, to_show, provinces, filter_text, settled_
   );
   let li_items = _block;
   let _block$1;
-  let $ = is_some(settled_province);
-  if ($) {
-    _block$1 = debounce(on_input(emit_msg.text_input), 200);
-  } else {
-    _block$1 = none();
-  }
+  let _pipe$1 = on_input(emit_msg.text_input);
+  _block$1 = debounce(_pipe$1, 200);
   let input_handler = _block$1;
   return div(
     toList([id(id2), class$("relative")]),
@@ -7128,12 +7115,8 @@ function render_ward_combobox(id2, to_show, wards, filter_text, settled_ward, em
   );
   let li_items = _block;
   let _block$1;
-  let $ = is_some(settled_ward);
-  if ($) {
-    _block$1 = debounce(on_input(emit_msg.text_input), 200);
-  } else {
-    _block$1 = none();
-  }
+  let _pipe$1 = on_input(emit_msg.text_input);
+  _block$1 = debounce(_pipe$1, 200);
   let input_handler = _block$1;
   return div(
     toList([id(id2), class$("relative")]),
@@ -7246,10 +7229,10 @@ function handle_loaded_provinces(provinces, model) {
       let p = $22[0];
       _block = [new Some(p), load_wards(p.code)];
     } else {
-      _block = [new None(), none2()];
+      _block = [new None(), none()];
     }
   } else {
-    _block = [new None(), none2()];
+    _block = [new None(), none()];
   }
   let $ = _block;
   let selected_province;
@@ -7331,7 +7314,7 @@ function handle_loaded_wards(wards, model) {
       );
     })()
   );
-  return [model$1, none2()];
+  return [model$1, none()];
 }
 function handle_route_changed(new_route, queried_province, queried_ward, model) {
   let current_route;
@@ -7410,7 +7393,7 @@ function handle_route_changed(new_route, queried_province, queried_ward, model) 
     let p_code = should_load_wards[0];
     _block$5 = load_wards(p_code);
   } else {
-    _block$5 = none2();
+    _block$5 = none();
   }
   let whatnext = _block$5;
   let model$1 = new Model(
@@ -7455,7 +7438,7 @@ function update2(model, msg) {
       })(),
       model.ward_combobox_state
     );
-    return [model$1, none2()];
+    return [model$1, none()];
   } else if (msg instanceof ProvinceComboboxClearClick) {
     let model$1 = new Model(
       model.route,
@@ -7472,7 +7455,7 @@ function update2(model, msg) {
       })(),
       model.ward_combobox_state
     );
-    return [model$1, none2()];
+    return [model$1, none()];
   } else if (msg instanceof ProvinceComboboxTextInput) {
     let s = msg[0];
     let model$1 = new Model(
@@ -7493,7 +7476,6 @@ function update2(model, msg) {
     return [model$1, search_provinces(s)];
   } else if (msg instanceof ProvinceComboboxSelected) {
     let p = msg[0];
-    console_log("ProvinceComboboxSelected");
     let model$1 = new Model(
       model.route,
       model.provinces,
@@ -7529,7 +7511,7 @@ function update2(model, msg) {
         );
       })()
     );
-    return [model$1, none2()];
+    return [model$1, none()];
   } else if (msg instanceof WardComboboxClearClick) {
     let model$1 = new Model(
       model.route,
@@ -7546,10 +7528,9 @@ function update2(model, msg) {
         );
       })()
     );
-    return [model$1, none2()];
+    return [model$1, none()];
   } else if (msg instanceof WardComboboxTextInput) {
     let s = msg[0];
-    console_log("Ward input text: " + s);
     let selected_province;
     selected_province = model.province_combobox_state.selected_item;
     let model$1 = new Model(
@@ -7612,7 +7593,7 @@ function update2(model, msg) {
       let provinces = $[0];
       return handle_loaded_provinces(provinces, model);
     } else {
-      return [model, none2()];
+      return [model, none()];
     }
   } else if (msg instanceof ApiReturnedSearchedProvinces) {
     let $ = msg[0];
@@ -7633,18 +7614,17 @@ function update2(model, msg) {
         })(),
         model.ward_combobox_state
       );
-      return [model$1, none2()];
+      return [model$1, none()];
     } else {
-      return [model, none2()];
+      return [model, none()];
     }
   } else if (msg instanceof ApiReturnedWards) {
     let $ = msg[0];
     if ($ instanceof Ok) {
       let wards = $[0];
-      console_log("Wards loaded");
       return handle_loaded_wards(wards, model);
     } else {
-      return [model, none2()];
+      return [model, none()];
     }
   } else if (msg instanceof ApiReturnedSearchedWards) {
     let $ = msg[0];
@@ -7665,9 +7645,9 @@ function update2(model, msg) {
           );
         })()
       );
-      return [model$1, none2()];
+      return [model$1, none()];
     } else {
-      return [model, none2()];
+      return [model, none()];
     }
   } else if (msg instanceof OnRouteChange) {
     let new_route = msg[0];
@@ -7679,7 +7659,7 @@ function update2(model, msg) {
         create_empty_combobox_state(),
         create_empty_combobox_state()
       );
-      return [model$1, none2()];
+      return [model$1, none()];
     } else {
       let p = new_route[0];
       let w = new_route[1];
@@ -7728,7 +7708,7 @@ function update2(model, msg) {
         );
       })()
     );
-    return [model$1, none2()];
+    return [model$1, none()];
   }
 }
 var id_province_combobox = "province-combobox";
@@ -7873,7 +7853,7 @@ function view2(model) {
               (() => {
                 let _pipe = selected_province;
                 let _pipe$1 = map(_pipe, show_brief_info_province);
-                return unwrap(_pipe$1, none3());
+                return unwrap(_pipe$1, none2());
               })()
             ])
           ),
@@ -7888,7 +7868,7 @@ function view2(model) {
               (() => {
                 let _pipe = selected_ward;
                 let _pipe$1 = map(_pipe, show_brief_info_ward);
-                return unwrap(_pipe$1, none3());
+                return unwrap(_pipe$1, none2());
               })()
             ])
           )
@@ -7908,15 +7888,15 @@ function main() {
       "let_assert",
       FILEPATH,
       "vn_provinces_demo",
-      48,
+      47,
       "main",
       "Pattern match failed, no pattern matched the value.",
       {
         value: $,
-        start: 1332,
-        end: 1387,
-        pattern_start: 1343,
-        pattern_end: 1354
+        start: 1316,
+        end: 1371,
+        pattern_start: 1327,
+        pattern_end: 1338
       }
     );
   }

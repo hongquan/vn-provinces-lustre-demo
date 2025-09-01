@@ -1,5 +1,4 @@
 import gleam/int
-import gleam/io
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
@@ -121,7 +120,6 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(model, effect.none())
     }
     core.ApiReturnedWards(Ok(wards)) -> {
-      io.println("Wards loaded")
       handle_loaded_wards(wards, model)
     }
     core.ApiReturnedSearchedWards(Ok(wards)) -> {
@@ -167,7 +165,6 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(model, actions.search_provinces(s))
     }
     ProvinceComboboxSelected(p) -> {
-      io.println("ProvinceComboboxSelected")
       let model =
         Model(
           ..model,
@@ -227,7 +224,6 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(model, effect.none())
     }
     WardComboboxTextInput(s) -> {
-      io.println("Ward input text: " <> s)
       let Model(
         province_combobox_state: ComboboxState(
           selected_item: selected_province,

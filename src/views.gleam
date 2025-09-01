@@ -84,10 +84,7 @@ pub fn render_province_combobox(
       )
     })
   // Event handler for the text input
-  let input_handler = case is_some(settled_province) {
-    True -> ev.debounce(ev.on_input(emit_msg.text_input), 200)
-    False -> a.none()
-  }
+  let input_handler = ev.on_input(emit_msg.text_input) |> ev.debounce(200)
   // Handle "click outside"
   h.div([a.id(id), a.class("relative")], [
     // The Text Input of the combobox
@@ -159,10 +156,7 @@ pub fn render_ward_combobox(
       )
     })
   // Event handler for the text input
-  let input_handler = case is_some(settled_ward) {
-    True -> ev.debounce(ev.on_input(emit_msg.text_input), 200)
-    False -> a.none()
-  }
+  let input_handler = ev.on_input(emit_msg.text_input) |> ev.debounce(200)
   h.div([a.id(id), a.class("relative")], [
     // The Text Input of the combobox
     h.input([
