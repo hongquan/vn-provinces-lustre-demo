@@ -2,8 +2,7 @@ import gleam/dynamic/decode.{new_primitive_decoder}
 import gleam/int
 import gleam/io
 import gleam/list
-import gleam/option.{None, Some}
-import gleam/result
+import gleam/option.{type Option, None, Some}
 import gleam/uri
 import lustre
 import lustre/attribute as a
@@ -19,9 +18,8 @@ import actions
 import core.{
   type ComboboxState, type Msg, type Province, type Ward, ComboboxState,
   ProvinceComboboxFocused, ProvinceComboboxSelected, ProvinceComboboxTextInput,
-  ProvinceSelected, UserClickedOutside, WardComboboxFocused,
-  WardComboboxSelected, WardComboboxTextInput, WardSelected,
-  create_empty_combobox_state,
+  UserClickedOutside, WardComboboxFocused, WardComboboxSelected,
+  WardComboboxTextInput, create_empty_combobox_state,
 }
 import router.{type Route, parse_to_route}
 import views.{
@@ -92,50 +90,26 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         )
       #(model, effect.none())
     }
-    // User has picked a province from dropdown
-    ProvinceSelected(p) -> {
-      let model =
-        Model(
-          ..model,
-          wards: [],
-          province_combobox_state: ComboboxState(
-            ..model.province_combobox_state,
-            selected_item: p,
-          ),
-        )
-      case p {
-        None -> #(model, effect.none())
-        Some(p) -> {
-          // Reflect to browser URL
-          let query_string =
-            uri.query_to_string([#("p", int.to_string(p.code))])
-          #(model, modem.push("", Some(query_string), None))
-        }
-      }
-    }
     core.ApiReturnedWards(Ok(wards)) -> {
       io.println("Wards loaded")
       handle_loaded_wards(wards, model)
     }
-    WardSelected(w) -> {
-      case w {
-        None -> #(model, effect.none())
-        Some(w) -> {
-          // Reflect to browser URL
-          let new_append = #("w", int.to_string(w.code))
-          let new_query = case model.route {
-            router.Province(p, _w) -> [#("p", int.to_string(p)), new_append]
-            _ -> [new_append]
-          }
-          #(model, modem.push("", Some(uri.query_to_string(new_query)), None))
-        }
-      }
+    core.ApiReturnedSearchedWards(Ok(wards)) -> {
+      let model =
+        Model(
+          ..model,
+          ward_combobox_state: ComboboxState(
+            ..model.ward_combobox_state,
+            filtered_items: wards,
+          ),
+        )
+      #(model, effect.none())
     }
     core.OnRouteChange(new_route) -> {
       case new_route {
         router.Home -> #(model, effect.none())
-        router.Province(p, _w) -> {
-          handle_route_changed(new_route, p, model)
+        router.Province(p, w) -> {
+          handle_route_changed(new_route, p, w, model)
         }
       }
     }
@@ -167,7 +141,6 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(model, modem.push("", Some(query_string), None))
     }
     ProvinceComboboxFocused -> {
-      io.println("Focused")
       let model =
         Model(
           ..model,
@@ -189,6 +162,28 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           ),
         )
       #(model, effect.none())
+    }
+
+    WardComboboxTextInput(s) -> {
+      io.println("Ward input text: " <> s)
+      let Model(
+        province_combobox_state: ComboboxState(
+          selected_item: selected_province,
+          ..,
+        ),
+        ..,
+      ) = model
+      let model =
+        Model(
+          ..model,
+          ward_combobox_state: ComboboxState(
+            ..model.ward_combobox_state,
+            filter_text: s,
+          ),
+        )
+      let province_code =
+        selected_province |> option.map(fn(p) { p.code }) |> option.unwrap(0)
+      #(model, actions.search_wards(s, province_code))
     }
 
     WardComboboxSelected(w) -> {
@@ -231,7 +226,6 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
 fn view(model: Model) -> Element(Msg) {
   let Model(
-    route:,
     provinces:,
     wards:,
     province_combobox_state: ComboboxState(
@@ -246,24 +240,11 @@ fn view(model: Model) -> Element(Msg) {
       filtered_items: filtered_wards,
       is_shown: ward_combobox_shown,
     ),
+    ..,
   ) = model
   let filtered_provinces = case province_filter_text {
     "" -> provinces
     _ -> filtered_provinces
-  }
-  // If the filter text is empty and the URL is pointing to a province, we show province name in the text input
-  let province_filter_text = case province_filter_text, route {
-    "", router.Province(p_code, _w) -> {
-      provinces
-      |> list.find_map(fn(p) {
-        case p.code == p_code {
-          True -> Ok(p.name)
-          False -> Error(Nil)
-        }
-      })
-      |> result.unwrap(province_filter_text)
-    }
-    _, _ -> province_filter_text
   }
   let cb_msg =
     views.ComboboxEmitMsg(
@@ -291,22 +272,6 @@ fn view(model: Model) -> Element(Msg) {
   let filtered_wards = case ward_filter_text {
     "" -> wards
     _ -> filtered_wards
-  }
-  // If the filter text is empty and the URL is pointing to a ward, we show ward name in the text input
-  let ward_filter_text = case ward_filter_text, route {
-    "", router.Province(_p, Some(w_code)) -> {
-      wards
-      |> list.find_map(fn(w) {
-        case w.code == w_code {
-          True -> {
-            Ok(w.name)
-          }
-          False -> Error(Nil)
-        }
-      })
-      |> result.unwrap(ward_filter_text)
-    }
-    _, _ -> ward_filter_text
   }
   let ward_combobox =
     render_ward_combobox(
@@ -338,14 +303,16 @@ fn view(model: Model) -> Element(Msg) {
       }
     })
   h.section([a.class("grow"), click_handler], [
-    h.div([a.class("space-y-4 md:flex md:flex-row md:space-x-4 md:space-y-0")], [
+    h.div([a.class("space-y-8 md:flex md:flex-row md:space-x-8 md:space-y-0")], [
       h.div([], [
+        h.label([a.class("text-lg")], [h.text("Tỉnh thành")]),
         province_combobox,
         selected_province
           |> option.map(show_brief_info_province)
           |> option.unwrap(element.none()),
       ]),
       h.div([], [
+        h.label([a.class("text-lg")], [h.text("Phường xã")]),
         ward_combobox,
         selected_ward
           |> option.map(show_brief_info_ward)
@@ -369,7 +336,9 @@ fn handle_loaded_provinces(
   provinces: List(core.Province),
   model: Model,
 ) -> #(Model, Effect(Msg)) {
-  // Check the browser URL, if it points to a province, we load the wards for that province
+  // Check the browser URL, if it points to a province, we :
+  // - Set the combobox value to that province.
+  // - Load the wards for that province.
   let #(selected_province, whatnext) = case model.route {
     router.Province(i, _v) -> {
       case list.find(provinces, fn(p) { p.code == i }) {
@@ -381,6 +350,10 @@ fn handle_loaded_provinces(
     }
     _ -> #(None, effect.none())
   }
+  let #(filter_text, filtered_items) = case selected_province {
+    Some(p) -> #(p.name, [p])
+    _ -> #("", [])
+  }
   // Save provinces to model, reset the selection and wards
   let model =
     Model(
@@ -389,7 +362,9 @@ fn handle_loaded_provinces(
       wards: [],
       province_combobox_state: ComboboxState(
         ..model.province_combobox_state,
+        filter_text:,
         selected_item: selected_province,
+        filtered_items:,
       ),
     )
   #(model, whatnext)
@@ -403,6 +378,10 @@ fn handle_loaded_wards(wards: List(Ward), model: Model) {
     _ -> None
   }
   // Save wards to the model
+  let #(filter_text, filtered_items) = case selected_ward {
+    Some(w) -> #(w.name, [w])
+    _ -> #("", [])
+  }
   let model =
     Model(
       ..model,
@@ -410,6 +389,8 @@ fn handle_loaded_wards(wards: List(Ward), model: Model) {
       ward_combobox_state: ComboboxState(
         ..model.ward_combobox_state,
         selected_item: selected_ward,
+        filter_text:,
+        filtered_items:,
       ),
     )
   #(model, effect.none())
@@ -418,20 +399,35 @@ fn handle_loaded_wards(wards: List(Ward), model: Model) {
 fn handle_route_changed(
   new_route: Route,
   queried_province: Int,
+  queried_ward: Option(Int),
   model: Model,
 ) -> #(Model, Effect(Msg)) {
-  let Model(provinces:, route: current_route, ..) = model
+  let Model(provinces:, wards:, route: current_route, ..) = model
+  // If queried_province != current_province, we will load new wards
+  // If queried_province == current_province and queried_ward != current_ward, we update model
   let queried_province =
     list.find(provinces, fn(p) { p.code == queried_province })
-  // If queried_province != current_province, we will load new wards
-  let current_province = case current_route {
-    router.Home -> None
-    router.Province(i, _v) -> Some(i)
+  let queried_ward = case queried_ward {
+    Some(code) ->
+      wards |> list.find(fn(w) { w.code == code }) |> option.from_result
+    _ -> None
   }
-  let whatnext = case queried_province, current_province {
-    Ok(i), Some(j) if i.code != j -> actions.load_wards(i.code)
-    Ok(i), None -> actions.load_wards(i.code)
-    _, _ -> effect.none()
+  let filtered_wards = case queried_ward {
+    Some(w) -> [w]
+    None -> []
+  }
+  let #(current_province, _current_ward) = case current_route {
+    router.Home -> #(None, None)
+    router.Province(i, j) -> #(Some(i), j)
+  }
+  let should_load_wards = case queried_province, current_province {
+    Ok(p), Some(i) if p.code != i -> Some(p.code)
+    Ok(p), None -> Some(p.code)
+    _, _ -> None
+  }
+  let whatnext = case should_load_wards {
+    Some(p_code) -> actions.load_wards(p_code)
+    None -> effect.none()
   }
   let model =
     Model(
@@ -440,6 +436,11 @@ fn handle_route_changed(
       province_combobox_state: ComboboxState(
         ..model.province_combobox_state,
         selected_item: option.from_result(queried_province),
+      ),
+      ward_combobox_state: ComboboxState(
+        ..model.ward_combobox_state,
+        selected_item: queried_ward,
+        filtered_items: filtered_wards,
       ),
     )
   #(model, whatnext)

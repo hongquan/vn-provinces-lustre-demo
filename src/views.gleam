@@ -2,7 +2,7 @@ import consts
 import gleam/dynamic/decode
 import gleam/int
 import gleam/list
-import gleam/option.{type Option, is_some}
+import gleam/option.{type Option, Some, is_some}
 import gleam/result
 import lustre/attribute as a
 import lustre/element.{type Element}
@@ -71,7 +71,7 @@ pub fn render_province_list(
 }
 
 pub fn show_brief_info_province(province: Province) {
-  h.dl([a.class("max-w-md")], [
+  h.dl([a.class("max-w-md mt-8")], [
     h.dt([a.class("font-semibold text-lg")], [h.text(province.name)]),
     h.dt([a.class("flex")], [
       h.span([a.class("block")], [h.text("Mã số:")]),
@@ -83,7 +83,7 @@ pub fn show_brief_info_province(province: Province) {
 }
 
 pub fn show_brief_info_ward(ward: Ward) {
-  h.dl([a.class("max-w-md")], [
+  h.dl([a.class("max-w-md mt-8")], [
     h.dt([a.class("font-semibold text-lg")], [h.text(ward.name)]),
     h.dt([a.class("flex")], [
       h.span([a.class("block")], [h.text("Mã số:")]),
@@ -132,6 +132,10 @@ pub fn render_province_combobox(
     |> list.map(fn(p) {
       let click_handler =
         ev.on("click", decode.success(emit_msg.choice_click(p)))
+      let indicator = case settled_province {
+        Some(x) if x == p -> "🗸 "
+        _ -> ""
+      }
       #(
         int.to_string(p.code),
         h.li([], [
@@ -143,7 +147,7 @@ pub fn render_province_combobox(
               click_handler,
             ],
             [
-              h.text(p.name),
+              h.text(indicator <> p.name),
             ],
           ),
         ]),
@@ -196,6 +200,10 @@ pub fn render_ward_combobox(
     |> list.map(fn(w) {
       let click_handler =
         ev.on("click", decode.success(emit_msg.choice_click(w)))
+      let indicator = case settled_ward {
+        Some(x) if x == w -> "🗸 "
+        _ -> ""
+      }
       #(
         int.to_string(w.code),
         h.li([], [
@@ -207,7 +215,7 @@ pub fn render_ward_combobox(
               click_handler,
             ],
             [
-              h.text(w.name),
+              h.text(indicator <> w.name),
             ],
           ),
         ]),
@@ -226,7 +234,6 @@ pub fn render_ward_combobox(
       ),
       input_handler,
       ev.on_focus(emit_msg.input_focus),
-      a.value(filter_text),
       a.value(filter_text),
     ]),
     // We need some container div elements to make paddings and create scroll view for the dropdown.

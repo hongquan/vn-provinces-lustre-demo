@@ -2,7 +2,7 @@
 var CustomType = class {
   withFields(fields) {
     let properties = Object.keys(this).map(
-      (label) => label in fields ? fields[label] : this[label]
+      (label2) => label2 in fields ? fields[label2] : this[label2]
     );
     return new this.constructor(...properties);
   }
@@ -2095,56 +2095,6 @@ function field(field_name, field_decoder, next) {
   return subfield(toList([field_name]), field_decoder, next);
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/result.mjs
-function map4(result, fun) {
-  if (result instanceof Ok) {
-    let x = result[0];
-    return new Ok(fun(x));
-  } else {
-    return result;
-  }
-}
-function map_error(result, fun) {
-  if (result instanceof Ok) {
-    return result;
-  } else {
-    let error = result[0];
-    return new Error(fun(error));
-  }
-}
-function try$(result, fun) {
-  if (result instanceof Ok) {
-    let x = result[0];
-    return fun(x);
-  } else {
-    return result;
-  }
-}
-function unwrap2(result, default$) {
-  if (result instanceof Ok) {
-    let v = result[0];
-    return v;
-  } else {
-    return default$;
-  }
-}
-function unwrap_both(result) {
-  if (result instanceof Ok) {
-    let a = result[0];
-    return a;
-  } else {
-    let a = result[0];
-    return a;
-  }
-}
-function replace_error(result, error) {
-  if (result instanceof Ok) {
-    return result;
-  } else {
-    return new Error(error);
-  }
-}
-
 // build/dev/javascript/gleam_stdlib/gleam/uri.mjs
 var Uri = class extends CustomType {
   constructor(scheme, userinfo, host, port, path, query, fragment3) {
@@ -2937,6 +2887,48 @@ var empty = /* @__PURE__ */ new Uri(
 );
 function parse(uri_string) {
   return parse_scheme_loop(uri_string, uri_string, empty, 0);
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/result.mjs
+function map4(result, fun) {
+  if (result instanceof Ok) {
+    let x = result[0];
+    return new Ok(fun(x));
+  } else {
+    return result;
+  }
+}
+function map_error(result, fun) {
+  if (result instanceof Ok) {
+    return result;
+  } else {
+    let error = result[0];
+    return new Error(fun(error));
+  }
+}
+function try$(result, fun) {
+  if (result instanceof Ok) {
+    let x = result[0];
+    return fun(x);
+  } else {
+    return result;
+  }
+}
+function unwrap_both(result) {
+  if (result instanceof Ok) {
+    let a = result[0];
+    return a;
+  } else {
+    let a = result[0];
+    return a;
+  }
+}
+function replace_error(result, error) {
+  if (result instanceof Ok) {
+    return result;
+  } else {
+    return new Error(error);
+  }
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/bool.mjs
@@ -3959,6 +3951,9 @@ function button(attrs, children) {
 }
 function input(attrs) {
   return element2("input", attrs, empty_list);
+}
+function label(attrs, children) {
+  return element2("label", attrs, children);
 }
 
 // build/dev/javascript/lustre/lustre/vdom/patch.mjs
@@ -6735,18 +6730,6 @@ var Ward = class extends CustomType {
     this.province_code = province_code;
   }
 };
-var ProvinceSelected = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var WardSelected = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
 var ProvinceComboboxFocused = class extends CustomType {
 };
 var ProvinceComboboxTextInput = class extends CustomType {
@@ -6788,6 +6771,12 @@ var ApiReturnedSearchedProvinces = class extends CustomType {
   }
 };
 var ApiReturnedWards = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var ApiReturnedSearchedWards = class extends CustomType {
   constructor($0) {
     super();
     this[0] = $0;
@@ -6893,6 +6882,37 @@ function load_wards(p) {
   );
   return get2(url, handler);
 }
+function search_wards(search, province_code) {
+  let url = "https://provinces.open-api.vn/api/v2/w/?" + query_to_string(
+    toList([["search", search], ["province", to_string(province_code)]])
+  );
+  let decoder = field(
+    "name",
+    string2,
+    (name) => {
+      return field(
+        "code",
+        int2,
+        (code2) => {
+          return field(
+            "province_code",
+            int2,
+            (province_code2) => {
+              return success(new Ward(name, code2, province_code2));
+            }
+          );
+        }
+      );
+    }
+  );
+  let handler = expect_json(
+    list2(decoder),
+    (var0) => {
+      return new ApiReturnedSearchedWards(var0);
+    }
+  );
+  return get2(url, handler);
+}
 
 // build/dev/javascript/vn_provinces_demo/views.mjs
 var ComboboxEmitMsg = class extends CustomType {
@@ -6905,7 +6925,7 @@ var ComboboxEmitMsg = class extends CustomType {
 };
 function show_brief_info_province(province) {
   return dl(
-    toList([class$("max-w-md")]),
+    toList([class$("max-w-md mt-8")]),
     toList([
       dt(
         toList([class$("font-semibold text-lg")]),
@@ -6926,7 +6946,7 @@ function show_brief_info_province(province) {
 }
 function show_brief_info_ward(ward) {
   return dl(
-    toList([class$("max-w-md")]),
+    toList([class$("max-w-md mt-8")]),
     toList([
       dt(
         toList([class$("font-semibold text-lg")]),
@@ -6955,6 +6975,18 @@ function render_province_combobox(id2, to_show, provinces, filter_text, settled_
         "click",
         success(emit_msg.choice_click(p))
       );
+      let _block$12;
+      if (settled_province instanceof Some) {
+        let x = settled_province[0];
+        if (isEqual(x, p)) {
+          _block$12 = "\u{1F5F8} ";
+        } else {
+          _block$12 = "";
+        }
+      } else {
+        _block$12 = "";
+      }
+      let indicator = _block$12;
       return [
         to_string(p.code),
         li(
@@ -6967,7 +6999,7 @@ function render_province_combobox(id2, to_show, provinces, filter_text, settled_
                 ),
                 click_handler
               ]),
-              toList([text3(p.name)])
+              toList([text3(indicator + p.name)])
             )
           ])
         )
@@ -7023,6 +7055,18 @@ function render_ward_combobox(id2, to_show, wards, filter_text, settled_ward, em
         "click",
         success(emit_msg.choice_click(w))
       );
+      let _block$12;
+      if (settled_ward instanceof Some) {
+        let x = settled_ward[0];
+        if (isEqual(x, w)) {
+          _block$12 = "\u{1F5F8} ";
+        } else {
+          _block$12 = "";
+        }
+      } else {
+        _block$12 = "";
+      }
+      let indicator = _block$12;
       return [
         to_string(w.code),
         li(
@@ -7035,7 +7079,7 @@ function render_ward_combobox(id2, to_show, wards, filter_text, settled_ward, em
                 ),
                 click_handler
               ]),
-              toList([text3(w.name)])
+              toList([text3(indicator + w.name)])
             )
           ])
         )
@@ -7061,7 +7105,6 @@ function render_ward_combobox(id2, to_show, wards, filter_text, settled_ward, em
           ),
           input_handler,
           on_focus(emit_msg.input_focus),
-          value(filter_text),
           value(filter_text)
         ])
       ),
@@ -7144,11 +7187,11 @@ function handle_loaded_provinces(provinces, model) {
   let $1 = model.route;
   if ($1 instanceof Province) {
     let i = $1[0];
-    let $2 = find2(provinces, (p) => {
+    let $22 = find2(provinces, (p) => {
       return p.code === i;
     });
-    if ($2 instanceof Ok) {
-      let p = $2[0];
+    if ($22 instanceof Ok) {
+      let p = $22[0];
       _block = [new Some(p), load_wards(p.code)];
     } else {
       _block = [new None(), none2()];
@@ -7161,6 +7204,18 @@ function handle_loaded_provinces(provinces, model) {
   let whatnext;
   selected_province = $[0];
   whatnext = $[1];
+  let _block$1;
+  if (selected_province instanceof Some) {
+    let p = selected_province[0];
+    _block$1 = [p.name, toList([p])];
+  } else {
+    _block$1 = ["", toList([])];
+  }
+  let $2 = _block$1;
+  let filter_text;
+  let filtered_items;
+  filter_text = $2[0];
+  filtered_items = $2[1];
   let model$1 = new Model(
     model.route,
     provinces,
@@ -7169,8 +7224,8 @@ function handle_loaded_provinces(provinces, model) {
       let _record = model.province_combobox_state;
       return new ComboboxState(
         _record.is_shown,
-        _record.filter_text,
-        _record.filtered_items,
+        filter_text,
+        filtered_items,
         selected_province
       );
     })(),
@@ -7182,9 +7237,9 @@ function handle_loaded_wards(wards, model) {
   let _block;
   let $ = model.route;
   if ($ instanceof Province) {
-    let $1 = $[1];
-    if ($1 instanceof Some) {
-      let w_code = $1[0];
+    let $12 = $[1];
+    if ($12 instanceof Some) {
+      let w_code = $12[0];
       let _pipe = wards;
       let _pipe$1 = find2(_pipe, (w) => {
         return w.code === w_code;
@@ -7197,6 +7252,18 @@ function handle_loaded_wards(wards, model) {
     _block = new None();
   }
   let selected_ward = _block;
+  let _block$1;
+  if (selected_ward instanceof Some) {
+    let w = selected_ward[0];
+    _block$1 = [w.name, toList([w])];
+  } else {
+    _block$1 = ["", toList([])];
+  }
+  let $1 = _block$1;
+  let filter_text;
+  let filtered_items;
+  filter_text = $1[0];
+  filtered_items = $1[1];
   let model$1 = new Model(
     model.route,
     model.provinces,
@@ -7206,19 +7273,21 @@ function handle_loaded_wards(wards, model) {
       let _record = model.ward_combobox_state;
       return new ComboboxState(
         _record.is_shown,
-        _record.filter_text,
-        _record.filtered_items,
+        filter_text,
+        filtered_items,
         selected_ward
       );
     })()
   );
   return [model$1, none2()];
 }
-function handle_route_changed(new_route, queried_province, model) {
+function handle_route_changed(new_route, queried_province, queried_ward, model) {
   let current_route;
   let provinces;
+  let wards;
   current_route = model.route;
   provinces = model.provinces;
+  wards = model.wards;
   let queried_province$1 = find2(
     provinces,
     (p) => {
@@ -7226,33 +7295,64 @@ function handle_route_changed(new_route, queried_province, model) {
     }
   );
   let _block;
-  if (current_route instanceof Home) {
+  if (queried_ward instanceof Some) {
+    let code2 = queried_ward[0];
+    let _pipe = wards;
+    let _pipe$1 = find2(_pipe, (w) => {
+      return w.code === code2;
+    });
+    _block = from_result(_pipe$1);
+  } else {
     _block = new None();
+  }
+  let queried_ward$1 = _block;
+  let _block$1;
+  if (queried_ward$1 instanceof Some) {
+    let w = queried_ward$1[0];
+    _block$1 = toList([w]);
+  } else {
+    _block$1 = toList([]);
+  }
+  let filtered_wards = _block$1;
+  let _block$2;
+  if (current_route instanceof Home) {
+    _block$2 = [new None(), new None()];
   } else {
     let i = current_route[0];
-    _block = new Some(i);
+    let j = current_route[1];
+    _block$2 = [new Some(i), j];
   }
-  let current_province = _block;
-  let _block$1;
+  let $ = _block$2;
+  let current_province;
+  current_province = $[0];
+  let _block$3;
   if (current_province instanceof Some) {
     if (queried_province$1 instanceof Ok) {
-      let j = current_province[0];
-      let i = queried_province$1[0];
-      if (i.code !== j) {
-        _block$1 = load_wards(i.code);
+      let i = current_province[0];
+      let p = queried_province$1[0];
+      if (p.code !== i) {
+        _block$3 = new Some(p.code);
       } else {
-        _block$1 = none2();
+        _block$3 = new None();
       }
     } else {
-      _block$1 = none2();
+      _block$3 = new None();
     }
   } else if (queried_province$1 instanceof Ok) {
-    let i = queried_province$1[0];
-    _block$1 = load_wards(i.code);
+    let p = queried_province$1[0];
+    _block$3 = new Some(p.code);
   } else {
-    _block$1 = none2();
+    _block$3 = new None();
   }
-  let whatnext = _block$1;
+  let should_load_wards = _block$3;
+  let _block$4;
+  if (should_load_wards instanceof Some) {
+    let p_code = should_load_wards[0];
+    _block$4 = load_wards(p_code);
+  } else {
+    _block$4 = none2();
+  }
+  let whatnext = _block$4;
   let model$1 = new Model(
     new_route,
     model.provinces,
@@ -7266,60 +7366,20 @@ function handle_route_changed(new_route, queried_province, model) {
         from_result(queried_province$1)
       );
     })(),
-    model.ward_combobox_state
+    (() => {
+      let _record = model.ward_combobox_state;
+      return new ComboboxState(
+        _record.is_shown,
+        _record.filter_text,
+        filtered_wards,
+        queried_ward$1
+      );
+    })()
   );
   return [model$1, whatnext];
 }
 function update2(model, msg) {
-  if (msg instanceof ProvinceSelected) {
-    let p = msg[0];
-    let model$1 = new Model(
-      model.route,
-      model.provinces,
-      toList([]),
-      (() => {
-        let _record = model.province_combobox_state;
-        return new ComboboxState(
-          _record.is_shown,
-          _record.filter_text,
-          _record.filtered_items,
-          p
-        );
-      })(),
-      model.ward_combobox_state
-    );
-    if (p instanceof Some) {
-      let p$1 = p[0];
-      let query_string = query_to_string(
-        toList([["p", to_string(p$1.code)]])
-      );
-      return [model$1, push("", new Some(query_string), new None())];
-    } else {
-      return [model$1, none2()];
-    }
-  } else if (msg instanceof WardSelected) {
-    let w = msg[0];
-    if (w instanceof Some) {
-      let w$1 = w[0];
-      let new_append = ["w", to_string(w$1.code)];
-      let _block;
-      let $ = model.route;
-      if ($ instanceof Province) {
-        let p = $[0];
-        _block = toList([["p", to_string(p)], new_append]);
-      } else {
-        _block = toList([new_append]);
-      }
-      let new_query = _block;
-      return [
-        model,
-        push("", new Some(query_to_string(new_query)), new None())
-      ];
-    } else {
-      return [model, none2()];
-    }
-  } else if (msg instanceof ProvinceComboboxFocused) {
-    console_log("Focused");
+  if (msg instanceof ProvinceComboboxFocused) {
     let model$1 = new Model(
       model.route,
       model.provinces,
@@ -7393,6 +7453,34 @@ function update2(model, msg) {
       })()
     );
     return [model$1, none2()];
+  } else if (msg instanceof WardComboboxTextInput) {
+    let s = msg[0];
+    console_log("Ward input text: " + s);
+    let selected_province;
+    selected_province = model.province_combobox_state.selected_item;
+    let model$1 = new Model(
+      model.route,
+      model.provinces,
+      model.wards,
+      model.province_combobox_state,
+      (() => {
+        let _record = model.ward_combobox_state;
+        return new ComboboxState(
+          _record.is_shown,
+          s,
+          _record.filtered_items,
+          _record.selected_item
+        );
+      })()
+    );
+    let _block;
+    let _pipe = selected_province;
+    let _pipe$1 = map(_pipe, (p) => {
+      return p.code;
+    });
+    _block = unwrap(_pipe$1, 0);
+    let province_code = _block;
+    return [model$1, search_wards(s, province_code)];
   } else if (msg instanceof WardComboboxSelected) {
     let w = msg[0];
     let model$1 = new Model(
@@ -7464,15 +7552,39 @@ function update2(model, msg) {
     } else {
       return [model, none2()];
     }
+  } else if (msg instanceof ApiReturnedSearchedWards) {
+    let $ = msg[0];
+    if ($ instanceof Ok) {
+      let wards = $[0];
+      let model$1 = new Model(
+        model.route,
+        model.provinces,
+        model.wards,
+        model.province_combobox_state,
+        (() => {
+          let _record = model.ward_combobox_state;
+          return new ComboboxState(
+            _record.is_shown,
+            _record.filter_text,
+            wards,
+            _record.selected_item
+          );
+        })()
+      );
+      return [model$1, none2()];
+    } else {
+      return [model, none2()];
+    }
   } else if (msg instanceof OnRouteChange) {
     let new_route = msg[0];
     if (new_route instanceof Home) {
       return [model, none2()];
     } else {
       let p = new_route[0];
-      return handle_route_changed(new_route, p, model);
+      let w = new_route[1];
+      return handle_route_changed(new_route, p, w, model);
     }
-  } else if (msg instanceof UserClickedOutside) {
+  } else {
     let model$1 = new Model(
       model.route,
       model.provinces,
@@ -7497,8 +7609,6 @@ function update2(model, msg) {
       })()
     );
     return [model$1, none2()];
-  } else {
-    return [model, none2()];
   }
 }
 function get_htmlelement_decoder() {
@@ -7517,7 +7627,6 @@ function get_htmlelement_decoder() {
 var id_province_combobox = "province-combobox";
 var id_ward_combobox = "ward-combobox";
 function view2(model) {
-  let route;
   let provinces;
   let wards;
   let province_combobox_shown;
@@ -7528,7 +7637,6 @@ function view2(model) {
   let ward_filter_text;
   let filtered_wards;
   let selected_ward;
-  route = model.route;
   provinces = model.provinces;
   wards = model.wards;
   ward_combobox_shown = model.ward_combobox_state.is_shown;
@@ -7546,26 +7654,6 @@ function view2(model) {
     _block = filtered_provinces;
   }
   let filtered_provinces$1 = _block;
-  let _block$1;
-  if (route instanceof Province && province_filter_text === "") {
-    let p_code = route[0];
-    let _pipe = provinces;
-    let _pipe$1 = find_map(
-      _pipe,
-      (p) => {
-        let $ = p.code === p_code;
-        if ($) {
-          return new Ok(p.name);
-        } else {
-          return new Error(void 0);
-        }
-      }
-    );
-    _block$1 = unwrap2(_pipe$1, province_filter_text);
-  } else {
-    _block$1 = province_filter_text;
-  }
-  let province_filter_text$1 = _block$1;
   let cb_msg = new ComboboxEmitMsg(
     (var0) => {
       return new ProvinceComboboxTextInput(var0);
@@ -7579,7 +7667,7 @@ function view2(model) {
     id_province_combobox,
     province_combobox_shown,
     filtered_provinces$1,
-    province_filter_text$1,
+    province_filter_text,
     selected_province,
     cb_msg
   );
@@ -7592,43 +7680,18 @@ function view2(model) {
     },
     new WardComboboxFocused()
   );
-  let _block$2;
+  let _block$1;
   if (ward_filter_text === "") {
-    _block$2 = wards;
+    _block$1 = wards;
   } else {
-    _block$2 = filtered_wards;
+    _block$1 = filtered_wards;
   }
-  let filtered_wards$1 = _block$2;
-  let _block$3;
-  if (route instanceof Province) {
-    let $ = route[1];
-    if ($ instanceof Some && ward_filter_text === "") {
-      let w_code = $[0];
-      let _pipe = wards;
-      let _pipe$1 = find_map(
-        _pipe,
-        (w) => {
-          let $1 = w.code === w_code;
-          if ($1) {
-            return new Ok(w.name);
-          } else {
-            return new Error(void 0);
-          }
-        }
-      );
-      _block$3 = unwrap2(_pipe$1, ward_filter_text);
-    } else {
-      _block$3 = ward_filter_text;
-    }
-  } else {
-    _block$3 = ward_filter_text;
-  }
-  let ward_filter_text$1 = _block$3;
+  let filtered_wards$1 = _block$1;
   let ward_combobox = render_ward_combobox(
     id_ward_combobox,
     ward_combobox_shown,
     filtered_wards$1,
-    ward_filter_text$1,
+    ward_filter_text,
     selected_ward,
     cb_msg$1
   );
@@ -7640,24 +7703,24 @@ function view2(model) {
         "target",
         html_element_decoder,
         (clicked_node) => {
-          let _block$4;
+          let _block$2;
           let $ = getElementById(id_province_combobox);
           if ($ instanceof Ok) {
             let box = $[0];
-            _block$4 = contains2(clicked_node, box);
+            _block$2 = contains2(clicked_node, box);
           } else {
-            _block$4 = true;
+            _block$2 = true;
           }
-          let outside_province = _block$4;
-          let _block$5;
+          let outside_province = _block$2;
+          let _block$3;
           let $1 = getElementById(id_ward_combobox);
           if ($1 instanceof Ok) {
             let box = $1[0];
-            _block$5 = contains2(clicked_node, box);
+            _block$3 = contains2(clicked_node, box);
           } else {
-            _block$5 = true;
+            _block$3 = true;
           }
-          let outside_ward = _block$5;
+          let outside_ward = _block$3;
           let $2 = outside_province || outside_ward;
           if ($2) {
             return success(new UserClickedOutside());
@@ -7673,12 +7736,16 @@ function view2(model) {
     toList([
       div(
         toList([
-          class$("space-y-4 md:flex md:flex-row md:space-x-4 md:space-y-0")
+          class$("space-y-8 md:flex md:flex-row md:space-x-8 md:space-y-0")
         ]),
         toList([
           div(
             toList([]),
             toList([
+              label(
+                toList([class$("text-lg")]),
+                toList([text3("T\u1EC9nh th\xE0nh")])
+              ),
               province_combobox,
               (() => {
                 let _pipe = selected_province;
@@ -7690,6 +7757,10 @@ function view2(model) {
           div(
             toList([]),
             toList([
+              label(
+                toList([class$("text-lg")]),
+                toList([text3("Ph\u01B0\u1EDDng x\xE3")])
+              ),
               ward_combobox,
               (() => {
                 let _pipe = selected_ward;
@@ -7711,15 +7782,15 @@ function main() {
       "let_assert",
       FILEPATH,
       "vn_provinces_demo",
-      49,
+      47,
       "main",
       "Pattern match failed, no pattern matched the value.",
       {
         value: $,
-        start: 1355,
-        end: 1404,
-        pattern_start: 1366,
-        pattern_end: 1371
+        start: 1314,
+        end: 1363,
+        pattern_start: 1325,
+        pattern_end: 1330
       }
     );
   }

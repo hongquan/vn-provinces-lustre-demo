@@ -12,8 +12,6 @@ pub type Ward {
 }
 
 pub type Msg {
-  ProvinceSelected(Option(Province))
-  WardSelected(Option(Ward))
   ProvinceComboboxFocused
   ProvinceComboboxTextInput(String)
   ProvinceComboboxSelected(Province)
@@ -25,6 +23,7 @@ pub type Msg {
   // This is the API response for searched provinces
   ApiReturnedSearchedProvinces(Result(List(Province), rsvp.Error))
   ApiReturnedWards(Result(List(Ward), rsvp.Error))
+  ApiReturnedSearchedWards(Result(List(Ward), rsvp.Error))
   OnRouteChange(router.Route)
   UserClickedOutside
 }
