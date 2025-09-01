@@ -1,18 +1,19 @@
-import gleam/dynamic/decode.{new_primitive_decoder}
 import gleam/int
 import gleam/io
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/result
 import gleam/uri
 import lustre
 import lustre/attribute as a
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html as h
-import lustre/event as ev
 import modem
-import plinth/browser/document.{create_text_node}
+import plinth/browser/document
 import plinth/browser/element as web_element
+import plinth/browser/event as web_event
+import plinth/javascript/console
 
 import actions
 import core.{
@@ -45,8 +46,37 @@ pub type Model {
 
 pub fn main() -> Nil {
   let app = lustre.application(init, update, view)
-  let assert Ok(_) = lustre.start(app, "#app", Nil)
-  Nil
+  let assert Ok(runtime) = lustre.start(app, "#app", Nil)
+  document.add_event_listener("click", fn(lev) {
+    case get_message_for_document_click(lev) {
+      Ok(Some(msg)) -> {
+        lustre.send(runtime, msg)
+      }
+      _ -> Nil
+    }
+  })
+}
+
+fn get_message_for_document_click(lev: web_event.Event(Msg)) {
+  use clicked_elm <- result.try(web_element.cast(web_event.target(lev)))
+  let outside_province_cbb =
+    document.get_element_by_id(id_province_combobox)
+    |> result.map(fn(p_cbb) { web_element.contains(clicked_elm, p_cbb) })
+    |> result.unwrap(True)
+  let outside_ward_cbb =
+    document.get_element_by_id(id_ward_combobox)
+    |> result.map(fn(w_cbb) { web_element.contains(clicked_elm, w_cbb) })
+    |> result.unwrap(True)
+  let msg =
+    case outside_province_cbb, outside_ward_cbb {
+      True, True -> Some(core.OutBoth)
+      True, _ -> Some(core.OutProvince)
+      _, True -> Some(core.OutWard)
+      _, _ -> None
+    }
+    |> option.map(UserClickedOutside)
+    |> option.map(lustre.dispatch)
+  Ok(msg)
 }
 
 fn init(_args) -> #(Model, Effect(Msg)) {
@@ -238,17 +268,27 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
       #(model, modem.push("", Some(uri.query_to_string(new_query)), None))
     }
-    UserClickedOutside -> {
+    UserClickedOutside(position) -> {
+      let should_close_province_dropdown = case position {
+        core.OutBoth -> True
+        core.OutProvince -> True
+        _ -> False
+      }
+      let should_close_ward_dropdown = case position {
+        core.OutBoth -> True
+        core.OutWard -> True
+        _ -> False
+      }
       let model =
         Model(
           ..model,
           province_combobox_state: ComboboxState(
             ..model.province_combobox_state,
-            is_shown: False,
+            is_shown: !should_close_province_dropdown,
           ),
           ward_combobox_state: ComboboxState(
             ..model.ward_combobox_state,
-            is_shown: False,
+            is_shown: !should_close_ward_dropdown,
           ),
         )
       #(model, effect.none())
@@ -318,26 +358,8 @@ fn view(model: Model) -> Element(Msg) {
       cb_msg,
     )
   // Handle "click outside" for our combobox
-  let click_handler =
-    ev.on("click", {
-      let html_element_decoder = get_htmlelement_decoder()
-      use clicked_node <- decode.field("target", html_element_decoder)
-      let outside_province = case
-        document.get_element_by_id(id_province_combobox)
-      {
-        Ok(box) -> web_element.contains(clicked_node, box)
-        Error(_) -> True
-      }
-      let outside_ward = case document.get_element_by_id(id_ward_combobox) {
-        Ok(box) -> web_element.contains(clicked_node, box)
-        Error(_) -> True
-      }
-      case outside_province || outside_ward {
-        True -> decode.success(UserClickedOutside)
-        False -> decode.failure(UserClickedOutside, "Not outsise")
-      }
-    })
-  h.section([a.class("grow"), click_handler], [
+
+  h.section([a.class("grow")], [
     h.div([a.class("space-y-8 md:flex md:flex-row md:space-x-8 md:space-y-0")], [
       h.div([], [
         h.label([a.class("text-lg")], [h.text("Tỉnh thành")]),
@@ -484,13 +506,4 @@ fn handle_route_changed(
       ),
     )
   #(model, whatnext)
-}
-
-fn get_htmlelement_decoder() -> decode.Decoder(web_element.Element) {
-  new_primitive_decoder("HTMLElement", fn(data) {
-    case web_element.cast(data) {
-      Ok(x) -> Ok(x)
-      Error(_) -> Error(create_text_node(""))
-    }
-  })
 }

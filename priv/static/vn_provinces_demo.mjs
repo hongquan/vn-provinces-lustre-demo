@@ -357,15 +357,15 @@ function structurallyCompatibleObjects(a, b) {
   return a.constructor === b.constructor;
 }
 function makeError(variant, file, module, line, fn, message2, extra) {
-  let error = new globalThis.Error(message2);
-  error.gleam_error = variant;
-  error.file = file;
-  error.module = module;
-  error.line = line;
-  error.function = fn;
-  error.fn = fn;
-  for (let k in extra) error[k] = extra[k];
-  return error;
+  let error2 = new globalThis.Error(message2);
+  error2.gleam_error = variant;
+  error2.file = file;
+  error2.module = module;
+  error2.line = line;
+  error2.function = fn;
+  error2.fn = fn;
+  for (let k in extra) error2[k] = extra[k];
+  return error2;
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/order.mjs
@@ -1141,181 +1141,6 @@ var Dict = class _Dict {
 };
 var unequalDictSymbol = /* @__PURE__ */ Symbol();
 
-// build/dev/javascript/gleam_stdlib/gleam_stdlib.mjs
-var Nil = void 0;
-function identity(x) {
-  return x;
-}
-function parse_int(value3) {
-  if (/^[-+]?(\d+)$/.test(value3)) {
-    return new Ok(parseInt(value3));
-  } else {
-    return new Error(Nil);
-  }
-}
-function to_string(term) {
-  return term.toString();
-}
-function pop_codeunit(str) {
-  return [str.charCodeAt(0) | 0, str.slice(1)];
-}
-function lowercase(string5) {
-  return string5.toLowerCase();
-}
-function concat(xs) {
-  let result = "";
-  for (const x of xs) {
-    result = result + x;
-  }
-  return result;
-}
-function string_codeunit_slice(str, from2, length4) {
-  return str.slice(from2, from2 + length4);
-}
-function starts_with(haystack, needle) {
-  return haystack.startsWith(needle);
-}
-var unicode_whitespaces = [
-  " ",
-  // Space
-  "	",
-  // Horizontal tab
-  "\n",
-  // Line feed
-  "\v",
-  // Vertical tab
-  "\f",
-  // Form feed
-  "\r",
-  // Carriage return
-  "\x85",
-  // Next line
-  "\u2028",
-  // Line separator
-  "\u2029"
-  // Paragraph separator
-].join("");
-var trim_start_regex = /* @__PURE__ */ new RegExp(
-  `^[${unicode_whitespaces}]*`
-);
-var trim_end_regex = /* @__PURE__ */ new RegExp(`[${unicode_whitespaces}]*$`);
-function trim_start(string5) {
-  return string5.replace(trim_start_regex, "");
-}
-function trim_end(string5) {
-  return string5.replace(trim_end_regex, "");
-}
-function console_log(term) {
-  console.log(term);
-}
-function unsafe_percent_decode_query(string5) {
-  return decodeURIComponent((string5 || "").replace("+", " "));
-}
-function percent_encode(string5) {
-  return encodeURIComponent(string5).replace("%2B", "+");
-}
-function parse_query(query) {
-  try {
-    const pairs = [];
-    for (const section2 of query.split("&")) {
-      const [key2, value3] = section2.split("=");
-      if (!key2) continue;
-      const decodedKey = unsafe_percent_decode_query(key2);
-      const decodedValue = unsafe_percent_decode_query(value3);
-      pairs.push([decodedKey, decodedValue]);
-    }
-    return new Ok(List.fromArray(pairs));
-  } catch {
-    return new Error(Nil);
-  }
-}
-function classify_dynamic(data) {
-  if (typeof data === "string") {
-    return "String";
-  } else if (typeof data === "boolean") {
-    return "Bool";
-  } else if (data instanceof Result) {
-    return "Result";
-  } else if (data instanceof List) {
-    return "List";
-  } else if (data instanceof BitArray) {
-    return "BitArray";
-  } else if (data instanceof Dict) {
-    return "Dict";
-  } else if (Number.isInteger(data)) {
-    return "Int";
-  } else if (Array.isArray(data)) {
-    return `Array`;
-  } else if (typeof data === "number") {
-    return "Float";
-  } else if (data === null) {
-    return "Nil";
-  } else if (data === void 0) {
-    return "Nil";
-  } else {
-    const type = typeof data;
-    return type.charAt(0).toUpperCase() + type.slice(1);
-  }
-}
-function index2(data, key2) {
-  if (data instanceof Dict || data instanceof WeakMap || data instanceof Map) {
-    const token = {};
-    const entry = data.get(key2, token);
-    if (entry === token) return new Ok(new None());
-    return new Ok(new Some(entry));
-  }
-  const key_is_int = Number.isInteger(key2);
-  if (key_is_int && key2 >= 0 && key2 < 8 && data instanceof List) {
-    let i = 0;
-    for (const value3 of data) {
-      if (i === key2) return new Ok(new Some(value3));
-      i++;
-    }
-    return new Error("Indexable");
-  }
-  if (key_is_int && Array.isArray(data) || data && typeof data === "object" || data && Object.getPrototypeOf(data) === Object.prototype) {
-    if (key2 in data) return new Ok(new Some(data[key2]));
-    return new Ok(new None());
-  }
-  return new Error(key_is_int ? "Indexable" : "Dict");
-}
-function list(data, decode2, pushPath, index5, emptyList) {
-  if (!(data instanceof List || Array.isArray(data))) {
-    const error = new DecodeError("List", classify_dynamic(data), emptyList);
-    return [emptyList, List.fromArray([error])];
-  }
-  const decoded = [];
-  for (const element4 of data) {
-    const layer = decode2(element4);
-    const [out, errors] = layer;
-    if (errors instanceof NonEmpty) {
-      const [_, errors2] = pushPath(layer, index5.toString());
-      return [emptyList, errors2];
-    }
-    decoded.push(out);
-    index5++;
-  }
-  return [List.fromArray(decoded), emptyList];
-}
-function int(data) {
-  if (Number.isInteger(data)) return new Ok(data);
-  return new Error(0);
-}
-function string(data) {
-  if (typeof data === "string") return new Ok(data);
-  return new Error("");
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/int.mjs
-function max(a, b) {
-  let $ = a > b;
-  if ($) {
-    return a;
-  } else {
-    return b;
-  }
-}
-
 // build/dev/javascript/gleam_stdlib/gleam/list.mjs
 var Ascending = class extends CustomType {
 };
@@ -1921,11 +1746,6 @@ function one_of(first, alternatives) {
     }
   );
 }
-function decode_error(expected, found) {
-  return toList([
-    new DecodeError(expected, classify_dynamic(found), toList([]))
-  ]);
-}
 function run_dynamic_function(data, name, f) {
   let $ = f(data);
   if ($ instanceof Ok) {
@@ -1941,28 +1761,6 @@ function run_dynamic_function(data, name, f) {
 }
 function decode_int(data) {
   return run_dynamic_function(data, "Int", int);
-}
-function failure(zero, expected) {
-  return new Decoder((d) => {
-    return [zero, decode_error(expected, d)];
-  });
-}
-function new_primitive_decoder(name, decoding_function) {
-  return new Decoder(
-    (d) => {
-      let $ = decoding_function(d);
-      if ($ instanceof Ok) {
-        let t = $[0];
-        return [t, toList([])];
-      } else {
-        let zero = $[0];
-        return [
-          zero,
-          toList([new DecodeError(name, classify_dynamic(d), toList([]))])
-        ];
-      }
-    }
-  );
 }
 var int2 = /* @__PURE__ */ new Decoder(decode_int);
 function decode_string(data) {
@@ -2009,11 +1807,11 @@ function push_path(layer, path) {
   );
   let errors = map2(
     layer[1],
-    (error) => {
+    (error2) => {
       return new DecodeError(
-        error.expected,
-        error.found,
-        append(path$1, error.path)
+        error2.expected,
+        error2.found,
+        append(path$1, error2.path)
       );
     }
   );
@@ -2093,6 +1891,231 @@ function subfield(field_path, field_decoder, next) {
 }
 function field(field_name, field_decoder, next) {
   return subfield(toList([field_name]), field_decoder, next);
+}
+
+// build/dev/javascript/gleam_stdlib/gleam_stdlib.mjs
+var Nil = void 0;
+function identity(x) {
+  return x;
+}
+function parse_int(value3) {
+  if (/^[-+]?(\d+)$/.test(value3)) {
+    return new Ok(parseInt(value3));
+  } else {
+    return new Error(Nil);
+  }
+}
+function to_string(term) {
+  return term.toString();
+}
+function pop_codeunit(str) {
+  return [str.charCodeAt(0) | 0, str.slice(1)];
+}
+function lowercase(string5) {
+  return string5.toLowerCase();
+}
+function concat(xs) {
+  let result = "";
+  for (const x of xs) {
+    result = result + x;
+  }
+  return result;
+}
+function string_codeunit_slice(str, from2, length4) {
+  return str.slice(from2, from2 + length4);
+}
+function starts_with(haystack, needle) {
+  return haystack.startsWith(needle);
+}
+var unicode_whitespaces = [
+  " ",
+  // Space
+  "	",
+  // Horizontal tab
+  "\n",
+  // Line feed
+  "\v",
+  // Vertical tab
+  "\f",
+  // Form feed
+  "\r",
+  // Carriage return
+  "\x85",
+  // Next line
+  "\u2028",
+  // Line separator
+  "\u2029"
+  // Paragraph separator
+].join("");
+var trim_start_regex = /* @__PURE__ */ new RegExp(
+  `^[${unicode_whitespaces}]*`
+);
+var trim_end_regex = /* @__PURE__ */ new RegExp(`[${unicode_whitespaces}]*$`);
+function trim_start(string5) {
+  return string5.replace(trim_start_regex, "");
+}
+function trim_end(string5) {
+  return string5.replace(trim_end_regex, "");
+}
+function console_log(term) {
+  console.log(term);
+}
+function unsafe_percent_decode_query(string5) {
+  return decodeURIComponent((string5 || "").replace("+", " "));
+}
+function percent_encode(string5) {
+  return encodeURIComponent(string5).replace("%2B", "+");
+}
+function parse_query(query) {
+  try {
+    const pairs = [];
+    for (const section2 of query.split("&")) {
+      const [key2, value3] = section2.split("=");
+      if (!key2) continue;
+      const decodedKey = unsafe_percent_decode_query(key2);
+      const decodedValue = unsafe_percent_decode_query(value3);
+      pairs.push([decodedKey, decodedValue]);
+    }
+    return new Ok(List.fromArray(pairs));
+  } catch {
+    return new Error(Nil);
+  }
+}
+function classify_dynamic(data) {
+  if (typeof data === "string") {
+    return "String";
+  } else if (typeof data === "boolean") {
+    return "Bool";
+  } else if (data instanceof Result) {
+    return "Result";
+  } else if (data instanceof List) {
+    return "List";
+  } else if (data instanceof BitArray) {
+    return "BitArray";
+  } else if (data instanceof Dict) {
+    return "Dict";
+  } else if (Number.isInteger(data)) {
+    return "Int";
+  } else if (Array.isArray(data)) {
+    return `Array`;
+  } else if (typeof data === "number") {
+    return "Float";
+  } else if (data === null) {
+    return "Nil";
+  } else if (data === void 0) {
+    return "Nil";
+  } else {
+    const type = typeof data;
+    return type.charAt(0).toUpperCase() + type.slice(1);
+  }
+}
+function index2(data, key2) {
+  if (data instanceof Dict || data instanceof WeakMap || data instanceof Map) {
+    const token = {};
+    const entry = data.get(key2, token);
+    if (entry === token) return new Ok(new None());
+    return new Ok(new Some(entry));
+  }
+  const key_is_int = Number.isInteger(key2);
+  if (key_is_int && key2 >= 0 && key2 < 8 && data instanceof List) {
+    let i = 0;
+    for (const value3 of data) {
+      if (i === key2) return new Ok(new Some(value3));
+      i++;
+    }
+    return new Error("Indexable");
+  }
+  if (key_is_int && Array.isArray(data) || data && typeof data === "object" || data && Object.getPrototypeOf(data) === Object.prototype) {
+    if (key2 in data) return new Ok(new Some(data[key2]));
+    return new Ok(new None());
+  }
+  return new Error(key_is_int ? "Indexable" : "Dict");
+}
+function list(data, decode2, pushPath, index5, emptyList) {
+  if (!(data instanceof List || Array.isArray(data))) {
+    const error2 = new DecodeError("List", classify_dynamic(data), emptyList);
+    return [emptyList, List.fromArray([error2])];
+  }
+  const decoded = [];
+  for (const element4 of data) {
+    const layer = decode2(element4);
+    const [out, errors] = layer;
+    if (errors instanceof NonEmpty) {
+      const [_, errors2] = pushPath(layer, index5.toString());
+      return [emptyList, errors2];
+    }
+    decoded.push(out);
+    index5++;
+  }
+  return [List.fromArray(decoded), emptyList];
+}
+function int(data) {
+  if (Number.isInteger(data)) return new Ok(data);
+  return new Error(0);
+}
+function string(data) {
+  if (typeof data === "string") return new Ok(data);
+  return new Error("");
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/int.mjs
+function max(a, b) {
+  let $ = a > b;
+  if ($) {
+    return a;
+  } else {
+    return b;
+  }
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/result.mjs
+function map4(result, fun) {
+  if (result instanceof Ok) {
+    let x = result[0];
+    return new Ok(fun(x));
+  } else {
+    return result;
+  }
+}
+function map_error(result, fun) {
+  if (result instanceof Ok) {
+    return result;
+  } else {
+    let error2 = result[0];
+    return new Error(fun(error2));
+  }
+}
+function try$(result, fun) {
+  if (result instanceof Ok) {
+    let x = result[0];
+    return fun(x);
+  } else {
+    return result;
+  }
+}
+function unwrap2(result, default$) {
+  if (result instanceof Ok) {
+    let v = result[0];
+    return v;
+  } else {
+    return default$;
+  }
+}
+function unwrap_both(result) {
+  if (result instanceof Ok) {
+    let a = result[0];
+    return a;
+  } else {
+    let a = result[0];
+    return a;
+  }
+}
+function replace_error(result, error2) {
+  if (result instanceof Ok) {
+    return result;
+  } else {
+    return new Error(error2);
+  }
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/uri.mjs
@@ -2889,48 +2912,6 @@ function parse(uri_string) {
   return parse_scheme_loop(uri_string, uri_string, empty, 0);
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/result.mjs
-function map4(result, fun) {
-  if (result instanceof Ok) {
-    let x = result[0];
-    return new Ok(fun(x));
-  } else {
-    return result;
-  }
-}
-function map_error(result, fun) {
-  if (result instanceof Ok) {
-    return result;
-  } else {
-    let error = result[0];
-    return new Error(fun(error));
-  }
-}
-function try$(result, fun) {
-  if (result instanceof Ok) {
-    let x = result[0];
-    return fun(x);
-  } else {
-    return result;
-  }
-}
-function unwrap_both(result) {
-  if (result instanceof Ok) {
-    let a = result[0];
-    return a;
-  } else {
-    let a = result[0];
-    return a;
-  }
-}
-function replace_error(result, error) {
-  if (result instanceof Ok) {
-    return result;
-  } else {
-    return new Error(error);
-  }
-}
-
 // build/dev/javascript/gleam_stdlib/gleam/bool.mjs
 function guard(requirement, consequence, alternative) {
   if (requirement) {
@@ -3359,8 +3340,8 @@ function none2() {
 }
 function from(effect) {
   let task = (actions) => {
-    let dispatch = actions.dispatch;
-    return effect(dispatch);
+    let dispatch2 = actions.dispatch;
+    return effect(dispatch2);
   };
   return new Effect(toList([task]), empty2.before_paint, empty2.after_paint);
 }
@@ -5079,9 +5060,9 @@ var Reconciler = class {
   };
   #useServerEvents = false;
   #exposeKeys = false;
-  constructor(root3, dispatch, { useServerEvents = false, exposeKeys = false } = {}) {
+  constructor(root3, dispatch2, { useServerEvents = false, exposeKeys = false } = {}) {
     this.#root = root3;
-    this.#dispatch = dispatch;
+    this.#dispatch = dispatch2;
     this.#useServerEvents = useServerEvents;
     this.#exposeKeys = exposeKeys;
   }
@@ -5821,6 +5802,9 @@ var Runtime = class {
     }
   }
 };
+var send = (runtime, message2) => {
+  runtime.send(message2);
+};
 function makeEffect(synchronous) {
   return {
     synchronous,
@@ -5948,6 +5932,9 @@ var NotABrowser = class extends CustomType {
 function application(init3, update3, view3) {
   return new App(init3, update3, view3, new$6(empty_list));
 }
+function dispatch(msg) {
+  return new EffectDispatchedMessage(msg);
+}
 function start3(app, selector, start_args) {
   return guard(
     !is_browser(),
@@ -5956,76 +5943,6 @@ function start3(app, selector, start_args) {
       return start(app, selector, start_args);
     }
   );
-}
-
-// build/dev/javascript/lustre/lustre/event.mjs
-function is_immediate_event(name) {
-  if (name === "input") {
-    return true;
-  } else if (name === "change") {
-    return true;
-  } else if (name === "focus") {
-    return true;
-  } else if (name === "focusin") {
-    return true;
-  } else if (name === "focusout") {
-    return true;
-  } else if (name === "blur") {
-    return true;
-  } else if (name === "select") {
-    return true;
-  } else {
-    return false;
-  }
-}
-function on(name, handler) {
-  return event(
-    name,
-    map3(handler, (msg) => {
-      return new Handler(false, false, msg);
-    }),
-    empty_list,
-    never,
-    never,
-    is_immediate_event(name),
-    0,
-    0
-  );
-}
-function debounce(event4, delay) {
-  if (event4 instanceof Event2) {
-    return new Event2(
-      event4.kind,
-      event4.name,
-      event4.handler,
-      event4.include,
-      event4.prevent_default,
-      event4.stop_propagation,
-      event4.immediate,
-      max(0, delay),
-      event4.throttle
-    );
-  } else {
-    return event4;
-  }
-}
-function on_click(msg) {
-  return on("click", success(msg));
-}
-function on_input(msg) {
-  return on(
-    "input",
-    subfield(
-      toList(["target", "value"]),
-      string2,
-      (value3) => {
-        return success(msg(value3));
-      }
-    )
-  );
-}
-function on_focus(msg) {
-  return on("focus", success(msg));
 }
 
 // build/dev/javascript/modem/modem.ffi.mjs
@@ -6041,7 +5958,7 @@ var do_initial_uri = () => {
     return new Ok(uri_from_url(new URL(initial_location)));
   }
 };
-var do_init = (dispatch, options = defaults) => {
+var do_init = (dispatch2, options = defaults) => {
   document.addEventListener("click", (event4) => {
     const a = find_anchor(event4.target);
     if (!a) return;
@@ -6062,7 +5979,7 @@ var do_init = (dispatch, options = defaults) => {
           }
         });
       }
-      return dispatch(uri);
+      return dispatch2(uri);
     } catch {
       return;
     }
@@ -6078,13 +5995,13 @@ var do_init = (dispatch, options = defaults) => {
         window.scrollTo(0, 0);
       }
     });
-    dispatch(uri);
+    dispatch2(uri);
   });
   window.addEventListener("modem-push", ({ detail }) => {
-    dispatch(detail);
+    dispatch2(detail);
   });
   window.addEventListener("modem-replace", ({ detail }) => {
-    dispatch(detail);
+    dispatch2(detail);
   });
 };
 var do_push = (uri) => {
@@ -6127,7 +6044,7 @@ var uri_from_url = (url) => {
 // build/dev/javascript/modem/modem.mjs
 function init(handler) {
   return from(
-    (dispatch) => {
+    (dispatch2) => {
       return guard(
         !is_browser(),
         void 0,
@@ -6136,7 +6053,7 @@ function init(handler) {
             (uri) => {
               let _pipe = uri;
               let _pipe$1 = handler(_pipe);
-              return dispatch(_pipe$1);
+              return dispatch2(_pipe$1);
             }
           );
         }
@@ -6229,8 +6146,8 @@ function try_await(promise, callback) {
 }
 
 // build/dev/javascript/plinth/document_ffi.mjs
-function createTextNode2(content) {
-  return document.createTextNode(content);
+function addEventListener2(type, listener) {
+  return document.addEventListener(type, listener);
 }
 function getElementById(id2) {
   let found = document.getElementById(id2);
@@ -6250,6 +6167,11 @@ function cast(raw) {
 }
 function contains2(element4, other) {
   return element4.contains(other);
+}
+
+// build/dev/javascript/plinth/event_ffi.mjs
+function target(event4) {
+  return event4.target;
 }
 
 // build/dev/javascript/plinth/plinth/browser/element.mjs
@@ -6402,8 +6324,8 @@ function get_header(response, key2) {
 async function raw_send(request) {
   try {
     return new Ok(await fetch(request));
-  } catch (error) {
-    return new Error(new NetworkError(error.toString()));
+  } catch (error2) {
+    return new Error(new NetworkError(error2.toString()));
   }
 }
 function from_fetch_response(response) {
@@ -6436,7 +6358,7 @@ async function read_text_body(response) {
   let body2;
   try {
     body2 = await response.body.text();
-  } catch (error) {
+  } catch (error2) {
     return new Error(new UnableToReadBody());
   }
   return new Ok(response.withFields({ body: body2 }));
@@ -6578,7 +6500,7 @@ function expect_json_response(handler) {
 }
 function do_send(request, handler) {
   return from(
-    (dispatch) => {
+    (dispatch2) => {
       let _pipe = send2(request);
       let _pipe$1 = try_await(_pipe, read_text_body);
       let _pipe$2 = map_promise(
@@ -6586,10 +6508,10 @@ function do_send(request, handler) {
         (_capture) => {
           return map_error(
             _capture,
-            (error) => {
-              if (error instanceof NetworkError) {
+            (error2) => {
+              if (error2 instanceof NetworkError) {
                 return new NetworkError2();
-              } else if (error instanceof UnableToReadBody) {
+              } else if (error2 instanceof UnableToReadBody) {
                 return new BadBody();
               } else {
                 return new BadBody();
@@ -6599,7 +6521,7 @@ function do_send(request, handler) {
         }
       );
       let _pipe$3 = map_promise(_pipe$2, handler.run);
-      tap(_pipe$3, dispatch);
+      tap(_pipe$3, dispatch2);
       return void 0;
     }
   );
@@ -6609,10 +6531,10 @@ function send3(request, handler) {
 }
 function reject(err, handler) {
   return from(
-    (dispatch) => {
+    (dispatch2) => {
       let _pipe = new Error(err);
       let _pipe$1 = handler.run(_pipe);
-      return dispatch(_pipe$1);
+      return dispatch2(_pipe$1);
     }
   );
 }
@@ -6757,6 +6679,12 @@ var Ward = class extends CustomType {
     this.province_code = province_code;
   }
 };
+var OutBoth = class extends CustomType {
+};
+var OutProvince = class extends CustomType {
+};
+var OutWard = class extends CustomType {
+};
 var ProvinceComboboxFocused = class extends CustomType {
 };
 var ProvinceComboboxClearClick = class extends CustomType {
@@ -6820,6 +6748,10 @@ var OnRouteChange = class extends CustomType {
   }
 };
 var UserClickedOutside = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
 };
 var ComboboxState = class extends CustomType {
   constructor(is_shown, filter_text, filtered_items, selected_item) {
@@ -6943,6 +6875,76 @@ function search_wards(search, province_code) {
     }
   );
   return get2(url, handler);
+}
+
+// build/dev/javascript/lustre/lustre/event.mjs
+function is_immediate_event(name) {
+  if (name === "input") {
+    return true;
+  } else if (name === "change") {
+    return true;
+  } else if (name === "focus") {
+    return true;
+  } else if (name === "focusin") {
+    return true;
+  } else if (name === "focusout") {
+    return true;
+  } else if (name === "blur") {
+    return true;
+  } else if (name === "select") {
+    return true;
+  } else {
+    return false;
+  }
+}
+function on(name, handler) {
+  return event(
+    name,
+    map3(handler, (msg) => {
+      return new Handler(false, false, msg);
+    }),
+    empty_list,
+    never,
+    never,
+    is_immediate_event(name),
+    0,
+    0
+  );
+}
+function debounce(event4, delay) {
+  if (event4 instanceof Event2) {
+    return new Event2(
+      event4.kind,
+      event4.name,
+      event4.handler,
+      event4.include,
+      event4.prevent_default,
+      event4.stop_propagation,
+      event4.immediate,
+      max(0, delay),
+      event4.throttle
+    );
+  } else {
+    return event4;
+  }
+}
+function on_click(msg) {
+  return on("click", success(msg));
+}
+function on_input(msg) {
+  return on(
+    "input",
+    subfield(
+      toList(["target", "value"]),
+      string2,
+      (value3) => {
+        return success(msg(value3));
+      }
+    )
+  );
+}
+function on_focus(msg) {
+  return on("focus", success(msg));
 }
 
 // build/dev/javascript/vn_provinces_demo/views.mjs
@@ -7702,6 +7704,25 @@ function update2(model, msg) {
       return handle_route_changed(new_route, p, w, model);
     }
   } else {
+    let position = msg[0];
+    let _block;
+    if (position instanceof OutBoth) {
+      _block = true;
+    } else if (position instanceof OutProvince) {
+      _block = true;
+    } else {
+      _block = false;
+    }
+    let should_close_province_dropdown = _block;
+    let _block$1;
+    if (position instanceof OutBoth) {
+      _block$1 = true;
+    } else if (position instanceof OutWard) {
+      _block$1 = true;
+    } else {
+      _block$1 = false;
+    }
+    let should_close_ward_dropdown = _block$1;
     let model$1 = new Model(
       model.route,
       model.provinces,
@@ -7709,7 +7730,7 @@ function update2(model, msg) {
       (() => {
         let _record = model.province_combobox_state;
         return new ComboboxState(
-          false,
+          !should_close_province_dropdown,
           _record.filter_text,
           _record.filtered_items,
           _record.selected_item
@@ -7718,7 +7739,7 @@ function update2(model, msg) {
       (() => {
         let _record = model.ward_combobox_state;
         return new ComboboxState(
-          false,
+          !should_close_ward_dropdown,
           _record.filter_text,
           _record.filtered_items,
           _record.selected_item
@@ -7728,21 +7749,58 @@ function update2(model, msg) {
     return [model$1, none2()];
   }
 }
-function get_htmlelement_decoder() {
-  return new_primitive_decoder(
-    "HTMLElement",
-    (data) => {
-      let $ = cast2(data);
-      if ($ instanceof Ok) {
-        return $;
+var id_province_combobox = "province-combobox";
+var id_ward_combobox = "ward-combobox";
+function get_message_for_document_click(lev) {
+  return try$(
+    cast2(target(lev)),
+    (clicked_elm) => {
+      let _block;
+      let _pipe = getElementById(id_province_combobox);
+      let _pipe$1 = map4(
+        _pipe,
+        (p_cbb) => {
+          return contains2(clicked_elm, p_cbb);
+        }
+      );
+      _block = unwrap2(_pipe$1, true);
+      let outside_province_cbb = _block;
+      let _block$1;
+      let _pipe$2 = getElementById(id_ward_combobox);
+      let _pipe$3 = map4(
+        _pipe$2,
+        (w_cbb) => {
+          return contains2(clicked_elm, w_cbb);
+        }
+      );
+      _block$1 = unwrap2(_pipe$3, true);
+      let outside_ward_cbb = _block$1;
+      let _block$2;
+      let _block$3;
+      if (outside_ward_cbb) {
+        if (outside_province_cbb) {
+          _block$3 = new Some(new OutBoth());
+        } else {
+          _block$3 = new Some(new OutWard());
+        }
+      } else if (outside_province_cbb) {
+        _block$3 = new Some(new OutProvince());
       } else {
-        return new Error(createTextNode2(""));
+        _block$3 = new None();
       }
+      let _pipe$4 = _block$3;
+      let _pipe$5 = map(
+        _pipe$4,
+        (var0) => {
+          return new UserClickedOutside(var0);
+        }
+      );
+      _block$2 = map(_pipe$5, dispatch);
+      let msg = _block$2;
+      return new Ok(msg);
     }
   );
 }
-var id_province_combobox = "province-combobox";
-var id_ward_combobox = "ward-combobox";
 function view2(model) {
   let provinces;
   let wards;
@@ -7814,44 +7872,8 @@ function view2(model) {
     selected_ward,
     cb_msg$1
   );
-  let click_handler = on(
-    "click",
-    (() => {
-      let html_element_decoder = get_htmlelement_decoder();
-      return field(
-        "target",
-        html_element_decoder,
-        (clicked_node) => {
-          let _block$2;
-          let $ = getElementById(id_province_combobox);
-          if ($ instanceof Ok) {
-            let box = $[0];
-            _block$2 = contains2(clicked_node, box);
-          } else {
-            _block$2 = true;
-          }
-          let outside_province = _block$2;
-          let _block$3;
-          let $1 = getElementById(id_ward_combobox);
-          if ($1 instanceof Ok) {
-            let box = $1[0];
-            _block$3 = contains2(clicked_node, box);
-          } else {
-            _block$3 = true;
-          }
-          let outside_ward = _block$3;
-          let $2 = outside_province || outside_ward;
-          if ($2) {
-            return success(new UserClickedOutside());
-          } else {
-            return failure(new UserClickedOutside(), "Not outsise");
-          }
-        }
-      );
-    })()
-  );
   return section(
-    toList([class$("grow"), click_handler]),
+    toList([class$("grow")]),
     toList([
       div(
         toList([
@@ -7896,24 +7918,43 @@ function view2(model) {
 function main() {
   let app = application(init2, update2, view2);
   let $ = start3(app, "#app", void 0);
-  if (!($ instanceof Ok)) {
+  let runtime;
+  if ($ instanceof Ok) {
+    runtime = $[0];
+  } else {
     throw makeError(
       "let_assert",
       FILEPATH,
       "vn_provinces_demo",
-      48,
+      49,
       "main",
       "Pattern match failed, no pattern matched the value.",
       {
         value: $,
-        start: 1368,
-        end: 1417,
-        pattern_start: 1379,
-        pattern_end: 1384
+        start: 1365,
+        end: 1420,
+        pattern_start: 1376,
+        pattern_end: 1387
       }
     );
   }
-  return void 0;
+  return addEventListener2(
+    "click",
+    (lev) => {
+      let $1 = get_message_for_document_click(lev);
+      if ($1 instanceof Ok) {
+        let $2 = $1[0];
+        if ($2 instanceof Some) {
+          let msg = $2[0];
+          return send(runtime, msg);
+        } else {
+          return void 0;
+        }
+      } else {
+        return void 0;
+      }
+    }
+  );
 }
 
 // build/.lustre/entry.mjs

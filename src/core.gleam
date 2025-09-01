@@ -11,6 +11,12 @@ pub type Ward {
   Ward(name: String, code: Int, province_code: Int)
 }
 
+pub type OutsideObject {
+  OutBoth
+  OutProvince
+  OutWard
+}
+
 pub type Msg {
   ProvinceComboboxFocused
   ProvinceComboboxClearClick
@@ -27,7 +33,7 @@ pub type Msg {
   ApiReturnedWards(Result(List(Ward), rsvp.Error))
   ApiReturnedSearchedWards(Result(List(Ward), rsvp.Error))
   OnRouteChange(router.Route)
-  UserClickedOutside
+  UserClickedOutside(OutsideObject)
 }
 
 pub type ComboboxState(obj) {
