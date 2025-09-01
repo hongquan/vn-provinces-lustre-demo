@@ -108,7 +108,19 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
     core.OnRouteChange(new_route) -> {
       case new_route {
-        router.Home -> #(model, effect.none())
+        router.Home -> {
+          let model =
+            Model(
+              ..model,
+              route: new_route,
+              wards: [],
+              // For province combobox
+              province_combobox_state: create_empty_combobox_state(),
+              ward_combobox_state: create_empty_combobox_state(),
+            )
+
+          #(model, effect.none())
+        }
         router.Province(p, w) -> {
           handle_route_changed(new_route, p, w, model)
         }
@@ -430,6 +442,10 @@ fn handle_route_changed(
   // If queried_province == current_province and queried_ward != current_ward, we update model
   let queried_province =
     list.find(provinces, fn(p) { p.code == queried_province })
+  let filtered_provinces = case queried_province {
+    Ok(p) -> [p]
+    _ -> []
+  }
   let queried_ward = case queried_ward {
     Some(code) ->
       wards |> list.find(fn(w) { w.code == code }) |> option.from_result
@@ -459,6 +475,7 @@ fn handle_route_changed(
       province_combobox_state: ComboboxState(
         ..model.province_combobox_state,
         selected_item: option.from_result(queried_province),
+        filtered_items: filtered_provinces,
       ),
       ward_combobox_state: ComboboxState(
         ..model.ward_combobox_state,

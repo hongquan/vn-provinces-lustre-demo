@@ -7321,64 +7321,72 @@ function handle_route_changed(new_route, queried_province, queried_ward, model) 
     }
   );
   let _block;
+  if (queried_province$1 instanceof Ok) {
+    let p = queried_province$1[0];
+    _block = toList([p]);
+  } else {
+    _block = toList([]);
+  }
+  let filtered_provinces = _block;
+  let _block$1;
   if (queried_ward instanceof Some) {
     let code2 = queried_ward[0];
     let _pipe = wards;
     let _pipe$1 = find2(_pipe, (w) => {
       return w.code === code2;
     });
-    _block = from_result(_pipe$1);
+    _block$1 = from_result(_pipe$1);
   } else {
-    _block = new None();
+    _block$1 = new None();
   }
-  let queried_ward$1 = _block;
-  let _block$1;
+  let queried_ward$1 = _block$1;
+  let _block$2;
   if (queried_ward$1 instanceof Some) {
     let w = queried_ward$1[0];
-    _block$1 = toList([w]);
+    _block$2 = toList([w]);
   } else {
-    _block$1 = toList([]);
+    _block$2 = toList([]);
   }
-  let filtered_wards = _block$1;
-  let _block$2;
+  let filtered_wards = _block$2;
+  let _block$3;
   if (current_route instanceof Home) {
-    _block$2 = [new None(), new None()];
+    _block$3 = [new None(), new None()];
   } else {
     let i = current_route[0];
     let j = current_route[1];
-    _block$2 = [new Some(i), j];
+    _block$3 = [new Some(i), j];
   }
-  let $ = _block$2;
+  let $ = _block$3;
   let current_province;
   current_province = $[0];
-  let _block$3;
+  let _block$4;
   if (current_province instanceof Some) {
     if (queried_province$1 instanceof Ok) {
       let i = current_province[0];
       let p = queried_province$1[0];
       if (p.code !== i) {
-        _block$3 = new Some(p.code);
+        _block$4 = new Some(p.code);
       } else {
-        _block$3 = new None();
+        _block$4 = new None();
       }
     } else {
-      _block$3 = new None();
+      _block$4 = new None();
     }
   } else if (queried_province$1 instanceof Ok) {
     let p = queried_province$1[0];
-    _block$3 = new Some(p.code);
+    _block$4 = new Some(p.code);
   } else {
-    _block$3 = new None();
+    _block$4 = new None();
   }
-  let should_load_wards = _block$3;
-  let _block$4;
+  let should_load_wards = _block$4;
+  let _block$5;
   if (should_load_wards instanceof Some) {
     let p_code = should_load_wards[0];
-    _block$4 = load_wards(p_code);
+    _block$5 = load_wards(p_code);
   } else {
-    _block$4 = none2();
+    _block$5 = none2();
   }
-  let whatnext = _block$4;
+  let whatnext = _block$5;
   let model$1 = new Model(
     new_route,
     model.provinces,
@@ -7388,7 +7396,7 @@ function handle_route_changed(new_route, queried_province, queried_ward, model) 
       return new ComboboxState(
         _record.is_shown,
         _record.filter_text,
-        _record.filtered_items,
+        filtered_provinces,
         from_result(queried_province$1)
       );
     })(),
@@ -7638,7 +7646,14 @@ function update2(model, msg) {
   } else if (msg instanceof OnRouteChange) {
     let new_route = msg[0];
     if (new_route instanceof Home) {
-      return [model, none2()];
+      let model$1 = new Model(
+        new_route,
+        model.provinces,
+        toList([]),
+        create_empty_combobox_state(),
+        create_empty_combobox_state()
+      );
+      return [model$1, none2()];
     } else {
       let p = new_route[0];
       let w = new_route[1];
