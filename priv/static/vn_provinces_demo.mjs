@@ -6999,6 +6999,9 @@ function show_brief_info_ward(ward) {
     ])
   );
 }
+var class_combobox_input = "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded";
+var class_combobox_close_button = "w-full hover:bg-gray-200 dark:hover:bg-gray-600 text-start px-2 py-1.5 rounded cursor-pointer";
+var class_combobox_dropdown_container = "absolute z-1 top-10 start-0 end-0 sm:-end-4 py-2 ps-2 bg-gray-50 dark:bg-gray-800 rounded shadow";
 function render_province_combobox(id2, to_show, provinces, filter_text, settled_province, emit_msg) {
   let _block;
   let _pipe = provinces;
@@ -7027,12 +7030,7 @@ function render_province_combobox(id2, to_show, provinces, filter_text, settled_
           toList([role("option")]),
           toList([
             button(
-              toList([
-                class$(
-                  "w-full hover:bg-gray-200 dark:hover:bg-gray-600 text-start px-2 py-1.5 rounded cursor-pointer"
-                ),
-                click_handler
-              ]),
+              toList([class$(class_combobox_close_button), click_handler]),
               toList([text3(indicator + p.name)])
             )
           ])
@@ -7055,9 +7053,7 @@ function render_province_combobox(id2, to_show, provinces, filter_text, settled_
       input(
         toList([
           type_("search"),
-          class$(
-            "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded"
-          ),
+          class$(class_combobox_input),
           role("combobox"),
           value(filter_text),
           input_handler,
@@ -7077,9 +7073,7 @@ function render_province_combobox(id2, to_show, provinces, filter_text, settled_
       ),
       div(
         toList([
-          class$(
-            "absolute z-1 top-10 start-0 -end-4 py-2 ps-2 bg-gray-50 dark:bg-gray-800 shadow"
-          ),
+          class$(class_combobox_dropdown_container),
           classes(toList([["hidden", !to_show]]))
         ]),
         toList([
@@ -7125,12 +7119,7 @@ function render_ward_combobox(id2, to_show, wards, filter_text, settled_ward, em
           toList([role("option")]),
           toList([
             button(
-              toList([
-                class$(
-                  "w-full hover:bg-gray-200 dark:hover:bg-gray-600 text-start px-2 py-1.5 rounded cursor-pointer"
-                ),
-                click_handler
-              ]),
+              toList([class$(class_combobox_close_button), click_handler]),
               toList([text3(indicator + w.name)])
             )
           ])
@@ -7153,9 +7142,7 @@ function render_ward_combobox(id2, to_show, wards, filter_text, settled_ward, em
       input(
         toList([
           type_("search"),
-          class$(
-            "border focus-visible:outline-none focus-visible:ring-1 px-2 py-1 w-full rounded"
-          ),
+          class$(class_combobox_input),
           role("combobox"),
           value(filter_text),
           input_handler,
@@ -7175,9 +7162,7 @@ function render_ward_combobox(id2, to_show, wards, filter_text, settled_ward, em
       ),
       div(
         toList([
-          class$(
-            "absolute z-1 top-10 start-0 -end-4 py-2 ps-2 bg-gray-50 dark:bg-gray-800 shadow"
-          ),
+          class$(class_combobox_dropdown_container),
           classes(toList([["hidden", !to_show]]))
         ]),
         toList([

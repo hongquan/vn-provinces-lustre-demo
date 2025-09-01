@@ -10,6 +10,12 @@ import lustre/event as ev
 
 import core.{type Province, type Ward}
 
+const class_combobox_input = "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded"
+
+const class_combobox_close_button = "w-full hover:bg-gray-200 dark:hover:bg-gray-600 text-start px-2 py-1.5 rounded cursor-pointer"
+
+const class_combobox_dropdown_container = "absolute z-1 top-10 start-0 end-0 sm:-end-4 py-2 ps-2 bg-gray-50 dark:bg-gray-800 rounded shadow"
+
 pub type ComboboxEmitMsg(msg, obj) {
   ComboboxEmitMsg(
     text_input: fn(String) -> msg,
@@ -65,9 +71,7 @@ pub fn render_province_combobox(
         h.li([a.role("option")], [
           h.button(
             [
-              a.class(
-                "w-full hover:bg-gray-200 dark:hover:bg-gray-600 text-start px-2 py-1.5 rounded cursor-pointer",
-              ),
+              a.class(class_combobox_close_button),
               click_handler,
             ],
             [
@@ -87,9 +91,7 @@ pub fn render_province_combobox(
     // The Text Input of the combobox
     h.input([
       a.type_("search"),
-      a.class(
-        "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded",
-      ),
+      a.class(class_combobox_input),
       a.role("combobox"),
       a.value(filter_text),
       input_handler,
@@ -111,9 +113,7 @@ pub fn render_province_combobox(
     // We need some container div elements to make paddings and create scroll view for the dropdown.
     h.div(
       [
-        a.class(
-          "absolute z-1 top-10 start-0 -end-4 py-2 ps-2 bg-gray-50 dark:bg-gray-800 shadow",
-        ),
+        a.class(class_combobox_dropdown_container),
         a.classes([#("hidden", !to_show)]),
       ],
       [
@@ -148,9 +148,7 @@ pub fn render_ward_combobox(
         h.li([a.role("option")], [
           h.button(
             [
-              a.class(
-                "w-full hover:bg-gray-200 dark:hover:bg-gray-600 text-start px-2 py-1.5 rounded cursor-pointer",
-              ),
+              a.class(class_combobox_close_button),
               click_handler,
             ],
             [
@@ -169,9 +167,7 @@ pub fn render_ward_combobox(
     // The Text Input of the combobox
     h.input([
       a.type_("search"),
-      a.class(
-        "border focus-visible:outline-none focus-visible:ring-1 px-2 py-1 w-full rounded",
-      ),
+      a.class(class_combobox_input),
       a.role("combobox"),
       a.value(filter_text),
       input_handler,
@@ -193,9 +189,7 @@ pub fn render_ward_combobox(
     // We need some container div elements to make paddings and create scroll view for the dropdown.
     h.div(
       [
-        a.class(
-          "absolute z-1 top-10 start-0 -end-4 py-2 ps-2 bg-gray-50 dark:bg-gray-800 shadow",
-        ),
+        a.class(class_combobox_dropdown_container),
         a.classes([#("hidden", !to_show)]),
       ],
       [

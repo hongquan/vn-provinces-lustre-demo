@@ -22,6 +22,7 @@
     --color-white: #fff;
     --spacing: 0.25rem;
     --container-md: 28rem;
+    --container-xl: 36rem;
     --text-sm: 0.875rem;
     --text-sm--line-height: calc(1.25 / 0.875);
     --text-lg: 1.125rem;
@@ -193,9 +194,6 @@
   }
   .start-0 {
     inset-inline-start: calc(var(--spacing) * 0);
-  }
-  .-end-4 {
-    inset-inline-end: calc(var(--spacing) * -4);
   }
   .end-0 {
     inset-inline-end: calc(var(--spacing) * 0);
@@ -415,6 +413,21 @@
     &:focus-visible {
       --tw-outline-style: none;
       outline-style: none;
+    }
+  }
+  .sm\:-end-4 {
+    @media (width >= 40rem) {
+      inset-inline-end: calc(var(--spacing) * -4);
+    }
+  }
+  .sm\:mx-auto {
+    @media (width >= 40rem) {
+      margin-inline: auto;
+    }
+  }
+  .sm\:max-w-xl {
+    @media (width >= 40rem) {
+      max-width: var(--container-xl);
     }
   }
   .md\:flex {
