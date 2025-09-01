@@ -7,6 +7,7 @@
     'Noto Color Emoji';
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
     monospace;
+    --color-red-400: oklch(70.4% 0.191 22.216);
     --color-sky-300: oklch(82.8% 0.111 230.318);
     --color-sky-800: oklch(44.3% 0.11 240.79);
     --color-blue-500: oklch(62.3% 0.214 259.815);
@@ -25,6 +26,8 @@
     --text-sm--line-height: calc(1.25 / 0.875);
     --text-lg: 1.125rem;
     --text-lg--line-height: calc(1.75 / 1.125);
+    --text-xl: 1.25rem;
+    --text-xl--line-height: calc(1.75 / 1.25);
     --text-2xl: 1.5rem;
     --text-2xl--line-height: calc(2 / 1.5);
     --font-weight-semibold: 600;
@@ -194,6 +197,9 @@
   .-end-4 {
     inset-inline-end: calc(var(--spacing) * -4);
   }
+  .end-0 {
+    inset-inline-end: calc(var(--spacing) * 0);
+  }
   .top-10 {
     top: calc(var(--spacing) * 10);
   }
@@ -230,11 +236,20 @@
   .hidden {
     display: none;
   }
+  .inline-block {
+    display: inline-block;
+  }
+  .h-4 {
+    height: calc(var(--spacing) * 4);
+  }
   .max-h-40 {
     max-height: calc(var(--spacing) * 40);
   }
   .min-h-screen {
     min-height: 100vh;
+  }
+  .w-auto {
+    width: auto;
   }
   .w-full {
     width: 100%;
@@ -307,6 +322,9 @@
   .pe-2 {
     padding-inline-end: calc(var(--spacing) * 2);
   }
+  .pe-6 {
+    padding-inline-end: calc(var(--spacing) * 6);
+  }
   .text-end {
     text-align: end;
   }
@@ -324,6 +342,10 @@
   .text-sm {
     font-size: var(--text-sm);
     line-height: var(--tw-leading, var(--text-sm--line-height));
+  }
+  .text-xl {
+    font-size: var(--text-xl);
+    line-height: var(--tw-leading, var(--text-xl--line-height));
   }
   .font-semibold {
     --tw-font-weight: var(--font-weight-semibold);
@@ -354,6 +376,13 @@
       }
     }
   }
+  .hover\:text-red-400 {
+    &:hover {
+      @media (hover: hover) {
+        color: var(--color-red-400);
+      }
+    }
+  }
   .hover\:text-sky-800 {
     &:hover {
       @media (hover: hover) {
@@ -364,6 +393,11 @@
   .focus\:border-blue-500 {
     &:focus {
       border-color: var(--color-blue-500);
+    }
+  }
+  .focus\:text-red-400 {
+    &:focus {
+      color: var(--color-red-400);
     }
   }
   .focus\:ring-blue-500 {
@@ -462,6 +496,15 @@
       &:hover {
         @media (hover: hover) {
           color: var(--color-sky-300);
+        }
+      }
+    }
+  }
+  .hover\:dark\:text-red-400 {
+    &:hover {
+      @media (hover: hover) {
+        @media (prefers-color-scheme: dark) {
+          color: var(--color-red-400);
         }
       }
     }

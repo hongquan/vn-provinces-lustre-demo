@@ -5985,6 +5985,9 @@ function debounce(event4, delay) {
     return event4;
   }
 }
+function on_click(msg) {
+  return on("click", success(msg));
+}
 function on_input(msg) {
   return on(
     "input",
@@ -6732,6 +6735,8 @@ var Ward = class extends CustomType {
 };
 var ProvinceComboboxFocused = class extends CustomType {
 };
+var ProvinceComboboxClearClick = class extends CustomType {
+};
 var ProvinceComboboxTextInput = class extends CustomType {
   constructor($0) {
     super();
@@ -6745,6 +6750,8 @@ var ProvinceComboboxSelected = class extends CustomType {
   }
 };
 var WardComboboxFocused = class extends CustomType {
+};
+var WardComboboxClearClick = class extends CustomType {
 };
 var WardComboboxTextInput = class extends CustomType {
   constructor($0) {
@@ -6916,11 +6923,12 @@ function search_wards(search, province_code) {
 
 // build/dev/javascript/vn_provinces_demo/views.mjs
 var ComboboxEmitMsg = class extends CustomType {
-  constructor(text_input, choice_click, input_focus) {
+  constructor(text_input, choice_click, input_focus, clear_click) {
     super();
     this.text_input = text_input;
     this.choice_click = choice_click;
     this.input_focus = input_focus;
+    this.clear_click = clear_click;
   }
 };
 function show_brief_info_province(province) {
@@ -7021,12 +7029,21 @@ function render_province_combobox(id2, to_show, provinces, filter_text, settled_
       input(
         toList([
           class$(
-            "border focus-visible:outline-none focus-visible:ring-1 px-2 py-1 w-full rounded"
+            "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded"
           ),
           input_handler,
           on_focus(emit_msg.input_focus),
           value(filter_text)
         ])
+      ),
+      button(
+        toList([
+          class$(
+            "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer"
+          ),
+          on_click(emit_msg.clear_click)
+        ]),
+        toList([text3("\u2A2F")])
       ),
       div(
         toList([
@@ -7107,6 +7124,15 @@ function render_ward_combobox(id2, to_show, wards, filter_text, settled_ward, em
           on_focus(emit_msg.input_focus),
           value(filter_text)
         ])
+      ),
+      button(
+        toList([
+          class$(
+            "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer"
+          ),
+          on_click(emit_msg.clear_click)
+        ]),
+        toList([text3("\u2A2F")])
       ),
       div(
         toList([
@@ -7396,6 +7422,23 @@ function update2(model, msg) {
       model.ward_combobox_state
     );
     return [model$1, none2()];
+  } else if (msg instanceof ProvinceComboboxClearClick) {
+    let model$1 = new Model(
+      model.route,
+      model.provinces,
+      model.wards,
+      (() => {
+        let _record = model.province_combobox_state;
+        return new ComboboxState(
+          _record.is_shown,
+          "",
+          _record.filtered_items,
+          _record.selected_item
+        );
+      })(),
+      model.ward_combobox_state
+    );
+    return [model$1, none2()];
   } else if (msg instanceof ProvinceComboboxTextInput) {
     let s = msg[0];
     let model$1 = new Model(
@@ -7447,6 +7490,23 @@ function update2(model, msg) {
         return new ComboboxState(
           true,
           _record.filter_text,
+          _record.filtered_items,
+          _record.selected_item
+        );
+      })()
+    );
+    return [model$1, none2()];
+  } else if (msg instanceof WardComboboxClearClick) {
+    let model$1 = new Model(
+      model.route,
+      model.provinces,
+      model.wards,
+      model.province_combobox_state,
+      (() => {
+        let _record = model.ward_combobox_state;
+        return new ComboboxState(
+          _record.is_shown,
+          "",
           _record.filtered_items,
           _record.selected_item
         );
@@ -7661,7 +7721,8 @@ function view2(model) {
     (var0) => {
       return new ProvinceComboboxSelected(var0);
     },
-    new ProvinceComboboxFocused()
+    new ProvinceComboboxFocused(),
+    new ProvinceComboboxClearClick()
   );
   let province_combobox = render_province_combobox(
     id_province_combobox,
@@ -7678,7 +7739,8 @@ function view2(model) {
     (var0) => {
       return new WardComboboxSelected(var0);
     },
-    new WardComboboxFocused()
+    new WardComboboxFocused(),
+    new WardComboboxClearClick()
   );
   let _block$1;
   if (ward_filter_text === "") {
@@ -7782,15 +7844,15 @@ function main() {
       "let_assert",
       FILEPATH,
       "vn_provinces_demo",
-      47,
+      48,
       "main",
       "Pattern match failed, no pattern matched the value.",
       {
         value: $,
-        start: 1314,
-        end: 1363,
-        pattern_start: 1325,
-        pattern_end: 1330
+        start: 1368,
+        end: 1417,
+        pattern_start: 1379,
+        pattern_end: 1384
       }
     );
   }

@@ -1,9 +1,7 @@
-import consts
 import gleam/dynamic/decode
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, Some, is_some}
-import gleam/result
 import lustre/attribute as a
 import lustre/element.{type Element}
 import lustre/element/html as h
@@ -17,6 +15,7 @@ pub type ComboboxEmitMsg(msg, obj) {
     text_input: fn(String) -> msg,
     choice_click: fn(obj) -> msg,
     input_focus: msg,
+    clear_click: msg,
   )
 }
 
@@ -45,31 +44,6 @@ pub fn get_ward_from_code(c: Int, wards: List(Ward)) -> Result(Ward, Nil) {
   wards |> list.find(fn(w) { w.code == c })
 }
 
-pub fn render_province_list(
-  provinces: List(Province),
-  selected_code: Int,
-  receiver: fn(Option(Province)) -> msg,
-) -> Element(msg) {
-  let options = [
-    h.option([a.value("")], "Tỉnh thành..."),
-    ..list.map(provinces, render_province_as_option(_, selected_code))
-  ]
-  let on_change_handler = fn(v: String) {
-    v
-    |> int.parse
-    |> result.try(get_province_from_code(_, provinces))
-    |> option.from_result
-    |> receiver
-  }
-  h.select(
-    [
-      a.class(consts.css_select),
-      ev.on_change(on_change_handler),
-    ],
-    options,
-  )
-}
-
 pub fn show_brief_info_province(province: Province) {
   h.dl([a.class("max-w-md mt-8")], [
     h.dt([a.class("font-semibold text-lg")], [h.text(province.name)]),
@@ -92,31 +66,6 @@ pub fn show_brief_info_ward(ward: Ward) {
       ]),
     ]),
   ])
-}
-
-pub fn render_ward_list(
-  wards: List(Ward),
-  selected_ward: Int,
-  receiver: fn(Option(Ward)) -> msg,
-) -> Element(msg) {
-  let options = [
-    h.option([a.value("")], "Phường xã..."),
-    ..list.map(wards, render_ward_as_option(_, selected_ward))
-  ]
-  let on_change_handler = fn(v: String) {
-    v
-    |> int.parse
-    |> result.try(get_ward_from_code(_, wards))
-    |> option.from_result
-    |> receiver
-  }
-  h.select(
-    [
-      a.class(consts.css_select),
-      ev.on_change(on_change_handler),
-    ],
-    options,
-  )
 }
 
 pub fn render_province_combobox(
@@ -163,12 +112,23 @@ pub fn render_province_combobox(
     // The Text Input of the combobox
     h.input([
       a.class(
-        "border focus-visible:outline-none focus-visible:ring-1 px-2 py-1 w-full rounded",
+        "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded",
       ),
       input_handler,
       ev.on_focus(emit_msg.input_focus),
       a.value(filter_text),
     ]),
+    h.button(
+      [
+        a.class(
+          "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer",
+        ),
+        ev.on_click(emit_msg.clear_click),
+      ],
+      [
+        h.text("⨯"),
+      ],
+    ),
     // We need some container div elements to make paddings and create scroll view for the dropdown.
     h.div(
       [
@@ -236,6 +196,17 @@ pub fn render_ward_combobox(
       ev.on_focus(emit_msg.input_focus),
       a.value(filter_text),
     ]),
+    h.button(
+      [
+        a.class(
+          "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer",
+        ),
+        ev.on_click(emit_msg.clear_click),
+      ],
+      [
+        h.text("⨯"),
+      ],
+    ),
     // We need some container div elements to make paddings and create scroll view for the dropdown.
     h.div(
       [

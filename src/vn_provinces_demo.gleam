@@ -17,9 +17,10 @@ import plinth/browser/element as web_element
 import actions
 import core.{
   type ComboboxState, type Msg, type Province, type Ward, ComboboxState,
-  ProvinceComboboxFocused, ProvinceComboboxSelected, ProvinceComboboxTextInput,
-  UserClickedOutside, WardComboboxFocused, WardComboboxSelected,
-  WardComboboxTextInput, create_empty_combobox_state,
+  ProvinceComboboxClearClick, ProvinceComboboxFocused, ProvinceComboboxSelected,
+  ProvinceComboboxTextInput, UserClickedOutside, WardComboboxClearClick,
+  WardComboboxFocused, WardComboboxSelected, WardComboboxTextInput,
+  create_empty_combobox_state,
 }
 import router.{type Route, parse_to_route}
 import views.{
@@ -151,7 +152,17 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         )
       #(model, effect.none())
     }
-
+    ProvinceComboboxClearClick -> {
+      let model =
+        Model(
+          ..model,
+          province_combobox_state: ComboboxState(
+            ..model.province_combobox_state,
+            filter_text: "",
+          ),
+        )
+      #(model, effect.none())
+    }
     WardComboboxFocused -> {
       let model =
         Model(
@@ -163,7 +174,17 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         )
       #(model, effect.none())
     }
-
+    WardComboboxClearClick -> {
+      let model =
+        Model(
+          ..model,
+          ward_combobox_state: ComboboxState(
+            ..model.ward_combobox_state,
+            filter_text: "",
+          ),
+        )
+      #(model, effect.none())
+    }
     WardComboboxTextInput(s) -> {
       io.println("Ward input text: " <> s)
       let Model(
@@ -251,6 +272,7 @@ fn view(model: Model) -> Element(Msg) {
       ProvinceComboboxTextInput,
       ProvinceComboboxSelected,
       ProvinceComboboxFocused,
+      ProvinceComboboxClearClick,
     )
 
   let province_combobox =
@@ -267,6 +289,7 @@ fn view(model: Model) -> Element(Msg) {
       WardComboboxTextInput,
       WardComboboxSelected,
       WardComboboxFocused,
+      WardComboboxClearClick,
     )
 
   let filtered_wards = case ward_filter_text {

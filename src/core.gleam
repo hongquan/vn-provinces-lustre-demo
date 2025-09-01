@@ -13,9 +13,11 @@ pub type Ward {
 
 pub type Msg {
   ProvinceComboboxFocused
+  ProvinceComboboxClearClick
   ProvinceComboboxTextInput(String)
   ProvinceComboboxSelected(Province)
   WardComboboxFocused
+  WardComboboxClearClick
   WardComboboxTextInput(String)
   WardComboboxSelected(Ward)
   // This is the API response for all provinces
