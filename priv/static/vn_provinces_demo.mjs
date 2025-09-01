@@ -385,12 +385,12 @@ var Some = class extends CustomType {
 };
 var None = class extends CustomType {
 };
-function is_some(option2) {
-  return !isEqual(option2, new None());
+function is_some(option) {
+  return !isEqual(option, new None());
 }
-function to_result(option2, e) {
-  if (option2 instanceof Some) {
-    let a = option2[0];
+function to_result(option, e) {
+  if (option instanceof Some) {
+    let a = option[0];
     return new Ok(a);
   } else {
     return new Error(e);
@@ -404,36 +404,36 @@ function from_result(result) {
     return new None();
   }
 }
-function unwrap(option2, default$) {
-  if (option2 instanceof Some) {
-    let x = option2[0];
+function unwrap(option, default$) {
+  if (option instanceof Some) {
+    let x = option[0];
     return x;
   } else {
     return default$;
   }
 }
-function map(option2, fun) {
-  if (option2 instanceof Some) {
-    let x = option2[0];
+function map(option, fun) {
+  if (option instanceof Some) {
+    let x = option[0];
     return new Some(fun(x));
   } else {
-    return option2;
+    return option;
   }
 }
-function flatten(option2) {
-  if (option2 instanceof Some) {
-    let x = option2[0];
+function flatten(option) {
+  if (option instanceof Some) {
+    let x = option[0];
     return x;
   } else {
-    return option2;
+    return option;
   }
 }
-function then$(option2, fun) {
-  if (option2 instanceof Some) {
-    let x = option2[0];
+function then$(option, fun) {
+  if (option instanceof Some) {
+    let x = option[0];
     return fun(x);
   } else {
-    return option2;
+    return option;
   }
 }
 
@@ -3312,8 +3312,32 @@ function classes(names) {
 function id(value3) {
   return attribute2("id", value3);
 }
+function type_(control_type) {
+  return attribute2("type", control_type);
+}
 function value(control_value) {
   return attribute2("value", control_value);
+}
+function aria(name, value3) {
+  return attribute2("aria-" + name, value3);
+}
+function role(name) {
+  return attribute2("role", name);
+}
+function aria_hidden(value3) {
+  return aria(
+    "hidden",
+    (() => {
+      if (value3) {
+        return "true";
+      } else {
+        return "false";
+      }
+    })()
+  );
+}
+function aria_label(value3) {
+  return aria("label", value3);
 }
 
 // build/dev/javascript/lustre/lustre/effect.mjs
@@ -5863,8 +5887,8 @@ function new$6(options) {
   return fold(
     options,
     init3,
-    (config, option2) => {
-      return option2.apply(config);
+    (config, option) => {
+      return option.apply(config);
     }
   );
 }
@@ -6998,7 +7022,7 @@ function render_province_combobox(id2, to_show, provinces, filter_text, settled_
       return [
         to_string(p.code),
         li(
-          toList([]),
+          toList([role("option")]),
           toList([
             button(
               toList([
@@ -7028,12 +7052,14 @@ function render_province_combobox(id2, to_show, provinces, filter_text, settled_
     toList([
       input(
         toList([
+          type_("search"),
           class$(
             "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded"
           ),
+          role("combobox"),
+          value(filter_text),
           input_handler,
-          on_focus(emit_msg.input_focus),
-          value(filter_text)
+          on_focus(emit_msg.input_focus)
         ])
       ),
       button(
@@ -7041,6 +7067,8 @@ function render_province_combobox(id2, to_show, provinces, filter_text, settled_
           class$(
             "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer"
           ),
+          aria_label("Close"),
+          aria_hidden(true),
           on_click(emit_msg.clear_click)
         ]),
         toList([text3("\u2A2F")])
@@ -7055,7 +7083,12 @@ function render_province_combobox(id2, to_show, provinces, filter_text, settled_
         toList([
           div(
             toList([class$("max-h-40 overflow-y-auto")]),
-            toList([ul(toList([class$("pe-2")]), li_items)])
+            toList([
+              ul(
+                toList([class$("pe-2"), role("listbox")]),
+                li_items
+              )
+            ])
           )
         ])
       )
@@ -7087,7 +7120,7 @@ function render_ward_combobox(id2, to_show, wards, filter_text, settled_ward, em
       return [
         to_string(w.code),
         li(
-          toList([]),
+          toList([role("option")]),
           toList([
             button(
               toList([
@@ -7117,12 +7150,14 @@ function render_ward_combobox(id2, to_show, wards, filter_text, settled_ward, em
     toList([
       input(
         toList([
+          type_("search"),
           class$(
             "border focus-visible:outline-none focus-visible:ring-1 px-2 py-1 w-full rounded"
           ),
+          role("combobox"),
+          value(filter_text),
           input_handler,
-          on_focus(emit_msg.input_focus),
-          value(filter_text)
+          on_focus(emit_msg.input_focus)
         ])
       ),
       button(
@@ -7130,6 +7165,8 @@ function render_ward_combobox(id2, to_show, wards, filter_text, settled_ward, em
           class$(
             "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer"
           ),
+          aria_label("Close"),
+          aria_hidden(true),
           on_click(emit_msg.clear_click)
         ]),
         toList([text3("\u2A2F")])
@@ -7144,7 +7181,12 @@ function render_ward_combobox(id2, to_show, wards, filter_text, settled_ward, em
         toList([
           div(
             toList([class$("max-h-40 overflow-y-auto")]),
-            toList([ul(toList([class$("pe-2")]), li_items)])
+            toList([
+              ul(
+                toList([class$("pe-2"), role("listbox")]),
+                li_items
+              )
+            ])
           )
         ])
       )

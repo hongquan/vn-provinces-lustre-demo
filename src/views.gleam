@@ -19,31 +19,6 @@ pub type ComboboxEmitMsg(msg, obj) {
   )
 }
 
-pub fn render_province_as_option(
-  p: Province,
-  selected_code: Int,
-) -> Element(msg) {
-  h.option(
-    [a.value(int.to_string(p.code)), a.selected(p.code == selected_code)],
-    p.name,
-  )
-}
-
-pub fn render_ward_as_option(w: Ward, selected_ward: Int) -> Element(msg) {
-  h.option(
-    [a.value(int.to_string(w.code)), a.selected(w.code == selected_ward)],
-    w.name,
-  )
-}
-
-pub fn get_province_from_code(c: Int, provinces: List(Province)) {
-  provinces |> list.find(fn(p) { p.code == c })
-}
-
-pub fn get_ward_from_code(c: Int, wards: List(Ward)) -> Result(Ward, Nil) {
-  wards |> list.find(fn(w) { w.code == c })
-}
-
 pub fn show_brief_info_province(province: Province) {
   h.dl([a.class("max-w-md mt-8")], [
     h.dt([a.class("font-semibold text-lg")], [h.text(province.name)]),
@@ -87,7 +62,7 @@ pub fn render_province_combobox(
       }
       #(
         int.to_string(p.code),
-        h.li([], [
+        h.li([a.role("option")], [
           h.button(
             [
               a.class(
@@ -111,18 +86,22 @@ pub fn render_province_combobox(
   h.div([a.id(id), a.class("relative")], [
     // The Text Input of the combobox
     h.input([
+      a.type_("search"),
       a.class(
         "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded",
       ),
+      a.role("combobox"),
+      a.value(filter_text),
       input_handler,
       ev.on_focus(emit_msg.input_focus),
-      a.value(filter_text),
     ]),
     h.button(
       [
         a.class(
           "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer",
         ),
+        a.aria_label("Close"),
+        a.aria_hidden(True),
         ev.on_click(emit_msg.clear_click),
       ],
       [
@@ -140,7 +119,7 @@ pub fn render_province_combobox(
       [
         h.div([a.class("max-h-40 overflow-y-auto")], [
           // The dropdown of the combobox
-          keyed.ul([a.class("pe-2")], li_items),
+          keyed.ul([a.class("pe-2"), a.role("listbox")], li_items),
         ]),
       ],
     ),
@@ -166,7 +145,7 @@ pub fn render_ward_combobox(
       }
       #(
         int.to_string(w.code),
-        h.li([], [
+        h.li([a.role("option")], [
           h.button(
             [
               a.class(
@@ -189,18 +168,22 @@ pub fn render_ward_combobox(
   h.div([a.id(id), a.class("relative")], [
     // The Text Input of the combobox
     h.input([
+      a.type_("search"),
       a.class(
         "border focus-visible:outline-none focus-visible:ring-1 px-2 py-1 w-full rounded",
       ),
+      a.role("combobox"),
+      a.value(filter_text),
       input_handler,
       ev.on_focus(emit_msg.input_focus),
-      a.value(filter_text),
     ]),
     h.button(
       [
         a.class(
           "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer",
         ),
+        a.aria_label("Close"),
+        a.aria_hidden(True),
         ev.on_click(emit_msg.clear_click),
       ],
       [
@@ -218,7 +201,7 @@ pub fn render_ward_combobox(
       [
         h.div([a.class("max-h-40 overflow-y-auto")], [
           // The dropdown of the combobox
-          keyed.ul([a.class("pe-2")], li_items),
+          keyed.ul([a.class("pe-2"), a.role("listbox")], li_items),
         ]),
       ],
     ),
