@@ -357,15 +357,15 @@ function structurallyCompatibleObjects(a, b) {
   return a.constructor === b.constructor;
 }
 function makeError(variant, file, module, line, fn, message2, extra) {
-  let error2 = new globalThis.Error(message2);
-  error2.gleam_error = variant;
-  error2.file = file;
-  error2.module = module;
-  error2.line = line;
-  error2.function = fn;
-  error2.fn = fn;
-  for (let k in extra) error2[k] = extra[k];
-  return error2;
+  let error = new globalThis.Error(message2);
+  error.gleam_error = variant;
+  error.file = file;
+  error.module = module;
+  error.line = line;
+  error.function = fn;
+  error.fn = fn;
+  for (let k in extra) error[k] = extra[k];
+  return error;
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/order.mjs
@@ -1807,11 +1807,11 @@ function push_path(layer, path) {
   );
   let errors = map2(
     layer[1],
-    (error2) => {
+    (error) => {
       return new DecodeError(
-        error2.expected,
-        error2.found,
-        append(path$1, error2.path)
+        error.expected,
+        error.found,
+        append(path$1, error.path)
       );
     }
   );
@@ -2033,8 +2033,8 @@ function index2(data, key2) {
 }
 function list(data, decode2, pushPath, index5, emptyList) {
   if (!(data instanceof List || Array.isArray(data))) {
-    const error2 = new DecodeError("List", classify_dynamic(data), emptyList);
-    return [emptyList, List.fromArray([error2])];
+    const error = new DecodeError("List", classify_dynamic(data), emptyList);
+    return [emptyList, List.fromArray([error])];
   }
   const decoded = [];
   for (const element4 of data) {
@@ -2081,8 +2081,8 @@ function map_error(result, fun) {
   if (result instanceof Ok) {
     return result;
   } else {
-    let error2 = result[0];
-    return new Error(fun(error2));
+    let error = result[0];
+    return new Error(fun(error));
   }
 }
 function try$(result, fun) {
@@ -2110,11 +2110,11 @@ function unwrap_both(result) {
     return a;
   }
 }
-function replace_error(result, error2) {
+function replace_error(result, error) {
   if (result instanceof Ok) {
     return result;
   } else {
-    return new Error(error2);
+    return new Error(error);
   }
 }
 
@@ -6324,8 +6324,8 @@ function get_header(response, key2) {
 async function raw_send(request) {
   try {
     return new Ok(await fetch(request));
-  } catch (error2) {
-    return new Error(new NetworkError(error2.toString()));
+  } catch (error) {
+    return new Error(new NetworkError(error.toString()));
   }
 }
 function from_fetch_response(response) {
@@ -6358,7 +6358,7 @@ async function read_text_body(response) {
   let body2;
   try {
     body2 = await response.body.text();
-  } catch (error2) {
+  } catch (error) {
     return new Error(new UnableToReadBody());
   }
   return new Ok(response.withFields({ body: body2 }));
@@ -6508,10 +6508,10 @@ function do_send(request, handler) {
         (_capture) => {
           return map_error(
             _capture,
-            (error2) => {
-              if (error2 instanceof NetworkError) {
+            (error) => {
+              if (error instanceof NetworkError) {
                 return new NetworkError2();
-              } else if (error2 instanceof UnableToReadBody) {
+              } else if (error instanceof UnableToReadBody) {
                 return new BadBody();
               } else {
                 return new BadBody();
@@ -7000,7 +7000,8 @@ function show_brief_info_ward(ward) {
   );
 }
 var class_combobox_input = "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded";
-var class_combobox_close_button = "w-full hover:bg-gray-200 dark:hover:bg-gray-600 text-start px-2 py-1.5 rounded cursor-pointer";
+var class_combobox_choice_button = "w-full hover:bg-gray-200 dark:hover:bg-gray-600 text-start px-2 py-1.5 rounded cursor-pointer";
+var class_combobox_close_button = "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer";
 var class_combobox_dropdown_container = "absolute z-1 top-10 start-0 end-0 sm:-end-4 py-2 ps-2 bg-gray-50 dark:bg-gray-800 rounded shadow";
 function render_province_combobox(id2, to_show, provinces, filter_text, settled_province, emit_msg) {
   let _block;
@@ -7016,7 +7017,7 @@ function render_province_combobox(id2, to_show, provinces, filter_text, settled_
       if (settled_province instanceof Some) {
         let x = settled_province[0];
         if (isEqual(x, p)) {
-          _block$12 = "\u{1F5F8} ";
+          _block$12 = "\u2713 ";
         } else {
           _block$12 = "";
         }
@@ -7030,7 +7031,7 @@ function render_province_combobox(id2, to_show, provinces, filter_text, settled_
           toList([role("option")]),
           toList([
             button(
-              toList([class$(class_combobox_close_button), click_handler]),
+              toList([class$(class_combobox_choice_button), click_handler]),
               toList([text3(indicator + p.name)])
             )
           ])
@@ -7062,9 +7063,7 @@ function render_province_combobox(id2, to_show, provinces, filter_text, settled_
       ),
       button(
         toList([
-          class$(
-            "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer"
-          ),
+          class$(class_combobox_close_button),
           aria_label("Close"),
           aria_hidden(true),
           on_click(emit_msg.clear_click)
@@ -7105,7 +7104,7 @@ function render_ward_combobox(id2, to_show, wards, filter_text, settled_ward, em
       if (settled_ward instanceof Some) {
         let x = settled_ward[0];
         if (isEqual(x, w)) {
-          _block$12 = "\u{1F5F8} ";
+          _block$12 = "\u2713 ";
         } else {
           _block$12 = "";
         }
@@ -7119,7 +7118,7 @@ function render_ward_combobox(id2, to_show, wards, filter_text, settled_ward, em
           toList([role("option")]),
           toList([
             button(
-              toList([class$(class_combobox_close_button), click_handler]),
+              toList([class$(class_combobox_choice_button), click_handler]),
               toList([text3(indicator + w.name)])
             )
           ])
@@ -7151,9 +7150,7 @@ function render_ward_combobox(id2, to_show, wards, filter_text, settled_ward, em
       ),
       button(
         toList([
-          class$(
-            "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer"
-          ),
+          class$(class_combobox_close_button),
           aria_label("Close"),
           aria_hidden(true),
           on_click(emit_msg.clear_click)
@@ -7911,15 +7908,15 @@ function main() {
       "let_assert",
       FILEPATH,
       "vn_provinces_demo",
-      49,
+      48,
       "main",
       "Pattern match failed, no pattern matched the value.",
       {
         value: $,
-        start: 1365,
-        end: 1420,
-        pattern_start: 1376,
-        pattern_end: 1387
+        start: 1332,
+        end: 1387,
+        pattern_start: 1343,
+        pattern_end: 1354
       }
     );
   }

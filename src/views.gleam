@@ -12,7 +12,9 @@ import core.{type Province, type Ward}
 
 const class_combobox_input = "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded"
 
-const class_combobox_close_button = "w-full hover:bg-gray-200 dark:hover:bg-gray-600 text-start px-2 py-1.5 rounded cursor-pointer"
+const class_combobox_choice_button = "w-full hover:bg-gray-200 dark:hover:bg-gray-600 text-start px-2 py-1.5 rounded cursor-pointer"
+
+const class_combobox_close_button = "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer"
 
 const class_combobox_dropdown_container = "absolute z-1 top-10 start-0 end-0 sm:-end-4 py-2 ps-2 bg-gray-50 dark:bg-gray-800 rounded shadow"
 
@@ -63,7 +65,7 @@ pub fn render_province_combobox(
       let click_handler =
         ev.on("click", decode.success(emit_msg.choice_click(p)))
       let indicator = case settled_province {
-        Some(x) if x == p -> "🗸 "
+        Some(x) if x == p -> "✓ "
         _ -> ""
       }
       #(
@@ -71,7 +73,7 @@ pub fn render_province_combobox(
         h.li([a.role("option")], [
           h.button(
             [
-              a.class(class_combobox_close_button),
+              a.class(class_combobox_choice_button),
               click_handler,
             ],
             [
@@ -99,9 +101,7 @@ pub fn render_province_combobox(
     ]),
     h.button(
       [
-        a.class(
-          "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer",
-        ),
+        a.class(class_combobox_close_button),
         a.aria_label("Close"),
         a.aria_hidden(True),
         ev.on_click(emit_msg.clear_click),
@@ -140,7 +140,7 @@ pub fn render_ward_combobox(
       let click_handler =
         ev.on("click", decode.success(emit_msg.choice_click(w)))
       let indicator = case settled_ward {
-        Some(x) if x == w -> "🗸 "
+        Some(x) if x == w -> "✓ "
         _ -> ""
       }
       #(
@@ -148,7 +148,7 @@ pub fn render_ward_combobox(
         h.li([a.role("option")], [
           h.button(
             [
-              a.class(class_combobox_close_button),
+              a.class(class_combobox_choice_button),
               click_handler,
             ],
             [
@@ -175,9 +175,7 @@ pub fn render_ward_combobox(
     ]),
     h.button(
       [
-        a.class(
-          "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer",
-        ),
+        a.class(class_combobox_close_button),
         a.aria_label("Close"),
         a.aria_hidden(True),
         ev.on_click(emit_msg.clear_click),

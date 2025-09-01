@@ -13,7 +13,6 @@ import modem
 import plinth/browser/document
 import plinth/browser/element as web_element
 import plinth/browser/event as web_event
-import plinth/javascript/console
 
 import actions
 import core.{
