@@ -11,14 +11,19 @@
     --color-sky-300: oklch(82.8% 0.111 230.318);
     --color-sky-800: oklch(44.3% 0.11 240.79);
     --color-blue-500: oklch(62.3% 0.214 259.815);
+    --color-slate-200: oklch(92.9% 0.013 255.508);
+    --color-slate-600: oklch(44.6% 0.043 257.281);
     --color-gray-50: oklch(98.5% 0.002 247.839);
-    --color-gray-200: oklch(92.8% 0.006 264.531);
     --color-gray-300: oklch(87.2% 0.01 258.338);
     --color-gray-400: oklch(70.7% 0.022 261.325);
     --color-gray-600: oklch(44.6% 0.03 256.802);
     --color-gray-700: oklch(37.3% 0.034 259.733);
-    --color-gray-800: oklch(27.8% 0.033 256.848);
     --color-gray-900: oklch(21% 0.034 264.665);
+    --color-neutral-50: oklch(98.5% 0 0);
+    --color-neutral-200: oklch(92.2% 0 0);
+    --color-neutral-600: oklch(43.9% 0 0);
+    --color-neutral-800: oklch(26.9% 0 0);
+    --color-neutral-900: oklch(20.5% 0 0);
     --color-white: #fff;
     --spacing: 0.25rem;
     --container-md: 28rem;
@@ -293,6 +298,12 @@
   .bg-gray-50 {
     background-color: var(--color-gray-50);
   }
+  .bg-neutral-50 {
+    background-color: var(--color-neutral-50);
+  }
+  .bg-slate-200 {
+    background-color: var(--color-slate-200);
+  }
   .p-2\.5 {
     padding: calc(var(--spacing) * 2.5);
   }
@@ -367,10 +378,10 @@
     --tw-blur: blur(8px);
     filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);
   }
-  .hover\:bg-gray-200 {
+  .hover\:bg-neutral-200 {
     &:hover {
       @media (hover: hover) {
-        background-color: var(--color-gray-200);
+        background-color: var(--color-neutral-200);
       }
     }
   }
@@ -468,14 +479,19 @@
       background-color: var(--color-gray-700);
     }
   }
-  .dark\:bg-gray-800 {
+  .dark\:bg-neutral-800 {
     @media (prefers-color-scheme: dark) {
-      background-color: var(--color-gray-800);
+      background-color: var(--color-neutral-800);
     }
   }
-  .dark\:bg-gray-900 {
+  .dark\:bg-neutral-900 {
     @media (prefers-color-scheme: dark) {
-      background-color: var(--color-gray-900);
+      background-color: var(--color-neutral-900);
+    }
+  }
+  .dark\:bg-slate-600 {
+    @media (prefers-color-scheme: dark) {
+      background-color: var(--color-slate-600);
     }
   }
   .dark\:text-gray-300 {
@@ -495,11 +511,11 @@
       }
     }
   }
-  .dark\:hover\:bg-gray-600 {
+  .dark\:hover\:bg-neutral-600 {
     @media (prefers-color-scheme: dark) {
       &:hover {
         @media (hover: hover) {
-          background-color: var(--color-gray-600);
+          background-color: var(--color-neutral-600);
         }
       }
     }

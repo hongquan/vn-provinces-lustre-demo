@@ -1,22 +1,28 @@
 import gleam/dynamic/decode
 import gleam/int
-import gleam/list
-import gleam/option.{Some}
+import gleam/option.{type Option, None, Some}
+import iv
 import lustre/attribute as a
 import lustre/element.{type Element}
 import lustre/element/html as h
 import lustre/element/keyed
 import lustre/event as ev
 
-import core.{type ComboboxState, type Province, type Ward, ComboboxState}
+import core.{
+  type ComboboxState, type Province, type SlideDir, type Ward, ComboboxState,
+}
 
 const class_combobox_input = "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded"
 
-const class_combobox_choice_button = "w-full hover:bg-gray-200 dark:hover:bg-gray-600 text-start px-2 py-1.5 rounded cursor-pointer"
+const class_combobox_choice_button = "w-full text-start px-2 py-1.5 rounded cursor-pointer"
+
+const class_combobox_unfocus_choice = "hover:bg-neutral-200 dark:hover:bg-neutral-600"
+
+const class_combobox_focus_choice = "bg-slate-200 dark:bg-slate-600"
 
 const class_combobox_close_button = "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer"
 
-const class_combobox_dropdown_container = "absolute z-1 top-10 start-0 end-0 sm:-end-4 py-2 ps-2 bg-gray-50 dark:bg-gray-800 rounded shadow"
+const class_combobox_dropdown_container = "absolute z-1 top-10 start-0 end-0 sm:-end-4 py-2 ps-2 bg-neutral-50 dark:bg-neutral-800 rounded shadow"
 
 pub type ComboboxEmitMsg(msg, obj) {
   ComboboxEmitMsg(
@@ -24,6 +30,7 @@ pub type ComboboxEmitMsg(msg, obj) {
     choice_click: fn(obj) -> msg,
     input_focus: msg,
     clear_click: msg,
+    option_navigate: fn(SlideDir) -> msg,
   )
 }
 
@@ -53,7 +60,6 @@ pub fn show_brief_info_ward(ward: Ward) {
 
 pub fn render_province_combobox(
   id: String,
-  provinces: List(Province),
   state: ComboboxState(Province),
   emit_msg: ComboboxEmitMsg(msg, Province),
 ) -> Element(msg) {
@@ -62,27 +68,31 @@ pub fn render_province_combobox(
     filter_text:,
     filtered_items: filtered_provinces,
     selected_item: settled_province,
-    ..,
+    focused_index:,
   ) = state
-  let offered_provinces = case filter_text {
-    "" -> provinces
-    _ -> filtered_provinces
-  }
   let li_items =
-    offered_provinces
-    |> list.map(fn(p) {
+    filtered_provinces
+    |> iv.index_map(fn(p, i) {
       let click_handler =
         ev.on("click", decode.success(emit_msg.choice_click(p)))
       let indicator = case settled_province {
         Some(x) if x == p -> "✓ "
         _ -> ""
       }
+      let is_focused = case focused_index {
+        fi if fi > 0 && fi == i + 1 -> True
+        _ -> False
+      }
       #(
         int.to_string(p.code),
         h.li([a.role("option")], [
           h.button(
             [
-              a.class(class_combobox_choice_button),
+              a.classes([
+                #(class_combobox_choice_button, True),
+                #(class_combobox_focus_choice, is_focused),
+                #(class_combobox_unfocus_choice, !is_focused),
+              ]),
               click_handler,
             ],
             [
@@ -94,7 +104,13 @@ pub fn render_province_combobox(
     })
   // Event handler for the text input
   let input_handler = ev.on_input(emit_msg.text_input) |> ev.debounce(200)
-  // Handle "click outside"
+  let focused_province = case focused_index - 1 {
+    fi if fi >= 0 -> {
+      filtered_provinces |> iv.get(fi) |> option.from_result
+    }
+    _ -> None
+  }
+  let keyup_handler = get_combobox_keyup_handler(emit_msg, focused_province)
   h.div([a.id(id), a.class("relative")], [
     // The Text Input of the combobox
     h.input([
@@ -104,6 +120,7 @@ pub fn render_province_combobox(
       a.value(filter_text),
       input_handler,
       ev.on_focus(emit_msg.input_focus),
+      keyup_handler,
     ]),
     h.button(
       [
@@ -125,7 +142,7 @@ pub fn render_province_combobox(
       [
         h.div([a.class("max-h-40 overflow-y-auto")], [
           // The dropdown of the combobox
-          keyed.ul([a.class("pe-2"), a.role("listbox")], li_items),
+          keyed.ul([a.class("pe-2"), a.role("listbox")], iv.to_list(li_items)),
         ]),
       ],
     ),
@@ -134,7 +151,6 @@ pub fn render_province_combobox(
 
 pub fn render_ward_combobox(
   id: String,
-  wards: List(Ward),
   state: ComboboxState(Ward),
   emit_msg: ComboboxEmitMsg(msg, Ward),
 ) {
@@ -143,27 +159,31 @@ pub fn render_ward_combobox(
     filter_text:,
     filtered_items: filtered_wards,
     selected_item: settled_ward,
-    ..,
+    focused_index:,
   ) = state
-  let offered_wards = case filter_text {
-    "" -> wards
-    _ -> filtered_wards
-  }
   let li_items =
-    offered_wards
-    |> list.map(fn(w) {
+    filtered_wards
+    |> iv.index_map(fn(w, i) {
       let click_handler =
         ev.on("click", decode.success(emit_msg.choice_click(w)))
       let indicator = case settled_ward {
         Some(x) if x == w -> "✓ "
         _ -> ""
       }
+      let is_focused = case focused_index {
+        fi if fi > 0 && fi == i + 1 -> True
+        _ -> False
+      }
       #(
         int.to_string(w.code),
         h.li([a.role("option")], [
           h.button(
             [
-              a.class(class_combobox_choice_button),
+              a.classes([
+                #(class_combobox_choice_button, True),
+                #(class_combobox_focus_choice, is_focused),
+                #(class_combobox_unfocus_choice, !is_focused),
+              ]),
               click_handler,
             ],
             [
@@ -175,6 +195,13 @@ pub fn render_ward_combobox(
     })
   // Event handler for the text input
   let input_handler = ev.on_input(emit_msg.text_input) |> ev.debounce(200)
+  let focused_ward = case focused_index - 1 {
+    fi if fi >= 0 -> {
+      filtered_wards |> iv.get(fi) |> option.from_result
+    }
+    _ -> None
+  }
+  let keyup_handler = get_combobox_keyup_handler(emit_msg, focused_ward)
   h.div([a.id(id), a.class("relative")], [
     // The Text Input of the combobox
     h.input([
@@ -184,6 +211,7 @@ pub fn render_ward_combobox(
       a.value(filter_text),
       input_handler,
       ev.on_focus(emit_msg.input_focus),
+      keyup_handler,
     ]),
     h.button(
       [
@@ -205,9 +233,30 @@ pub fn render_ward_combobox(
       [
         h.div([a.class("max-h-40 overflow-y-auto")], [
           // The dropdown of the combobox
-          keyed.ul([a.class("pe-2"), a.role("listbox")], li_items),
+          keyed.ul([a.class("pe-2"), a.role("listbox")], iv.to_list(li_items)),
         ]),
       ],
     ),
   ])
+}
+
+fn get_combobox_keyup_handler(
+  emit_msg: ComboboxEmitMsg(m, o),
+  focused_item: Option(o),
+) -> a.Attribute(m) {
+  ev.on("keyup", {
+    use key_code <- decode.field("key", decode.string)
+    let msg = case key_code {
+      "ArrowUp" -> Some(emit_msg.option_navigate(core.SlideUp))
+      "ArrowDown" -> Some(emit_msg.option_navigate(core.SlideDown))
+      "Enter" -> focused_item |> option.map(emit_msg.choice_click)
+      _ -> None
+    }
+
+    msg
+    |> option.map(fn(m) { decode.success(m) })
+    |> option.lazy_unwrap(fn() {
+      decode.failure(emit_msg.option_navigate(core.SlideUp), "SlideDir")
+    })
+  })
 }

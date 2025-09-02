@@ -1,4 +1,5 @@
 import gleam/option.{type Option, None}
+import iv.{type Array}
 import rsvp
 
 import router
@@ -47,14 +48,15 @@ pub type ComboboxState(obj) {
   ComboboxState(
     is_shown: Bool,
     filter_text: String,
-    filtered_items: List(obj),
+    filtered_items: Array(obj),
     // Used when the province value has been settled from combobox.
     selected_item: Option(obj),
-    // Index of the item to focus when navigating with keyboard
+    // 1-based index of the item to focus when navigating with keyboard.
+    // Zero means no one is focused.
     focused_index: Int,
   )
 }
 
 pub fn create_empty_combobox_state() -> ComboboxState(obj) {
-  ComboboxState(False, "", [], None, 0)
+  ComboboxState(False, "", iv.new(), None, 0)
 }
