@@ -1,14 +1,14 @@
 import gleam/dynamic/decode
 import gleam/int
 import gleam/list
-import gleam/option.{type Option, Some, is_some}
+import gleam/option.{Some}
 import lustre/attribute as a
 import lustre/element.{type Element}
 import lustre/element/html as h
 import lustre/element/keyed
 import lustre/event as ev
 
-import core.{type Province, type Ward}
+import core.{type ComboboxState, type Province, type Ward, ComboboxState}
 
 const class_combobox_input = "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded"
 
@@ -53,14 +53,23 @@ pub fn show_brief_info_ward(ward: Ward) {
 
 pub fn render_province_combobox(
   id: String,
-  to_show: Bool,
   provinces: List(Province),
-  filter_text: String,
-  settled_province: Option(Province),
+  state: ComboboxState(Province),
   emit_msg: ComboboxEmitMsg(msg, Province),
 ) -> Element(msg) {
+  let ComboboxState(
+    is_shown: to_show,
+    filter_text:,
+    filtered_items: filtered_provinces,
+    selected_item: settled_province,
+    ..,
+  ) = state
+  let offered_provinces = case filter_text {
+    "" -> provinces
+    _ -> filtered_provinces
+  }
   let li_items =
-    provinces
+    offered_provinces
     |> list.map(fn(p) {
       let click_handler =
         ev.on("click", decode.success(emit_msg.choice_click(p)))
@@ -125,14 +134,23 @@ pub fn render_province_combobox(
 
 pub fn render_ward_combobox(
   id: String,
-  to_show: Bool,
   wards: List(Ward),
-  filter_text: String,
-  settled_ward: Option(Ward),
+  state: ComboboxState(Ward),
   emit_msg: ComboboxEmitMsg(msg, Ward),
 ) {
+  let ComboboxState(
+    is_shown: to_show,
+    filter_text:,
+    filtered_items: filtered_wards,
+    selected_item: settled_ward,
+    ..,
+  ) = state
+  let offered_wards = case filter_text {
+    "" -> wards
+    _ -> filtered_wards
+  }
   let li_items =
-    wards
+    offered_wards
     |> list.map(fn(w) {
       let click_handler =
         ev.on("click", decode.success(emit_msg.choice_click(w)))

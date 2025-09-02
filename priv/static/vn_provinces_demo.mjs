@@ -6745,16 +6745,17 @@ var UserClickedOutside = class extends CustomType {
   }
 };
 var ComboboxState = class extends CustomType {
-  constructor(is_shown, filter_text, filtered_items, selected_item) {
+  constructor(is_shown, filter_text, filtered_items, selected_item, focused_index) {
     super();
     this.is_shown = is_shown;
     this.filter_text = filter_text;
     this.filtered_items = filtered_items;
     this.selected_item = selected_item;
+    this.focused_index = focused_index;
   }
 };
 function create_empty_combobox_state() {
-  return new ComboboxState(false, "", toList([]), new None());
+  return new ComboboxState(false, "", toList([]), new None(), 0);
 }
 
 // build/dev/javascript/vn_provinces_demo/actions.mjs
@@ -6994,28 +6995,43 @@ var class_combobox_input = "border focus-visible:outline-none focus-visible:ring
 var class_combobox_choice_button = "w-full hover:bg-gray-200 dark:hover:bg-gray-600 text-start px-2 py-1.5 rounded cursor-pointer";
 var class_combobox_close_button = "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer";
 var class_combobox_dropdown_container = "absolute z-1 top-10 start-0 end-0 sm:-end-4 py-2 ps-2 bg-gray-50 dark:bg-gray-800 rounded shadow";
-function render_province_combobox(id2, to_show, provinces, filter_text, settled_province, emit_msg) {
+function render_province_combobox(id2, provinces, state, emit_msg) {
+  let to_show;
+  let filter_text;
+  let filtered_provinces;
+  let settled_province;
+  to_show = state.is_shown;
+  filter_text = state.filter_text;
+  filtered_provinces = state.filtered_items;
+  settled_province = state.selected_item;
   let _block;
-  let _pipe = provinces;
-  _block = map2(
+  if (filter_text === "") {
+    _block = provinces;
+  } else {
+    _block = filtered_provinces;
+  }
+  let offered_provinces = _block;
+  let _block$1;
+  let _pipe = offered_provinces;
+  _block$1 = map2(
     _pipe,
     (p) => {
       let click_handler = on(
         "click",
         success(emit_msg.choice_click(p))
       );
-      let _block$12;
+      let _block$22;
       if (settled_province instanceof Some) {
         let x = settled_province[0];
         if (isEqual(x, p)) {
-          _block$12 = "\u2713 ";
+          _block$22 = "\u2713 ";
         } else {
-          _block$12 = "";
+          _block$22 = "";
         }
       } else {
-        _block$12 = "";
+        _block$22 = "";
       }
-      let indicator = _block$12;
+      let indicator = _block$22;
       return [
         to_string(p.code),
         li(
@@ -7030,11 +7046,11 @@ function render_province_combobox(id2, to_show, provinces, filter_text, settled_
       ];
     }
   );
-  let li_items = _block;
-  let _block$1;
+  let li_items = _block$1;
+  let _block$2;
   let _pipe$1 = on_input(emit_msg.text_input);
-  _block$1 = debounce(_pipe$1, 200);
-  let input_handler = _block$1;
+  _block$2 = debounce(_pipe$1, 200);
+  let input_handler = _block$2;
   return div(
     toList([id(id2), class$("relative")]),
     toList([
@@ -7077,28 +7093,43 @@ function render_province_combobox(id2, to_show, provinces, filter_text, settled_
     ])
   );
 }
-function render_ward_combobox(id2, to_show, wards, filter_text, settled_ward, emit_msg) {
+function render_ward_combobox(id2, wards, state, emit_msg) {
+  let to_show;
+  let filter_text;
+  let filtered_wards;
+  let settled_ward;
+  to_show = state.is_shown;
+  filter_text = state.filter_text;
+  filtered_wards = state.filtered_items;
+  settled_ward = state.selected_item;
   let _block;
-  let _pipe = wards;
-  _block = map2(
+  if (filter_text === "") {
+    _block = wards;
+  } else {
+    _block = filtered_wards;
+  }
+  let offered_wards = _block;
+  let _block$1;
+  let _pipe = offered_wards;
+  _block$1 = map2(
     _pipe,
     (w) => {
       let click_handler = on(
         "click",
         success(emit_msg.choice_click(w))
       );
-      let _block$12;
+      let _block$22;
       if (settled_ward instanceof Some) {
         let x = settled_ward[0];
         if (isEqual(x, w)) {
-          _block$12 = "\u2713 ";
+          _block$22 = "\u2713 ";
         } else {
-          _block$12 = "";
+          _block$22 = "";
         }
       } else {
-        _block$12 = "";
+        _block$22 = "";
       }
-      let indicator = _block$12;
+      let indicator = _block$22;
       return [
         to_string(w.code),
         li(
@@ -7113,11 +7144,11 @@ function render_ward_combobox(id2, to_show, wards, filter_text, settled_ward, em
       ];
     }
   );
-  let li_items = _block;
-  let _block$1;
+  let li_items = _block$1;
+  let _block$2;
   let _pipe$1 = on_input(emit_msg.text_input);
-  _block$1 = debounce(_pipe$1, 200);
-  let input_handler = _block$1;
+  _block$2 = debounce(_pipe$1, 200);
+  let input_handler = _block$2;
   return div(
     toList([id(id2), class$("relative")]),
     toList([
@@ -7261,7 +7292,8 @@ function handle_loaded_provinces(provinces, model) {
         _record.is_shown,
         filter_text,
         filtered_items,
-        selected_province
+        selected_province,
+        _record.focused_index
       );
     })(),
     model.ward_combobox_state
@@ -7310,7 +7342,8 @@ function handle_loaded_wards(wards, model) {
         _record.is_shown,
         filter_text,
         filtered_items,
-        selected_ward
+        selected_ward,
+        _record.focused_index
       );
     })()
   );
@@ -7406,7 +7439,8 @@ function handle_route_changed(new_route, queried_province, queried_ward, model) 
         _record.is_shown,
         _record.filter_text,
         filtered_provinces,
-        from_result(queried_province$1)
+        from_result(queried_province$1),
+        _record.focused_index
       );
     })(),
     (() => {
@@ -7415,7 +7449,8 @@ function handle_route_changed(new_route, queried_province, queried_ward, model) 
         _record.is_shown,
         _record.filter_text,
         filtered_wards,
-        queried_ward$1
+        queried_ward$1,
+        _record.focused_index
       );
     })()
   );
@@ -7433,7 +7468,8 @@ function update2(model, msg) {
           true,
           _record.filter_text,
           _record.filtered_items,
-          _record.selected_item
+          _record.selected_item,
+          _record.focused_index
         );
       })(),
       model.ward_combobox_state
@@ -7450,7 +7486,8 @@ function update2(model, msg) {
           _record.is_shown,
           "",
           _record.filtered_items,
-          _record.selected_item
+          _record.selected_item,
+          _record.focused_index
         );
       })(),
       model.ward_combobox_state
@@ -7468,7 +7505,8 @@ function update2(model, msg) {
           _record.is_shown,
           s,
           _record.filtered_items,
-          _record.selected_item
+          _record.selected_item,
+          _record.focused_index
         );
       })(),
       model.ward_combobox_state
@@ -7486,7 +7524,8 @@ function update2(model, msg) {
           false,
           p.name,
           _record.filtered_items,
-          new Some(p)
+          new Some(p),
+          _record.focused_index
         );
       })(),
       model.ward_combobox_state
@@ -7507,7 +7546,8 @@ function update2(model, msg) {
           true,
           _record.filter_text,
           _record.filtered_items,
-          _record.selected_item
+          _record.selected_item,
+          _record.focused_index
         );
       })()
     );
@@ -7524,7 +7564,8 @@ function update2(model, msg) {
           _record.is_shown,
           "",
           _record.filtered_items,
-          _record.selected_item
+          _record.selected_item,
+          _record.focused_index
         );
       })()
     );
@@ -7544,7 +7585,8 @@ function update2(model, msg) {
           _record.is_shown,
           s,
           _record.filtered_items,
-          _record.selected_item
+          _record.selected_item,
+          _record.focused_index
         );
       })()
     );
@@ -7569,7 +7611,8 @@ function update2(model, msg) {
           false,
           w.name,
           _record.filtered_items,
-          new Some(w)
+          new Some(w),
+          _record.focused_index
         );
       })()
     );
@@ -7609,7 +7652,8 @@ function update2(model, msg) {
             _record.is_shown,
             _record.filter_text,
             provinces,
-            _record.selected_item
+            _record.selected_item,
+            _record.focused_index
           );
         })(),
         model.ward_combobox_state
@@ -7641,7 +7685,8 @@ function update2(model, msg) {
             _record.is_shown,
             _record.filter_text,
             wards,
-            _record.selected_item
+            _record.selected_item,
+            _record.focused_index
           );
         })()
       );
@@ -7665,7 +7710,7 @@ function update2(model, msg) {
       let w = new_route[1];
       return handle_route_changed(new_route, p, w, model);
     }
-  } else {
+  } else if (msg instanceof UserClickedOutside) {
     let position = msg[0];
     let _block;
     if (position instanceof OutBoth) {
@@ -7695,7 +7740,8 @@ function update2(model, msg) {
           !should_close_province_dropdown,
           _record.filter_text,
           _record.filtered_items,
-          _record.selected_item
+          _record.selected_item,
+          _record.focused_index
         );
       })(),
       (() => {
@@ -7704,11 +7750,14 @@ function update2(model, msg) {
           !should_close_ward_dropdown,
           _record.filter_text,
           _record.filtered_items,
-          _record.selected_item
+          _record.selected_item,
+          _record.focused_index
         );
       })()
     );
     return [model$1, none()];
+  } else {
+    return [model, none()];
   }
 }
 var id_province_combobox = "province-combobox";
@@ -7766,31 +7815,12 @@ function get_message_for_document_click(lev) {
 function view2(model) {
   let provinces;
   let wards;
-  let province_combobox_shown;
-  let province_filter_text;
-  let filtered_provinces;
   let selected_province;
-  let ward_combobox_shown;
-  let ward_filter_text;
-  let filtered_wards;
   let selected_ward;
   provinces = model.provinces;
   wards = model.wards;
-  ward_combobox_shown = model.ward_combobox_state.is_shown;
-  ward_filter_text = model.ward_combobox_state.filter_text;
-  filtered_wards = model.ward_combobox_state.filtered_items;
   selected_ward = model.ward_combobox_state.selected_item;
-  province_combobox_shown = model.province_combobox_state.is_shown;
-  province_filter_text = model.province_combobox_state.filter_text;
-  filtered_provinces = model.province_combobox_state.filtered_items;
   selected_province = model.province_combobox_state.selected_item;
-  let _block;
-  if (province_filter_text === "") {
-    _block = provinces;
-  } else {
-    _block = filtered_provinces;
-  }
-  let filtered_provinces$1 = _block;
   let cb_msg = new ComboboxEmitMsg(
     (var0) => {
       return new ProvinceComboboxTextInput(var0);
@@ -7803,10 +7833,8 @@ function view2(model) {
   );
   let province_combobox = render_province_combobox(
     id_province_combobox,
-    province_combobox_shown,
-    filtered_provinces$1,
-    province_filter_text,
-    selected_province,
+    provinces,
+    model.province_combobox_state,
     cb_msg
   );
   let cb_msg$1 = new ComboboxEmitMsg(
@@ -7819,19 +7847,10 @@ function view2(model) {
     new WardComboboxFocused(),
     new WardComboboxClearClick()
   );
-  let _block$1;
-  if (ward_filter_text === "") {
-    _block$1 = wards;
-  } else {
-    _block$1 = filtered_wards;
-  }
-  let filtered_wards$1 = _block$1;
   let ward_combobox = render_ward_combobox(
     id_ward_combobox,
-    ward_combobox_shown,
-    filtered_wards$1,
-    ward_filter_text,
-    selected_ward,
+    wards,
+    model.ward_combobox_state,
     cb_msg$1
   );
   return section(

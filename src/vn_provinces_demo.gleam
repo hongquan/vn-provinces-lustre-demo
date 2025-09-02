@@ -296,24 +296,10 @@ fn view(model: Model) -> Element(Msg) {
   let Model(
     provinces:,
     wards:,
-    province_combobox_state: ComboboxState(
-      is_shown: province_combobox_shown,
-      filter_text: province_filter_text,
-      filtered_items: filtered_provinces,
-      selected_item: selected_province,
-    ),
-    ward_combobox_state: ComboboxState(
-      filter_text: ward_filter_text,
-      selected_item: selected_ward,
-      filtered_items: filtered_wards,
-      is_shown: ward_combobox_shown,
-    ),
+    province_combobox_state: ComboboxState(selected_item: selected_province, ..),
+    ward_combobox_state: ComboboxState(selected_item: selected_ward, ..),
     ..,
   ) = model
-  let filtered_provinces = case province_filter_text {
-    "" -> provinces
-    _ -> filtered_provinces
-  }
   let cb_msg =
     views.ComboboxEmitMsg(
       ProvinceComboboxTextInput,
@@ -325,10 +311,8 @@ fn view(model: Model) -> Element(Msg) {
   let province_combobox =
     render_province_combobox(
       id_province_combobox,
-      province_combobox_shown,
-      filtered_provinces,
-      province_filter_text,
-      selected_province,
+      provinces,
+      model.province_combobox_state,
       cb_msg,
     )
   let cb_msg =
@@ -339,17 +323,11 @@ fn view(model: Model) -> Element(Msg) {
       WardComboboxClearClick,
     )
 
-  let filtered_wards = case ward_filter_text {
-    "" -> wards
-    _ -> filtered_wards
-  }
   let ward_combobox =
     render_ward_combobox(
       id_ward_combobox,
-      ward_combobox_shown,
-      filtered_wards,
-      ward_filter_text,
-      selected_ward,
+      wards,
+      model.ward_combobox_state,
       cb_msg,
     )
   // Handle "click outside" for our combobox
