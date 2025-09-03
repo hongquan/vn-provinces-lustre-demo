@@ -160,9 +160,9 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       let filtered_provinces = model.province_combobox_state.filtered_items
       // If the text input contains empty string,
       // we show all provinces in the dropdown.
-      let filtered_provinces = case string.trim(s) {
-        "" -> iv.from_list(provinces)
-        _ -> filtered_provinces
+      let #(filtered_provinces, what_next) = case string.trim(s) {
+        "" -> #(iv.from_list(provinces), effect.none())
+        q -> #(filtered_provinces, actions.search_provinces(q))
       }
       let model =
         Model(
@@ -173,7 +173,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             filtered_items: filtered_provinces,
           ),
         )
-      #(model, actions.search_provinces(s))
+      #(model, what_next)
     }
     ProvinceComboboxSelected(p) -> {
       let model =
@@ -263,9 +263,15 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       let filtered_wards = model.ward_combobox_state.filtered_items
       // If the text input contains empty string,
       // we show all wards in the dropdown.
-      let filtered_wards = case string.trim(s) {
-        "" -> iv.from_list(wards)
-        _ -> filtered_wards
+      let #(filtered_wards, what_next) = case string.trim(s) {
+        "" -> #(iv.from_list(wards), effect.none())
+        q -> {
+          let province_code =
+            selected_province
+            |> option.map(fn(p) { p.code })
+            |> option.unwrap(0)
+          #(filtered_wards, actions.search_wards(q, province_code))
+        }
       }
       let model =
         Model(
@@ -276,9 +282,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             filtered_items: filtered_wards,
           ),
         )
-      let province_code =
-        selected_province |> option.map(fn(p) { p.code }) |> option.unwrap(0)
-      #(model, actions.search_wards(s, province_code))
+      #(model, what_next)
     }
 
     WardComboboxSlide(dir) -> {

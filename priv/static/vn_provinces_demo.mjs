@@ -8092,18 +8092,21 @@ function update3(model, msg) {
     return [model$1, none()];
   } else if (msg instanceof ProvinceComboboxTextInput) {
     let s = msg[0];
-    let provinces;
-    let filtered_provinces;
-    provinces = model.provinces;
-    filtered_provinces = model.province_combobox_state.filtered_items;
+    let provinces = model.provinces;
+    let filtered_provinces = model.province_combobox_state.filtered_items;
     let _block;
-    let $ = trim(s);
-    if ($ === "") {
-      _block = from_list2(provinces);
+    let $1 = trim(s);
+    if ($1 === "") {
+      _block = [from_list2(provinces), none()];
     } else {
-      _block = filtered_provinces;
+      let q = $1;
+      _block = [filtered_provinces, search_provinces(q)];
     }
-    let filtered_provinces$1 = _block;
+    let $ = _block;
+    let filtered_provinces$1;
+    let what_next;
+    filtered_provinces$1 = $[0];
+    what_next = $[1];
     let model$1 = new Model(
       model.route,
       model.provinces,
@@ -8120,13 +8123,11 @@ function update3(model, msg) {
       })(),
       model.ward_combobox_state
     );
-    return [model$1, search_provinces(s)];
+    return [model$1, what_next];
   } else if (msg instanceof ProvinceComboboxSlide) {
     let dir = msg[0];
-    let filtered_items;
-    let focused_index;
-    filtered_items = model.province_combobox_state.filtered_items;
-    focused_index = model.province_combobox_state.focused_index;
+    let filtered_provinces = model.province_combobox_state.filtered_items;
+    let focused_index = model.province_combobox_state.focused_index;
     let _block;
     if (dir instanceof SlideUp) {
       _block = focused_index - 1;
@@ -8134,7 +8135,7 @@ function update3(model, msg) {
       _block = focused_index + 1;
     }
     let i = _block;
-    let focused_index$1 = clamp(i, 0, length4(filtered_items));
+    let focused_index$1 = clamp(i, 0, length4(filtered_provinces));
     let model$1 = new Model(
       model.route,
       model.provinces,
@@ -8212,20 +8213,29 @@ function update3(model, msg) {
     return [model$1, none()];
   } else if (msg instanceof WardComboboxTextInput) {
     let s = msg[0];
-    let wards;
-    let selected_province;
-    let filtered_wards;
-    wards = model.wards;
-    filtered_wards = model.ward_combobox_state.filtered_items;
-    selected_province = model.province_combobox_state.selected_item;
+    let wards = model.wards;
+    let selected_province = model.province_combobox_state.selected_item;
+    let filtered_wards = model.ward_combobox_state.filtered_items;
     let _block;
-    let $ = trim(s);
-    if ($ === "") {
-      _block = from_list2(wards);
+    let $1 = trim(s);
+    if ($1 === "") {
+      _block = [from_list2(wards), none()];
     } else {
-      _block = filtered_wards;
+      let q = $1;
+      let _block$1;
+      let _pipe = selected_province;
+      let _pipe$1 = map(_pipe, (p) => {
+        return p.code;
+      });
+      _block$1 = unwrap(_pipe$1, 0);
+      let province_code = _block$1;
+      _block = [filtered_wards, search_wards(q, province_code)];
     }
-    let filtered_wards$1 = _block;
+    let $ = _block;
+    let filtered_wards$1;
+    let what_next;
+    filtered_wards$1 = $[0];
+    what_next = $[1];
     let model$1 = new Model(
       model.route,
       model.provinces,
@@ -8242,20 +8252,11 @@ function update3(model, msg) {
         );
       })()
     );
-    let _block$1;
-    let _pipe = selected_province;
-    let _pipe$1 = map(_pipe, (p) => {
-      return p.code;
-    });
-    _block$1 = unwrap(_pipe$1, 0);
-    let province_code = _block$1;
-    return [model$1, search_wards(s, province_code)];
+    return [model$1, what_next];
   } else if (msg instanceof WardComboboxSlide) {
     let dir = msg[0];
-    let filtered_items;
-    let focused_index;
-    filtered_items = model.ward_combobox_state.filtered_items;
-    focused_index = model.ward_combobox_state.focused_index;
+    let focused_index = model.ward_combobox_state.focused_index;
+    let filtered_wards = model.ward_combobox_state.filtered_items;
     let _block;
     if (dir instanceof SlideUp) {
       _block = focused_index - 1;
@@ -8263,7 +8264,7 @@ function update3(model, msg) {
       _block = focused_index + 1;
     }
     let i = _block;
-    let focused_index$1 = clamp(i, 0, length4(filtered_items));
+    let focused_index$1 = clamp(i, 0, length4(filtered_wards));
     let model$1 = new Model(
       model.route,
       model.provinces,
@@ -8494,10 +8495,8 @@ function get_message_for_document_click(lev) {
   );
 }
 function view2(model) {
-  let selected_province;
-  let selected_ward;
-  selected_ward = model.ward_combobox_state.selected_item;
-  selected_province = model.province_combobox_state.selected_item;
+  let selected_province = model.province_combobox_state.selected_item;
+  let selected_ward = model.ward_combobox_state.selected_item;
   let cb_msg = new ComboboxEmitMsg(
     (var0) => {
       return new ProvinceComboboxTextInput(var0);
