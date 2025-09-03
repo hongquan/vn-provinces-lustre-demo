@@ -156,14 +156,8 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
     }
     ProvinceComboboxTextInput(s) -> {
-      let Model(
-        provinces:,
-        province_combobox_state: ComboboxState(
-          filtered_items: filtered_provinces,
-          ..,
-        ),
-        ..,
-      ) = model
+      let provinces = model.provinces
+      let filtered_provinces = model.province_combobox_state.filtered_items
       // If the text input contains empty string,
       // we show all provinces in the dropdown.
       let filtered_provinces = case string.trim(s) {
@@ -220,20 +214,14 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
 
     ProvinceComboboxSlide(dir) -> {
-      let Model(
-        province_combobox_state: ComboboxState(
-          filtered_items:,
-          focused_index:,
-          ..,
-        ),
-        ..,
-      ) = model
+      let filtered_provinces = model.province_combobox_state.filtered_items
+      let focused_index = model.province_combobox_state.focused_index
       let i = case dir {
         // The lower item has higher index, so pressing ↑ means to go to lower index. 
         core.SlideUp -> focused_index - 1
         _ -> focused_index + 1
       }
-      let focused_index = int.clamp(i, 0, iv.length(filtered_items))
+      let focused_index = int.clamp(i, 0, iv.length(filtered_provinces))
       let model =
         Model(
           ..model,
@@ -270,15 +258,9 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
 
     WardComboboxTextInput(s) -> {
-      let Model(
-        province_combobox_state: ComboboxState(
-          selected_item: selected_province,
-          ..,
-        ),
-        wards:,
-        ward_combobox_state: ComboboxState(filtered_items: filtered_wards, ..),
-        ..,
-      ) = model
+      let wards = model.wards
+      let selected_province = model.province_combobox_state.selected_item
+      let filtered_wards = model.ward_combobox_state.filtered_items
       // If the text input contains empty string,
       // we show all wards in the dropdown.
       let filtered_wards = case string.trim(s) {
@@ -300,16 +282,14 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
 
     WardComboboxSlide(dir) -> {
-      let Model(
-        ward_combobox_state: ComboboxState(filtered_items:, focused_index:, ..),
-        ..,
-      ) = model
+      let focused_index = model.ward_combobox_state.focused_index
+      let filtered_wards = model.ward_combobox_state.filtered_items
       let i = case dir {
         // The lower item has higher index, so pressing ↑ means to go to lower index. 
         core.SlideUp -> focused_index - 1
         _ -> focused_index + 1
       }
-      let focused_index = int.clamp(i, 0, iv.length(filtered_items))
+      let focused_index = int.clamp(i, 0, iv.length(filtered_wards))
       let model =
         Model(
           ..model,
@@ -371,11 +351,8 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 }
 
 fn view(model: Model) -> Element(Msg) {
-  let Model(
-    province_combobox_state: ComboboxState(selected_item: selected_province, ..),
-    ward_combobox_state: ComboboxState(selected_item: selected_ward, ..),
-    ..,
-  ) = model
+  let selected_province = model.province_combobox_state.selected_item
+  let selected_ward = model.ward_combobox_state.selected_item
   let cb_msg =
     views.ComboboxEmitMsg(
       ProvinceComboboxTextInput,
