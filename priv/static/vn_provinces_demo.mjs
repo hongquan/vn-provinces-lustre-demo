@@ -8538,7 +8538,7 @@ function view2(model) {
     toList([
       div(
         toList([
-          class$("space-y-8 md:flex md:flex-row md:space-x-8 md:space-y-0")
+          class$("space-y-8 sm:flex sm:flex-row sm:space-x-8 sm:space-y-0")
         ]),
         toList([
           div(

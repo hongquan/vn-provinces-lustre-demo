@@ -386,7 +386,7 @@ fn view(model: Model) -> Element(Msg) {
   // Handle "click outside" for our combobox
 
   h.section([a.class("grow")], [
-    h.div([a.class("space-y-8 md:flex md:flex-row md:space-x-8 md:space-y-0")], [
+    h.div([a.class("space-y-8 sm:flex sm:flex-row sm:space-x-8 sm:space-y-0")], [
       h.div([], [
         h.label([a.class("text-lg")], [h.text("Tỉnh thành")]),
         province_combobox,
