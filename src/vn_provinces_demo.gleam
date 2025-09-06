@@ -110,6 +110,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     core.ApiReturnedProvinces(Ok(provinces)) -> {
       handle_loaded_provinces(provinces, model)
     }
+
     core.ApiReturnedSearchedProvinces(Ok(provinces)) -> {
       let model =
         Model(
@@ -121,9 +122,11 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         )
       #(model, effect.none())
     }
+
     core.ApiReturnedWards(Ok(wards)) -> {
       handle_loaded_wards(wards, model)
     }
+
     core.ApiReturnedSearchedWards(Ok(wards)) -> {
       let model =
         Model(
@@ -135,6 +138,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         )
       #(model, effect.none())
     }
+
     core.OnRouteChange(new_route) -> {
       case new_route {
         router.Home -> {
@@ -144,10 +148,12 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               route: new_route,
               wards: [],
               // For province combobox
-              province_combobox_state: create_empty_combobox_state(),
+              province_combobox_state: ComboboxState(
+                ..create_empty_combobox_state(),
+                filtered_items: iv.from_list(model.provinces),
+              ),
               ward_combobox_state: create_empty_combobox_state(),
             )
-
           #(model, effect.none())
         }
         router.Province(p, w) -> {
@@ -155,6 +161,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         }
       }
     }
+
     ProvinceComboboxTextInput(s) -> {
       let provinces = model.provinces
       let filtered_provinces = model.province_combobox_state.filtered_items
@@ -175,6 +182,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         )
       #(model, what_next)
     }
+
     ProvinceComboboxSelected(p) -> {
       let model =
         Model(
@@ -190,6 +198,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       let query_string = uri.query_to_string([#("p", int.to_string(p.code))])
       #(model, modem.push("", Some(query_string), None))
     }
+
     ProvinceComboboxFocused -> {
       let model =
         Model(
@@ -201,16 +210,9 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         )
       #(model, effect.none())
     }
+
     ProvinceComboboxClearClick -> {
-      let model =
-        Model(
-          ..model,
-          province_combobox_state: ComboboxState(
-            ..model.province_combobox_state,
-            filter_text: "",
-          ),
-        )
-      #(model, effect.none())
+      #(model, modem.push("", Some(""), None))
     }
 
     ProvinceComboboxSlide(dir) -> {
@@ -246,15 +248,12 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
 
     WardComboboxClearClick -> {
-      let model =
-        Model(
-          ..model,
-          ward_combobox_state: ComboboxState(
-            ..model.ward_combobox_state,
-            filter_text: "",
-          ),
-        )
-      #(model, effect.none())
+      let q =
+        model.province_combobox_state.selected_item
+        |> option.map(fn(p) {
+          uri.query_to_string([#("p", int.to_string(p.code))])
+        })
+      #(model, modem.push("", q, None))
     }
 
     WardComboboxTextInput(s) -> {
@@ -503,7 +502,7 @@ fn handle_route_changed(
   }
   let filtered_wards = case queried_ward {
     Some(w) -> iv.wrap(w)
-    None -> iv.new()
+    None -> iv.from_list(wards)
   }
   let #(current_province, _current_ward) = case current_route {
     router.Home -> #(None, None)
@@ -518,6 +517,8 @@ fn handle_route_changed(
     Some(p_code) -> actions.load_wards(p_code)
     None -> effect.none()
   }
+  let ward_text =
+    queried_ward |> option.map(fn(w) { w.name }) |> option.unwrap("")
   let model =
     Model(
       ..model,
@@ -531,6 +532,7 @@ fn handle_route_changed(
         ..model.ward_combobox_state,
         selected_item: queried_ward,
         filtered_items: filtered_wards,
+        filter_text: ward_text,
       ),
     )
   #(model, whatnext)

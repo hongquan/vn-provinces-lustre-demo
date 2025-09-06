@@ -8050,11 +8050,11 @@ function handle_route_changed(new_route, queried_province, queried_ward, model) 
   let _block$1;
   if (queried_ward instanceof Some) {
     let code2 = queried_ward[0];
-    let _pipe = wards;
-    let _pipe$1 = find2(_pipe, (w) => {
+    let _pipe2 = wards;
+    let _pipe$12 = find2(_pipe2, (w) => {
       return w.code === code2;
     });
-    _block$1 = from_result(_pipe$1);
+    _block$1 = from_result(_pipe$12);
   } else {
     _block$1 = new None();
   }
@@ -8064,7 +8064,7 @@ function handle_route_changed(new_route, queried_province, queried_ward, model) 
     let w = queried_ward$1[0];
     _block$2 = wrap(w);
   } else {
-    _block$2 = new$3();
+    _block$2 = from_list2(wards);
   }
   let filtered_wards = _block$2;
   let _block$3;
@@ -8106,6 +8106,13 @@ function handle_route_changed(new_route, queried_province, queried_ward, model) 
     _block$5 = none();
   }
   let whatnext = _block$5;
+  let _block$6;
+  let _pipe = queried_ward$1;
+  let _pipe$1 = map(_pipe, (w) => {
+    return w.name;
+  });
+  _block$6 = unwrap(_pipe$1, "");
+  let ward_text = _block$6;
   let model$1 = new Model(
     new_route,
     model.provinces,
@@ -8124,7 +8131,7 @@ function handle_route_changed(new_route, queried_province, queried_ward, model) 
       let _record = model.ward_combobox_state;
       return new ComboboxState(
         _record.is_shown,
-        _record.filter_text,
+        ward_text,
         filtered_wards,
         queried_ward$1,
         _record.focused_index
@@ -8205,23 +8212,7 @@ function update3(model, msg) {
     );
     return [model$1, none()];
   } else if (msg instanceof ProvinceComboboxClearClick) {
-    let model$1 = new Model(
-      model.route,
-      model.provinces,
-      model.wards,
-      (() => {
-        let _record = model.province_combobox_state;
-        return new ComboboxState(
-          _record.is_shown,
-          "",
-          _record.filtered_items,
-          _record.selected_item,
-          _record.focused_index
-        );
-      })(),
-      model.ward_combobox_state
-    );
-    return [model$1, none()];
+    return [model, push2("", new Some(""), new None())];
   } else if (msg instanceof ProvinceComboboxTextInput) {
     let s = msg[0];
     let provinces = model.provinces;
@@ -8329,23 +8320,16 @@ function update3(model, msg) {
     );
     return [model$1, none()];
   } else if (msg instanceof WardComboboxClearClick) {
-    let model$1 = new Model(
-      model.route,
-      model.provinces,
-      model.wards,
-      model.province_combobox_state,
-      (() => {
-        let _record = model.ward_combobox_state;
-        return new ComboboxState(
-          _record.is_shown,
-          "",
-          _record.filtered_items,
-          _record.selected_item,
-          _record.focused_index
-        );
-      })()
+    let _block;
+    let _pipe = model.province_combobox_state.selected_item;
+    _block = map(
+      _pipe,
+      (p) => {
+        return query_to_string(toList([["p", to_string(p.code)]]));
+      }
     );
-    return [model$1, none()];
+    let q = _block;
+    return [model, push2("", q, new None())];
   } else if (msg instanceof WardComboboxTextInput) {
     let s = msg[0];
     let wards = model.wards;
@@ -8523,7 +8507,16 @@ function update3(model, msg) {
         new_route,
         model.provinces,
         toList([]),
-        create_empty_combobox_state(),
+        (() => {
+          let _record = create_empty_combobox_state();
+          return new ComboboxState(
+            _record.is_shown,
+            _record.filter_text,
+            from_list2(model.provinces),
+            _record.selected_item,
+            _record.focused_index
+          );
+        })(),
         create_empty_combobox_state()
       );
       return [model$1, none()];
