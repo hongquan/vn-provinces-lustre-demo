@@ -25,7 +25,7 @@ import core.{
 }
 import router.{type Route, parse_to_route}
 import views.{
-  render_province_combobox, render_ward_combobox, scroll_to_see_province,
+  render_province_combobox, render_ward_combobox, scroll_to_see_focused_item,
   show_brief_info_province, show_brief_info_ward,
 }
 
@@ -230,7 +230,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             focused_index:,
           ),
         )
-      #(model, scroll_to_see_province())
+      #(model, scroll_to_see_focused_item(id_province_combobox, focused_index))
     }
 
     WardComboboxFocused -> {
@@ -304,7 +304,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             focused_index:,
           ),
         )
-      #(model, effect.none())
+      #(model, scroll_to_see_focused_item(id_ward_combobox, focused_index))
     }
 
     WardComboboxSelected(w) -> {

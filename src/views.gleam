@@ -1,7 +1,7 @@
+import gleam/bool
 import gleam/dynamic/decode
 import gleam/int
 import gleam/javascript/array
-import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import iv
@@ -11,6 +11,8 @@ import lustre/element.{type Element}
 import lustre/element/html as h
 import lustre/element/keyed
 import lustre/event as ev
+import on
+import plinth/browser/document
 import plinth/browser/element as web_element
 
 import core.{
@@ -271,24 +273,26 @@ fn get_combobox_keyup_handler(
   })
 }
 
-pub fn scroll_to_see_province() {
-  use _dispatch, root_element <- effect.after_paint
+pub fn scroll_to_see_focused_item(combobox_id: String, focused_index: Int) {
+  // The focused_index is 1-based, so we return early if it is <= 0
+  use <- bool.guard(focused_index <= 0, effect.none())
+  use _dispatch, _root_element <- effect.after_paint
 
-  let elems =
-    root_element
-    |> web_element.cast
-    |> result.replace_error(Nil)
-    |> result.map(query_selector_all(_, "." <> class_indicate_focus))
-    |> result.map(array.to_list)
-    |> result.unwrap([])
-  let container =
-    elems
-    |> list.first
-    |> result.try(web_element.closest(_, "[class~=overflow-y-auto]"))
-  let out_view =
-    container
-    |> result.try(fn(cont) { elems |> list.find(is_out_of_view(_, cont)) })
-  out_view
-  |> result.map(web_element.scroll_into_view)
-  |> result.unwrap(Nil)
+  // Convert focused_index to 0-based.
+  let index = focused_index - 1
+  let scrolled_container = document.get_element_by_id(combobox_id)
+  let focused_list_item =
+    scrolled_container
+    |> result.map(query_selector_all(_, "li"))
+    |> result.try(array.get(_, index))
+
+  case scrolled_container, focused_list_item {
+    Ok(cont), Ok(elm) -> {
+      use <- on.true(is_out_of_view(elm, cont))
+      web_element.scroll_into_view(elm)
+      True
+    }
+    _, _ -> False
+  }
+  Nil
 }

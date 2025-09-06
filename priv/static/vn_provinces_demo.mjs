@@ -1168,14 +1168,6 @@ function reverse_and_prepend(loop$prefix, loop$suffix) {
 function reverse(list4) {
   return reverse_and_prepend(list4, toList([]));
 }
-function first(list4) {
-  if (list4 instanceof Empty) {
-    return new Error(void 0);
-  } else {
-    let first$1 = list4.head;
-    return new Ok(first$1);
-  }
-}
 function map_loop(loop$list, loop$fun, loop$acc) {
   while (true) {
     let list4 = loop$list;
@@ -1197,20 +1189,20 @@ function map2(list4, fun) {
 }
 function append_loop(loop$first, loop$second) {
   while (true) {
-    let first2 = loop$first;
+    let first = loop$first;
     let second2 = loop$second;
-    if (first2 instanceof Empty) {
+    if (first instanceof Empty) {
       return second2;
     } else {
-      let first$1 = first2.head;
-      let rest$1 = first2.tail;
+      let first$1 = first.head;
+      let rest$1 = first.tail;
       loop$first = rest$1;
       loop$second = prepend(first$1, second2);
     }
   }
 }
-function append(first2, second2) {
-  return append_loop(reverse(first2), second2);
+function append(first, second2) {
+  return append_loop(reverse(first), second2);
 }
 function prepend2(list4, item) {
   return prepend(item, list4);
@@ -1743,10 +1735,10 @@ function run_decoders(loop$data, loop$failure, loop$decoders) {
     }
   }
 }
-function one_of(first2, alternatives) {
+function one_of(first, alternatives) {
   return new Decoder(
     (dynamic_data) => {
-      let $ = first2.function(dynamic_data);
+      let $ = first.function(dynamic_data);
       let layer;
       let errors;
       layer = $;
@@ -6594,8 +6586,8 @@ function push2(path, query, fragment3) {
 }
 
 // build/dev/javascript/gleam_javascript/gleam_javascript_ffi.mjs
-function reduceRight(thing, acc, fn) {
-  return thing.reduceRight(fn, acc);
+function index4(thing, index5) {
+  return index5 in thing ? new Ok(thing[index5]) : new Error(void 0);
 }
 var PromiseLayer = class _PromiseLayer {
   constructor(promise) {
@@ -6617,17 +6609,6 @@ function then_await(promise, fn) {
 function map_promise(promise, fn) {
   return promise.then(
     (value3) => PromiseLayer.wrap(fn(PromiseLayer.unwrap(value3)))
-  );
-}
-
-// build/dev/javascript/gleam_javascript/gleam/javascript/array.mjs
-function to_list2(items) {
-  return reduceRight(
-    items,
-    toList([]),
-    (list4, item) => {
-      return prepend(item, list4);
-    }
   );
 }
 
@@ -6677,13 +6658,6 @@ function cast(raw) {
   } else {
     return new Error();
   }
-}
-function closest(element4, selector) {
-  let ancestor = element4.closest(selector);
-  if (ancestor) {
-    return new Ok(ancestor);
-  }
-  return new Error();
 }
 function scrollIntoView(element4) {
   element4.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -7487,6 +7461,15 @@ function on_focus(msg) {
   return on("focus", success(msg));
 }
 
+// build/dev/javascript/on/on.mjs
+function true$(bool4, f2) {
+  if (bool4) {
+    return f2();
+  } else {
+    return bool4;
+  }
+}
+
 // build/dev/javascript/vn_provinces_demo/element.ffi.mjs
 function querySelectorAll3(element4, selector) {
   return Array.from(element4.querySelectorAll(selector));
@@ -7589,57 +7572,53 @@ function get_combobox_keyup_handler(emit_msg, focused_item) {
     )
   );
 }
+function scroll_to_see_focused_item(combobox_id, focused_index) {
+  return guard(
+    focused_index <= 0,
+    none(),
+    () => {
+      return after_paint(
+        (_, _1) => {
+          let index5 = focused_index - 1;
+          let scrolled_container = getElementById(combobox_id);
+          let _block;
+          let _pipe = scrolled_container;
+          let _pipe$1 = map4(
+            _pipe,
+            (_capture) => {
+              return querySelectorAll3(_capture, "li");
+            }
+          );
+          _block = try$(
+            _pipe$1,
+            (_capture) => {
+              return index4(_capture, index5);
+            }
+          );
+          let focused_list_item = _block;
+          if (focused_list_item instanceof Ok && scrolled_container instanceof Ok) {
+            let elm = focused_list_item[0];
+            let cont = scrolled_container[0];
+            true$(
+              isOutOfView(elm, cont),
+              () => {
+                scrollIntoView(elm);
+                return true;
+              }
+            );
+          } else {
+            false;
+          }
+          return void 0;
+        }
+      );
+    }
+  );
+}
 var class_combobox_input = "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded";
 var class_combobox_choice_button = "w-full text-start px-2 py-1.5 rounded cursor-pointer";
 var class_combobox_unfocus_choice = "hover:bg-neutral-200 dark:hover:bg-neutral-600";
 var class_indicate_focus = "vn-focus";
-function scroll_to_see_province() {
-  return after_paint(
-    (_, root_element) => {
-      let _block;
-      let _pipe = root_element;
-      let _pipe$1 = cast2(_pipe);
-      let _pipe$2 = replace_error(_pipe$1, void 0);
-      let _pipe$3 = map4(
-        _pipe$2,
-        (_capture) => {
-          return querySelectorAll3(_capture, "." + class_indicate_focus);
-        }
-      );
-      let _pipe$4 = map4(_pipe$3, to_list2);
-      _block = unwrap2(_pipe$4, toList([]));
-      let elems = _block;
-      let _block$1;
-      let _pipe$5 = elems;
-      let _pipe$6 = first(_pipe$5);
-      _block$1 = try$(
-        _pipe$6,
-        (_capture) => {
-          return closest(_capture, "[class~=overflow-y-auto]");
-        }
-      );
-      let container = _block$1;
-      let _block$2;
-      let _pipe$7 = container;
-      _block$2 = try$(
-        _pipe$7,
-        (cont) => {
-          let _pipe$82 = elems;
-          return find2(
-            _pipe$82,
-            (_capture) => {
-              return isOutOfView(_capture, cont);
-            }
-          );
-        }
-      );
-      let out_view = _block$2;
-      let _pipe$8 = out_view;
-      let _pipe$9 = map4(_pipe$8, scrollIntoView);
-      return unwrap2(_pipe$9, void 0);
-    }
-  );
-}
 var class_combobox_focus_choice = "bg-slate-200 dark:bg-slate-600 " + class_indicate_focus;
 var class_combobox_close_button = "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer";
 var class_combobox_dropdown_container = "absolute z-1 top-10 start-0 end-0 sm:-end-4 py-2 ps-2 bg-neutral-50 dark:bg-neutral-800 rounded shadow";
@@ -8154,6 +8133,58 @@ function handle_route_changed(new_route, queried_province, queried_ward, model) 
   );
   return [model$1, whatnext];
 }
+var id_province_combobox = "province-combobox";
+var id_ward_combobox = "ward-combobox";
+function get_message_for_document_click(lev) {
+  return try$(
+    cast2(target(lev)),
+    (clicked_elm) => {
+      let _block;
+      let _pipe = getElementById(id_province_combobox);
+      let _pipe$1 = map4(
+        _pipe,
+        (p_cbb) => {
+          return contains2(clicked_elm, p_cbb);
+        }
+      );
+      _block = unwrap2(_pipe$1, true);
+      let outside_province_cbb = _block;
+      let _block$1;
+      let _pipe$2 = getElementById(id_ward_combobox);
+      let _pipe$3 = map4(
+        _pipe$2,
+        (w_cbb) => {
+          return contains2(clicked_elm, w_cbb);
+        }
+      );
+      _block$1 = unwrap2(_pipe$3, true);
+      let outside_ward_cbb = _block$1;
+      let _block$2;
+      let _block$3;
+      if (outside_ward_cbb) {
+        if (outside_province_cbb) {
+          _block$3 = new Some(new OutBoth());
+        } else {
+          _block$3 = new Some(new OutWard());
+        }
+      } else if (outside_province_cbb) {
+        _block$3 = new Some(new OutProvince());
+      } else {
+        _block$3 = new None();
+      }
+      let _pipe$4 = _block$3;
+      let _pipe$5 = map(
+        _pipe$4,
+        (var0) => {
+          return new UserClickedOutside(var0);
+        }
+      );
+      _block$2 = map(_pipe$5, dispatch);
+      let msg = _block$2;
+      return new Ok(msg);
+    }
+  );
+}
 function update3(model, msg) {
   if (msg instanceof ProvinceComboboxFocused) {
     let model$1 = new Model(
@@ -8253,7 +8284,10 @@ function update3(model, msg) {
       })(),
       model.ward_combobox_state
     );
-    return [model$1, scroll_to_see_province()];
+    return [
+      model$1,
+      scroll_to_see_focused_item(id_province_combobox, focused_index$1)
+    ];
   } else if (msg instanceof ProvinceComboboxSelected) {
     let p = msg[0];
     let model$1 = new Model(
@@ -8382,7 +8416,10 @@ function update3(model, msg) {
         );
       })()
     );
-    return [model$1, none()];
+    return [
+      model$1,
+      scroll_to_see_focused_item(id_ward_combobox, focused_index$1)
+    ];
   } else if (msg instanceof WardComboboxSelected) {
     let w = msg[0];
     let model$1 = new Model(
@@ -8543,58 +8580,6 @@ function update3(model, msg) {
     return [model$1, none()];
   }
 }
-var id_province_combobox = "province-combobox";
-var id_ward_combobox = "ward-combobox";
-function get_message_for_document_click(lev) {
-  return try$(
-    cast2(target(lev)),
-    (clicked_elm) => {
-      let _block;
-      let _pipe = getElementById(id_province_combobox);
-      let _pipe$1 = map4(
-        _pipe,
-        (p_cbb) => {
-          return contains2(clicked_elm, p_cbb);
-        }
-      );
-      _block = unwrap2(_pipe$1, true);
-      let outside_province_cbb = _block;
-      let _block$1;
-      let _pipe$2 = getElementById(id_ward_combobox);
-      let _pipe$3 = map4(
-        _pipe$2,
-        (w_cbb) => {
-          return contains2(clicked_elm, w_cbb);
-        }
-      );
-      _block$1 = unwrap2(_pipe$3, true);
-      let outside_ward_cbb = _block$1;
-      let _block$2;
-      let _block$3;
-      if (outside_ward_cbb) {
-        if (outside_province_cbb) {
-          _block$3 = new Some(new OutBoth());
-        } else {
-          _block$3 = new Some(new OutWard());
-        }
-      } else if (outside_province_cbb) {
-        _block$3 = new Some(new OutProvince());
-      } else {
-        _block$3 = new None();
-      }
-      let _pipe$4 = _block$3;
-      let _pipe$5 = map(
-        _pipe$4,
-        (var0) => {
-          return new UserClickedOutside(var0);
-        }
-      );
-      _block$2 = map(_pipe$5, dispatch);
-      let msg = _block$2;
-      return new Ok(msg);
-    }
-  );
-}
 function view2(model) {
   let selected_province = model.province_combobox_state.selected_item;
   let selected_ward = model.ward_combobox_state.selected_item;
@@ -8693,10 +8678,10 @@ function main() {
       "Pattern match failed, no pattern matched the value.",
       {
         value: $,
-        start: 1412,
-        end: 1467,
-        pattern_start: 1423,
-        pattern_end: 1434
+        start: 1416,
+        end: 1471,
+        pattern_start: 1427,
+        pattern_end: 1438
       }
     );
   }
