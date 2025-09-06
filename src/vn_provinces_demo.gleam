@@ -25,8 +25,8 @@ import core.{
 }
 import router.{type Route, parse_to_route}
 import views.{
-  render_province_combobox, render_ward_combobox, show_brief_info_province,
-  show_brief_info_ward,
+  render_province_combobox, render_ward_combobox, scroll_to_see_province,
+  show_brief_info_province, show_brief_info_ward,
 }
 
 const id_province_combobox = "province-combobox"
@@ -230,7 +230,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             focused_index:,
           ),
         )
-      #(model, effect.none())
+      #(model, scroll_to_see_province())
     }
 
     WardComboboxFocused -> {
@@ -294,6 +294,8 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         _ -> focused_index + 1
       }
       let focused_index = int.clamp(i, 0, iv.length(filtered_wards))
+      // The focused ward may be not visible due to scrolled container,
+      // we will create an effect to tell browser to scroll the ward into view.
       let model =
         Model(
           ..model,

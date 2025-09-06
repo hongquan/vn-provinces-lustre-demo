@@ -1,16 +1,22 @@
 import gleam/dynamic/decode
 import gleam/int
+import gleam/javascript/array
+import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/result
 import iv
 import lustre/attribute as a
+import lustre/effect
 import lustre/element.{type Element}
 import lustre/element/html as h
 import lustre/element/keyed
 import lustre/event as ev
+import plinth/browser/element as web_element
 
 import core.{
   type ComboboxState, type Province, type SlideDir, type Ward, ComboboxState,
 }
+import ffi.{is_out_of_view, query_selector_all}
 
 const class_combobox_input = "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded"
 
@@ -18,7 +24,11 @@ const class_combobox_choice_button = "w-full text-start px-2 py-1.5 rounded curs
 
 const class_combobox_unfocus_choice = "hover:bg-neutral-200 dark:hover:bg-neutral-600"
 
+const class_indicate_focus = "vn-focus"
+
 const class_combobox_focus_choice = "bg-slate-200 dark:bg-slate-600"
+  <> " "
+  <> class_indicate_focus
 
 const class_combobox_close_button = "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer"
 
@@ -259,4 +269,26 @@ fn get_combobox_keyup_handler(
       decode.failure(emit_msg.option_navigate(core.SlideUp), "SlideDir")
     })
   })
+}
+
+pub fn scroll_to_see_province() {
+  use _dispatch, root_element <- effect.after_paint
+
+  let elems =
+    root_element
+    |> web_element.cast
+    |> result.replace_error(Nil)
+    |> result.map(query_selector_all(_, "." <> class_indicate_focus))
+    |> result.map(array.to_list)
+    |> result.unwrap([])
+  let container =
+    elems
+    |> list.first
+    |> result.try(web_element.closest(_, "[class~=overflow-y-auto]"))
+  let out_view =
+    container
+    |> result.try(fn(cont) { elems |> list.find(is_out_of_view(_, cont)) })
+  out_view
+  |> result.map(web_element.scroll_into_view)
+  |> result.unwrap(Nil)
 }

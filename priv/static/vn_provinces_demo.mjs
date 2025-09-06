@@ -1168,6 +1168,14 @@ function reverse_and_prepend(loop$prefix, loop$suffix) {
 function reverse(list4) {
   return reverse_and_prepend(list4, toList([]));
 }
+function first(list4) {
+  if (list4 instanceof Empty) {
+    return new Error(void 0);
+  } else {
+    let first$1 = list4.head;
+    return new Ok(first$1);
+  }
+}
 function map_loop(loop$list, loop$fun, loop$acc) {
   while (true) {
     let list4 = loop$list;
@@ -1189,20 +1197,20 @@ function map2(list4, fun) {
 }
 function append_loop(loop$first, loop$second) {
   while (true) {
-    let first = loop$first;
+    let first2 = loop$first;
     let second2 = loop$second;
-    if (first instanceof Empty) {
+    if (first2 instanceof Empty) {
       return second2;
     } else {
-      let first$1 = first.head;
-      let rest$1 = first.tail;
+      let first$1 = first2.head;
+      let rest$1 = first2.tail;
       loop$first = rest$1;
       loop$second = prepend(first$1, second2);
     }
   }
 }
-function append(first, second2) {
-  return append_loop(reverse(first), second2);
+function append(first2, second2) {
+  return append_loop(reverse(first2), second2);
 }
 function prepend2(list4, item) {
   return prepend(item, list4);
@@ -1735,10 +1743,10 @@ function run_decoders(loop$data, loop$failure, loop$decoders) {
     }
   }
 }
-function one_of(first, alternatives) {
+function one_of(first2, alternatives) {
   return new Decoder(
     (dynamic_data) => {
-      let $ = first.function(dynamic_data);
+      let $ = first2.function(dynamic_data);
       let layer;
       let errors;
       layer = $;
@@ -3806,11 +3814,11 @@ function aria_label(value3) {
 
 // build/dev/javascript/lustre/lustre/effect.mjs
 var Effect = class extends CustomType {
-  constructor(synchronous, before_paint2, after_paint) {
+  constructor(synchronous, before_paint2, after_paint2) {
     super();
     this.synchronous = synchronous;
     this.before_paint = before_paint2;
-    this.after_paint = after_paint;
+    this.after_paint = after_paint2;
   }
 };
 var empty4 = /* @__PURE__ */ new Effect(
@@ -3827,6 +3835,14 @@ function from(effect) {
     return effect(dispatch2);
   };
   return new Effect(toList([task]), empty4.before_paint, empty4.after_paint);
+}
+function after_paint(effect) {
+  let task = (actions) => {
+    let root3 = actions.root();
+    let dispatch2 = actions.dispatch;
+    return effect(dispatch2, root3);
+  };
+  return new Effect(empty4.synchronous, empty4.before_paint, toList([task]));
 }
 function batch(effects) {
   return fold(
@@ -6578,6 +6594,9 @@ function push2(path, query, fragment3) {
 }
 
 // build/dev/javascript/gleam_javascript/gleam_javascript_ffi.mjs
+function reduceRight(thing, acc, fn) {
+  return thing.reduceRight(fn, acc);
+}
 var PromiseLayer = class _PromiseLayer {
   constructor(promise) {
     this.promise = promise;
@@ -6598,6 +6617,17 @@ function then_await(promise, fn) {
 function map_promise(promise, fn) {
   return promise.then(
     (value3) => PromiseLayer.wrap(fn(PromiseLayer.unwrap(value3)))
+  );
+}
+
+// build/dev/javascript/gleam_javascript/gleam/javascript/array.mjs
+function to_list2(items) {
+  return reduceRight(
+    items,
+    toList([]),
+    (list4, item) => {
+      return prepend(item, list4);
+    }
   );
 }
 
@@ -6647,6 +6677,16 @@ function cast(raw) {
   } else {
     return new Error();
   }
+}
+function closest(element4, selector) {
+  let ancestor = element4.closest(selector);
+  if (ancestor) {
+    return new Ok(ancestor);
+  }
+  return new Error();
+}
+function scrollIntoView(element4) {
+  element4.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 function contains2(element4, other) {
   return element4.contains(other);
@@ -7447,6 +7487,19 @@ function on_focus(msg) {
   return on("focus", success(msg));
 }
 
+// build/dev/javascript/vn_provinces_demo/element.ffi.mjs
+function querySelectorAll3(element4, selector) {
+  return Array.from(element4.querySelectorAll(selector));
+}
+function isOutOfView(element4, scrolledContainer) {
+  const elmRec = element4.getBoundingClientRect();
+  const conRec = scrolledContainer.getBoundingClientRect();
+  const relYOffset = elmRec.top - conRec.top;
+  const isBelow = scrolledContainer.clientHeight <= relYOffset + elmRec.height;
+  const isAbove = relYOffset < 0;
+  return isBelow || isAbove;
+}
+
 // build/dev/javascript/vn_provinces_demo/views.mjs
 var ComboboxEmitMsg = class extends CustomType {
   constructor(text_input, choice_click, input_focus, clear_click, option_navigate) {
@@ -7539,7 +7592,55 @@ function get_combobox_keyup_handler(emit_msg, focused_item) {
 var class_combobox_input = "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded";
 var class_combobox_choice_button = "w-full text-start px-2 py-1.5 rounded cursor-pointer";
 var class_combobox_unfocus_choice = "hover:bg-neutral-200 dark:hover:bg-neutral-600";
-var class_combobox_focus_choice = "bg-slate-200 dark:bg-slate-600";
+var class_indicate_focus = "vn-focus";
+function scroll_to_see_province() {
+  return after_paint(
+    (_, root_element) => {
+      let _block;
+      let _pipe = root_element;
+      let _pipe$1 = cast2(_pipe);
+      let _pipe$2 = replace_error(_pipe$1, void 0);
+      let _pipe$3 = map4(
+        _pipe$2,
+        (_capture) => {
+          return querySelectorAll3(_capture, "." + class_indicate_focus);
+        }
+      );
+      let _pipe$4 = map4(_pipe$3, to_list2);
+      _block = unwrap2(_pipe$4, toList([]));
+      let elems = _block;
+      let _block$1;
+      let _pipe$5 = elems;
+      let _pipe$6 = first(_pipe$5);
+      _block$1 = try$(
+        _pipe$6,
+        (_capture) => {
+          return closest(_capture, "[class~=overflow-y-auto]");
+        }
+      );
+      let container = _block$1;
+      let _block$2;
+      let _pipe$7 = container;
+      _block$2 = try$(
+        _pipe$7,
+        (cont) => {
+          let _pipe$82 = elems;
+          return find2(
+            _pipe$82,
+            (_capture) => {
+              return isOutOfView(_capture, cont);
+            }
+          );
+        }
+      );
+      let out_view = _block$2;
+      let _pipe$8 = out_view;
+      let _pipe$9 = map4(_pipe$8, scrollIntoView);
+      return unwrap2(_pipe$9, void 0);
+    }
+  );
+}
+var class_combobox_focus_choice = "bg-slate-200 dark:bg-slate-600 " + class_indicate_focus;
 var class_combobox_close_button = "absolute end-0 px-2 text-xl hover:text-red-400 focus:text-red-400 hover:dark:text-red-400 cursor-pointer";
 var class_combobox_dropdown_container = "absolute z-1 top-10 start-0 end-0 sm:-end-4 py-2 ps-2 bg-neutral-50 dark:bg-neutral-800 rounded shadow";
 function render_province_combobox(id2, state, emit_msg) {
@@ -8152,7 +8253,7 @@ function update3(model, msg) {
       })(),
       model.ward_combobox_state
     );
-    return [model$1, none()];
+    return [model$1, scroll_to_see_province()];
   } else if (msg instanceof ProvinceComboboxSelected) {
     let p = msg[0];
     let model$1 = new Model(
@@ -8592,10 +8693,10 @@ function main() {
       "Pattern match failed, no pattern matched the value.",
       {
         value: $,
-        start: 1388,
-        end: 1443,
-        pattern_start: 1399,
-        pattern_end: 1410
+        start: 1412,
+        end: 1467,
+        pattern_start: 1423,
+        pattern_end: 1434
       }
     );
   }
