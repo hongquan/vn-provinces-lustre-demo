@@ -56,5 +56,12 @@ pub fn uri_empty_string_query_test() {
       query: Some(""),
     )
   let s = uri.to_string(uri)
-  assert s == "http://localhost"
+  assert s == "http://localhost/?"
+}
+
+pub fn uri_none_query_test() {
+  let uri =
+    Uri(..uri.empty, scheme: Some("http"), host: Some("localhost"), query: None)
+  let s = uri.to_string(uri)
+  assert s == "http://localhost/"
 }
