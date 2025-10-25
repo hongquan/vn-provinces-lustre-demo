@@ -18,10 +18,11 @@ import plinth/browser/event as web_event
 import actions
 import core.{
   type ComboboxState, type Msg, type Province, type Ward, ComboboxState,
-  ProvinceComboboxClearClick, ProvinceComboboxFocused, ProvinceComboboxSelected,
-  ProvinceComboboxSlide, ProvinceComboboxTextInput, UserClickedOutside,
-  WardComboboxClearClick, WardComboboxFocused, WardComboboxSelected,
-  WardComboboxSlide, WardComboboxTextInput, create_empty_combobox_state,
+  OnRouteChange, ProvinceComboboxClearClick, ProvinceComboboxFocused,
+  ProvinceComboboxSelected, ProvinceComboboxSlide, ProvinceComboboxTextInput,
+  UserClickedOutside, WardComboboxClearClick, WardComboboxFocused,
+  WardComboboxSelected, WardComboboxSlide, WardComboboxTextInput,
+  create_empty_combobox_state,
 }
 import router.{type Route, parse_to_route}
 import views.{
@@ -139,7 +140,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(model, effect.none())
     }
 
-    core.OnRouteChange(new_route) -> {
+    OnRouteChange(new_route) -> {
       case new_route {
         router.Home -> {
           let model =
@@ -413,7 +414,7 @@ pub fn on_url_change(uri: uri.Uri) -> Msg {
     |> option.flatten
     |> option.unwrap([])
     |> parse_to_route
-  core.OnRouteChange(route)
+  OnRouteChange(route)
 }
 
 fn handle_loaded_provinces(

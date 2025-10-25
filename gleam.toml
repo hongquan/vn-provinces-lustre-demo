@@ -15,17 +15,39 @@ target = "javascript"
 
 [dependencies]
 gleam_stdlib = ">= 0.44.0 and < 2.0.0"
-lustre = ">= 5.3.2 and < 6.0.0"
 rsvp = ">= 1.1.3 and < 2.0.0"
-modem = ">= 2.1.1 and < 3.0.0"
 plinth = ">= 0.7.2 and < 1.0.0"
 iv = ">= 1.3.2 and < 2.0.0"
 gleam_javascript = ">= 1.0.0 and < 2.0.0"
 on = ">= 1.0.2 and < 2.0.0"
+lustre = ">= 5.3.5 and < 6.0.0"
+modem = ">= 2.1.2 and < 3.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
-lustre_dev_tools = ">= 1.9.2 and < 2.0.0"
 simplifile = ">= 2.3.0 and < 3.0.0"
 gleam_json = ">= 3.0.2 and < 4.0.0"
 filepath = ">= 1.1.2 and < 2.0.0"
+lustre_dev_tools = ">= 2.1.3 and < 3.0.0"
+
+[tools.lustre.build]
+outdir = "./priv/static"
+minify = true
+
+[tools.lustre.html]
+body = """
+<div class='dark:bg-neutral-900 text-gray-900 dark:text-gray-300 p-4 antialiased min-h-screen flex flex-col'>
+  <header class='sm:max-w-xl sm:mx-auto'>
+    <h1 class='text-2xl py-4 text-gray-900 dark:text-gray-300'><a href='/'>Tỉnh thành Việt Nam 🇻🇳</a></h1>
+  </header>
+  <main id='app' class='mt-8 grow flex flex-col sm:max-w-3xl sm:mx-auto'></main>
+  <footer class='mt-8 text-sm sm:max-w-xl sm:mx-auto'>
+    <p>Implemented in <a href='https://gleam.run/' class='underline hover:text-sky-800 dark:hover:text-sky-300'>
+        <img src='https://gleam.run/images/lucy/lucy.svg' class='w-auto h-4 inline-block'> Gleam language
+      </a> and <a href='https://hexdocs.pm/lustre/' class='underline hover:text-sky-800 dark:hover:text-sky-300'>
+        Lustre framework</a>.</p>
+    <p>Source: <a href='https://github.com/hongquan/vn-provinces-lustre-demo'
+        class='underline hover:text-sky-800 dark:hover:text-sky-300'>hongquan/vn-provinces-lustre-demo</a></p>
+  </footer>
+</div>
+"""

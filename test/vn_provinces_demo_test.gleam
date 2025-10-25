@@ -3,6 +3,7 @@ import gleam/dynamic/decode
 import gleam/json
 import gleam/option.{None, Some}
 import gleam/string
+import gleam/uri.{Uri}
 import gleeunit
 import simplifile
 
@@ -44,4 +45,16 @@ pub fn split_string_test() {
   let text = "abc def  ghi"
   let words = string.split(text, " ")
   assert words == ["abc", "def", "", "ghi"]
+}
+
+pub fn uri_empty_string_query_test() {
+  let uri =
+    Uri(
+      ..uri.empty,
+      scheme: Some("http"),
+      host: Some("localhost"),
+      query: Some(""),
+    )
+  let s = uri.to_string(uri)
+  assert s == "http://localhost"
 }
