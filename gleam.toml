@@ -19,7 +19,7 @@ iv = ">= 1.3.2 and < 2.0.0"
 gleam_javascript = ">= 1.0.0 and < 2.0.0"
 on = ">= 1.0.2 and < 2.0.0"
 lustre = ">= 5.3.5 and < 6.0.0"
-modem = ">= 2.1.2 and < 3.0.0"
+modem = { git = "https://github.com/hongquan/modem.git", ref = "59f8197" }
 gleam_stdlib = ">= 0.65.0 and < 1.0.0"
 rsvp = ">= 1.1.3 and < 2.0.0"
 
