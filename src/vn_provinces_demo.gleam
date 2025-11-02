@@ -1,4 +1,5 @@
 import gleam/int
+import gleam/io
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
@@ -17,12 +18,13 @@ import plinth/browser/event as web_event
 
 import actions
 import core.{
-  type ComboboxState, type Msg, type Province, type Ward, ComboboxState,
-  OnRouteChange, ProvinceComboboxClearClick, ProvinceComboboxFocused,
-  ProvinceComboboxSelected, ProvinceComboboxSlide, ProvinceComboboxTextInput,
-  UserClickedOutside, WardComboboxClearClick, WardComboboxFocused,
-  WardComboboxSelected, WardComboboxSlide, WardComboboxTextInput,
-  create_empty_combobox_state,
+  type ComboboxState, type Msg, type Province, type Ward,
+  ApiReturnedSearchedProvinces, ApiReturnedSearchedWards, ApiReturnedWards,
+  ComboboxState, OnRouteChange, ProvinceComboboxClearClick,
+  ProvinceComboboxFocused, ProvinceComboboxSelected, ProvinceComboboxSlide,
+  ProvinceComboboxTextInput, UserClickedOutside, WardComboboxClearClick,
+  WardComboboxFocused, WardComboboxSelected, WardComboboxSlide,
+  WardComboboxTextInput, create_empty_combobox_state,
 }
 import router.{type Route, parse_to_route}
 import views.{
@@ -112,7 +114,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       handle_loaded_provinces(provinces, model)
     }
 
-    core.ApiReturnedSearchedProvinces(Ok(provinces)) -> {
+    ApiReturnedSearchedProvinces(Ok(provinces)) -> {
       let model =
         Model(
           ..model,
@@ -124,11 +126,11 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(model, effect.none())
     }
 
-    core.ApiReturnedWards(Ok(wards)) -> {
+    ApiReturnedWards(Ok(wards)) -> {
       handle_loaded_wards(wards, model)
     }
 
-    core.ApiReturnedSearchedWards(Ok(wards)) -> {
+    ApiReturnedSearchedWards(Ok(wards)) -> {
       let model =
         Model(
           ..model,
@@ -213,7 +215,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
 
     ProvinceComboboxClearClick -> {
-      #(model, modem.push("", Some(""), None))
+      #(model, modem.push(".", Some(""), None))
     }
 
     ProvinceComboboxSlide(dir) -> {
@@ -254,7 +256,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         |> option.map(fn(p) {
           uri.query_to_string([#("p", int.to_string(p.code))])
         })
-      #(model, modem.push("", q, None))
+      #(model, modem.push(".", q, None))
     }
 
     WardComboboxTextInput(s) -> {
