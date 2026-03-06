@@ -1,5 +1,4 @@
 import gleam/int
-import gleam/io
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
@@ -226,7 +225,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         core.SlideUp -> focused_index - 1
         _ -> focused_index + 1
       }
-      let focused_index = int.clamp(i, 0, iv.length(filtered_provinces))
+      let focused_index = int.clamp(i, 0, iv.size(filtered_provinces))
       let model =
         Model(
           ..model,
@@ -295,7 +294,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         core.SlideUp -> focused_index - 1
         _ -> focused_index + 1
       }
-      let focused_index = int.clamp(i, 0, iv.length(filtered_wards))
+      let focused_index = int.clamp(i, 0, iv.size(filtered_wards))
       // The focused ward may be not visible due to scrolled container,
       // we will create an effect to tell browser to scroll the ward into view.
       let model =
