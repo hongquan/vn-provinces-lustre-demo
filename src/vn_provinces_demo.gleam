@@ -1,8 +1,6 @@
-import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
-import gleam/string
 import gleam/uri
 import iv
 import lustre
@@ -14,37 +12,26 @@ import modem
 import plinth/browser/document
 import plinth/browser/element as web_element
 import plinth/browser/event as web_event
+import updates
 
 import actions
-import core.{
-  type ComboboxState, type Msg, type Province, type Ward,
-  ApiReturnedSearchedProvinces, ApiReturnedSearchedWards, ApiReturnedWards,
-  ComboboxState, OnRouteChange, ProvinceComboboxClearClick,
-  ProvinceComboboxFocused, ProvinceComboboxSelected, ProvinceComboboxSlide,
-  ProvinceComboboxTextInput, UserClickedOutside, WardComboboxClearClick,
-  WardComboboxFocused, WardComboboxSelected, WardComboboxSlide,
-  WardComboboxTextInput, create_empty_combobox_state,
+import common.{
+  type Model, type Msg, ApiReturnedSearchedProvinces, ApiReturnedSearchedWards,
+  ApiReturnedWards, Model, OnRouteChange, PCombobox, UserClickedOutside,
+  WCombobox,
 }
 import router.{type Route, parse_to_route}
+import types/core.{ComboboxState, create_empty_combobox_state}
+import types/province.{type Province}
+import types/ward.{type Ward}
 import views.{
-  render_province_combobox, render_ward_combobox, scroll_to_see_focused_item,
-  show_brief_info_province, show_brief_info_ward,
+  render_province_combobox, render_ward_combobox, show_brief_info_province,
+  show_brief_info_ward,
 }
 
 const id_province_combobox = "province-combobox"
 
 const id_ward_combobox = "ward-combobox"
-
-pub type Model {
-  Model(
-    route: Route,
-    provinces: List(Province),
-    wards: List(Ward),
-    // For province combobox
-    province_combobox_state: ComboboxState(Province),
-    ward_combobox_state: ComboboxState(Ward),
-  )
-}
 
 pub fn main() -> Nil {
   let app = lustre.application(init, update, view)
@@ -71,9 +58,9 @@ fn get_message_for_document_click(lev: web_event.Event(Msg)) {
     |> result.unwrap(True)
   let msg =
     case outside_province_cbb, outside_ward_cbb {
-      True, True -> Some(core.OutBoth)
-      True, _ -> Some(core.OutProvince)
-      _, True -> Some(core.OutWard)
+      True, True -> Some(common.OutBoth)
+      True, _ -> Some(common.OutProvince)
+      _, True -> Some(common.OutWard)
       _, _ -> None
     }
     |> option.map(UserClickedOutside)
@@ -109,7 +96,7 @@ fn init(_args) -> #(Model, Effect(Msg)) {
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    core.ApiReturnedProvinces(Ok(provinces)) -> {
+    common.ApiReturnedProvinces(Ok(provinces)) -> {
       handle_loaded_provinces(provinces, model)
     }
 
@@ -164,179 +151,23 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
     }
 
-    ProvinceComboboxTextInput(s) -> {
-      let provinces = model.provinces
-      let filtered_provinces = model.province_combobox_state.filtered_items
-      // If the text input contains empty string,
-      // we show all provinces in the dropdown.
-      let #(filtered_provinces, what_next) = case string.trim(s) {
-        "" -> #(iv.from_list(provinces), effect.none())
-        q -> #(filtered_provinces, actions.search_provinces(q))
-      }
-      let model =
-        Model(
-          ..model,
-          province_combobox_state: ComboboxState(
-            ..model.province_combobox_state,
-            filter_text: s,
-            filtered_items: filtered_provinces,
-          ),
-        )
-      #(model, what_next)
+    PCombobox(mm) -> {
+      updates.handle_province_combobox(mm, model, id_province_combobox)
     }
 
-    ProvinceComboboxSelected(p) -> {
-      let model =
-        Model(
-          ..model,
-          province_combobox_state: ComboboxState(
-            ..model.province_combobox_state,
-            selected_item: Some(p),
-            filter_text: p.name,
-            is_shown: False,
-          ),
-        )
-      // Reflect to browser URL
-      let query_string = uri.query_to_string([#("p", int.to_string(p.code))])
-      #(model, modem.push("", Some(query_string), None))
-    }
-
-    ProvinceComboboxFocused -> {
-      let model =
-        Model(
-          ..model,
-          province_combobox_state: ComboboxState(
-            ..model.province_combobox_state,
-            is_shown: True,
-          ),
-        )
-      #(model, effect.none())
-    }
-
-    ProvinceComboboxClearClick -> {
-      #(model, modem.push(".", Some(""), None))
-    }
-
-    ProvinceComboboxSlide(dir) -> {
-      let filtered_provinces = model.province_combobox_state.filtered_items
-      let focused_index = model.province_combobox_state.focused_index
-      let i = case dir {
-        // The lower item has higher index, so pressing ↑ means to go to lower index. 
-        core.SlideUp -> focused_index - 1
-        _ -> focused_index + 1
-      }
-      let focused_index = int.clamp(i, 0, iv.size(filtered_provinces))
-      let model =
-        Model(
-          ..model,
-          province_combobox_state: ComboboxState(
-            ..model.province_combobox_state,
-            focused_index:,
-          ),
-        )
-      #(model, scroll_to_see_focused_item(id_province_combobox, focused_index))
-    }
-
-    WardComboboxFocused -> {
-      let model =
-        Model(
-          ..model,
-          ward_combobox_state: ComboboxState(
-            ..model.ward_combobox_state,
-            is_shown: True,
-          ),
-        )
-      #(model, effect.none())
-    }
-
-    WardComboboxClearClick -> {
-      let q =
-        model.province_combobox_state.selected_item
-        |> option.map(fn(p) {
-          uri.query_to_string([#("p", int.to_string(p.code))])
-        })
-      #(model, modem.push(".", q, None))
-    }
-
-    WardComboboxTextInput(s) -> {
-      let wards = model.wards
-      let selected_province = model.province_combobox_state.selected_item
-      let filtered_wards = model.ward_combobox_state.filtered_items
-      // If the text input contains empty string,
-      // we show all wards in the dropdown.
-      let #(filtered_wards, what_next) = case string.trim(s) {
-        "" -> #(iv.from_list(wards), effect.none())
-        q -> {
-          let province_code =
-            selected_province
-            |> option.map(fn(p) { p.code })
-            |> option.unwrap(0)
-          #(filtered_wards, actions.search_wards(q, province_code))
-        }
-      }
-      let model =
-        Model(
-          ..model,
-          ward_combobox_state: ComboboxState(
-            ..model.ward_combobox_state,
-            filter_text: s,
-            filtered_items: filtered_wards,
-          ),
-        )
-      #(model, what_next)
-    }
-
-    WardComboboxSlide(dir) -> {
-      let focused_index = model.ward_combobox_state.focused_index
-      let filtered_wards = model.ward_combobox_state.filtered_items
-      let i = case dir {
-        // The lower item has higher index, so pressing ↑ means to go to lower index. 
-        core.SlideUp -> focused_index - 1
-        _ -> focused_index + 1
-      }
-      let focused_index = int.clamp(i, 0, iv.size(filtered_wards))
-      // The focused ward may be not visible due to scrolled container,
-      // we will create an effect to tell browser to scroll the ward into view.
-      let model =
-        Model(
-          ..model,
-          ward_combobox_state: ComboboxState(
-            ..model.ward_combobox_state,
-            focused_index:,
-          ),
-        )
-      #(model, scroll_to_see_focused_item(id_ward_combobox, focused_index))
-    }
-
-    WardComboboxSelected(w) -> {
-      let model =
-        Model(
-          ..model,
-          ward_combobox_state: ComboboxState(
-            ..model.ward_combobox_state,
-            is_shown: False,
-            filter_text: w.name,
-            selected_item: Some(w),
-          ),
-        )
-      // Reflect to browser URL
-      let new_append = #("w", int.to_string(w.code))
-      let new_query = case model.route {
-        router.Province(p, _w) -> [#("p", int.to_string(p)), new_append]
-        _ -> [new_append]
-      }
-      #(model, modem.push("", Some(uri.query_to_string(new_query)), None))
+    WCombobox(mm) -> {
+      updates.handle_ward_combobox(mm, model, id_ward_combobox)
     }
 
     UserClickedOutside(position) -> {
       let should_close_province_dropdown = case position {
-        core.OutBoth -> True
-        core.OutProvince -> True
+        common.OutBoth -> True
+        common.OutProvince -> True
         _ -> False
       }
       let should_close_ward_dropdown = case position {
-        core.OutBoth -> True
-        core.OutWard -> True
+        common.OutBoth -> True
+        common.OutWard -> True
         _ -> False
       }
       let model =
@@ -360,32 +191,32 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 fn view(model: Model) -> Element(Msg) {
   let selected_province = model.province_combobox_state.selected_item
   let selected_ward = model.ward_combobox_state.selected_item
-  let cb_msg =
+  let cb_msg_1 =
     views.ComboboxEmitMsg(
-      ProvinceComboboxTextInput,
-      ProvinceComboboxSelected,
-      ProvinceComboboxFocused,
-      ProvinceComboboxClearClick,
-      ProvinceComboboxSlide,
+      fn(s) { PCombobox(province.TextInput(s)) },
+      fn(p) { PCombobox(province.Selected(p)) },
+      PCombobox(province.Focus),
+      PCombobox(province.ClearClick),
+      fn(d) { PCombobox(province.Slide(d)) },
     )
 
   let province_combobox =
     render_province_combobox(
       id_province_combobox,
       model.province_combobox_state,
-      cb_msg,
+      cb_msg_1,
     )
-  let cb_msg =
+  let cb_msg_2 =
     views.ComboboxEmitMsg(
-      WardComboboxTextInput,
-      WardComboboxSelected,
-      WardComboboxFocused,
-      WardComboboxClearClick,
-      WardComboboxSlide,
+      fn(s) { WCombobox(ward.TextInput(s)) },
+      fn(p) { WCombobox(ward.Selected(p)) },
+      WCombobox(ward.Focus),
+      WCombobox(ward.ClearClick),
+      fn(d) { WCombobox(ward.Slide(d)) },
     )
 
   let ward_combobox =
-    render_ward_combobox(id_ward_combobox, model.ward_combobox_state, cb_msg)
+    render_ward_combobox(id_ward_combobox, model.ward_combobox_state, cb_msg_2)
   // Handle "click outside" for our combobox
 
   h.section([a.class("grow")], [
@@ -419,7 +250,7 @@ pub fn on_url_change(uri: uri.Uri) -> Msg {
 }
 
 fn handle_loaded_provinces(
-  provinces: List(core.Province),
+  provinces: List(Province),
   model: Model,
 ) -> #(Model, Effect(Msg)) {
   // Check the browser URL, if it points to a province, we :

@@ -15,10 +15,11 @@ import on
 import plinth/browser/document
 import plinth/browser/element as web_element
 
-import core.{
-  type ComboboxState, type Province, type SlideDir, type Ward, ComboboxState,
-}
 import ffi.{is_out_of_view, query_selector_all}
+import types/core.{type ComboboxState, ComboboxState}
+import types/core.{type SlideDir, SlideDown, SlideUp} as _core
+import types/province.{type Province}
+import types/ward.{type Ward}
 
 const class_combobox_input = "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded"
 
@@ -259,8 +260,8 @@ fn get_combobox_keyup_handler(
   ev.on("keyup", {
     use key_code <- decode.field("key", decode.string)
     let msg = case key_code {
-      "ArrowUp" -> Some(emit_msg.option_navigate(core.SlideUp))
-      "ArrowDown" -> Some(emit_msg.option_navigate(core.SlideDown))
+      "ArrowUp" -> Some(emit_msg.option_navigate(SlideUp))
+      "ArrowDown" -> Some(emit_msg.option_navigate(SlideDown))
       "Enter" -> focused_item |> option.map(emit_msg.choice_click)
       _ -> None
     }
@@ -268,7 +269,7 @@ fn get_combobox_keyup_handler(
     msg
     |> option.map(fn(m) { decode.success(m) })
     |> option.lazy_unwrap(fn() {
-      decode.failure(emit_msg.option_navigate(core.SlideUp), "SlideDir")
+      decode.failure(emit_msg.option_navigate(SlideUp), "SlideDir")
     })
   })
 }
