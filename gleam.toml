@@ -35,6 +35,7 @@ outdir = "./priv/static"
 minify = true
 
 [tools.lustre.html]
+title = "Tỉnh thành Việt Nam"
 body = """
 <div class='dark:bg-neutral-900 text-gray-900 dark:text-gray-300 p-4 antialiased min-h-screen flex flex-col'>
   <header class='sm:max-w-xl sm:mx-auto'>

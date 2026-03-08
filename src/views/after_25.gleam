@@ -1,5 +1,6 @@
 import gleam/dynamic/decode
 import gleam/int
+import gleam/list
 import gleam/option.{None, Some}
 import iv
 import lustre/attribute as a
@@ -11,7 +12,7 @@ import lustre/event as ev
 import common.{type Model, PCombobox, WCombobox}
 import types/core.{type ComboboxState, ComboboxState}
 import types/province.{type Province}
-import types/ward.{type Ward}
+import types/ward.{type SourceWard, type Ward}
 import views.{type ComboboxCss, type ComboboxEmitMsg, get_combobox_keyup_handler}
 
 pub fn show_brief_info_province(province: Province) {
@@ -278,6 +279,56 @@ pub fn render_post_2025_provinces(
       selected_ward
         |> option.map(show_brief_info_ward)
         |> option.unwrap(element.none()),
+      // Show source wards table if we have source_wards
+      case model.source_wards {
+        [] -> element.none()
+        wards -> {
+          h.div([a.class("mt-8")], [
+            h.h3([a.class("text-lg font-semibold mb-4")], [
+              h.text("Phường/Xã nguồn (trước sáp nhập 2025)"),
+            ]),
+            h.table([a.class("min-w-full border-collapse border border-gray-400 dark:border-gray-600")], [
+              h.thead([a.class("bg-gray-100 dark:bg-gray-900")], [
+                h.tr([], [
+                  h.th([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2 text-left")], [
+                    h.text("Mã số"),
+                  ]),
+                  h.th([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2 text-left")], [
+                    h.text("Tên"),
+                  ]),
+                  h.th([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2 text-left")], [
+                    h.text("Mã huyện"),
+                  ]),
+                  h.th([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2 text-left")], [
+                    h.text("Mã tỉnh"),
+                  ]),
+                ]),
+              ]),
+              h.tbody([a.class("bg-white dark:bg-gray-800")], wards |> list.map(fn(ward: SourceWard) {
+                h.tr([a.class("even:bg-gray-50 dark:even:bg-gray-700")], [
+                  h.td([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2")], [
+                    h.text(int.to_string(ward.code)),
+                  ]),
+                  h.td([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2")], [
+                    h.text(ward.name),
+                  ]),
+                  h.td([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2")], [
+                    h.text(int.to_string(ward.district_code)),
+                  ]),
+                  h.td([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2")], [
+                    h.text(int.to_string(ward.province_code)),
+                  ]),
+                ])
+              })),
+            ]),
+          ])
+        }
+      },
     ]),
   ])
+}
+
+pub fn render_source_wards(wards: List(SourceWard)) {
+  // Split to two smaller list
+  todo
 }

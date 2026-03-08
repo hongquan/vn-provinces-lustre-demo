@@ -6,7 +6,9 @@ import lustre/effect.{type Effect}
 import rsvp
 
 import types/province.{Province}
-import types/ward.{Ward}
+import types/ward.{SourceWard, Ward}
+
+const base_url = "https://provinces.open-api.vn/api"
 
 pub fn load_provinces() -> Effect(Msg) {
   let url = "https://provinces.open-api.vn/api/v2/p/"
@@ -65,5 +67,20 @@ pub fn search_wards(search: String, province_code: Int) -> Effect(Msg) {
   }
   let handler =
     rsvp.expect_json(decode.list(decoder), common.ApiReturnedSearchedWards)
+  rsvp.get(url, handler)
+}
+
+pub fn load_legacy_ward_sources(w: Int) {
+  let url = base_url <> "/v2/w/" <> int.to_string(w) <> "/to-legacies/"
+  // This API will return a list of legacy wards
+  let ward_decoder = {
+    use name <- decode.field("name", decode.string)
+    use code <- decode.field("code", decode.int)
+    use district_code <- decode.field("district_code", decode.int)
+    use province_code <- decode.field("province_code", decode.int)
+    decode.success(SourceWard(name, code, district_code, province_code))
+  }
+  let decoder = decode.list(ward_decoder)
+  let handler = rsvp.expect_json(decoder, common.ApiReturnedSourceWards)
   rsvp.get(url, handler)
 }

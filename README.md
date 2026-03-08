@@ -12,3 +12,11 @@ As a reference for Gleam & Lustre fellows, this application is using these techn
 - Routing (with [modem](https://hexdocs.pm/modem/)). It is to save the data selection to the URL, so that the selection won't be lost when refreshing page, or when copying and sharing URL to someone else.
 - Implement "click outside" to close dropdown menu.
 - Unpack assignment with nested records.
+
+## Development guide
+
+Run dev server:
+
+```sh
+ERL_FLAGS="+B" gleam run -m lustre/dev start
+```

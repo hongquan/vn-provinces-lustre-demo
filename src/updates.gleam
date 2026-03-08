@@ -97,6 +97,7 @@ pub fn handle_ward_combobox(
   model: Model,
   element_id: String,
 ) -> #(Model, Effect(Msg)) {
+  echo msg
   case msg {
     ward.Focus -> {
       let model =
