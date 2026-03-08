@@ -7,7 +7,6 @@ import gleam/result
 import iv
 import lustre/attribute as a
 import lustre/effect
-import lustre/element.{type Element}
 import lustre/element/html as h
 import lustre/element/keyed
 import lustre/event as ev
@@ -47,213 +46,29 @@ pub type ComboboxEmitMsg(msg, obj) {
   )
 }
 
-pub fn show_brief_info_province(province: Province) {
-  h.dl([a.class("max-w-md mt-8")], [
-    h.dt([a.class("font-semibold text-lg")], [h.text(province.name)]),
-    h.dt([a.class("flex")], [
-      h.span([a.class("block")], [h.text("Mã số:")]),
-      h.span([a.class("block flex-grow text-end")], [
-        h.text(int.to_string(province.code)),
-      ]),
-    ]),
-  ])
+pub type ComboboxCss {
+  ComboboxCss(
+    input: String,
+    close_button: String,
+    dropdown_container: String,
+    choice_button: String,
+    focus_choice: String,
+    unfocus_choice: String,
+  )
 }
 
-pub fn show_brief_info_ward(ward: Ward) {
-  h.dl([a.class("max-w-md mt-8")], [
-    h.dt([a.class("font-semibold text-lg")], [h.text(ward.name)]),
-    h.dt([a.class("flex")], [
-      h.span([a.class("block")], [h.text("Mã số:")]),
-      h.span([a.class("block flex-grow text-end")], [
-        h.text(int.to_string(ward.code)),
-      ]),
-    ]),
-  ])
+pub fn get_default_combobox_css() -> ComboboxCss {
+  ComboboxCss(
+    input: class_combobox_input,
+    close_button: class_combobox_close_button,
+    dropdown_container: class_combobox_dropdown_container,
+    choice_button: class_combobox_choice_button,
+    focus_choice: class_combobox_focus_choice,
+    unfocus_choice: class_combobox_unfocus_choice,
+  )
 }
 
-pub fn render_province_combobox(
-  id: String,
-  state: ComboboxState(Province),
-  emit_msg: ComboboxEmitMsg(msg, Province),
-) -> Element(msg) {
-  let ComboboxState(
-    is_shown: to_show,
-    filter_text:,
-    filtered_items: filtered_provinces,
-    selected_item: settled_province,
-    focused_index:,
-  ) = state
-  let li_items =
-    filtered_provinces
-    |> iv.index_map(fn(p, i) {
-      let click_handler =
-        ev.on("click", decode.success(emit_msg.choice_click(p)))
-      let indicator = case settled_province {
-        Some(x) if x == p -> "✓ "
-        _ -> ""
-      }
-      let is_focused = case focused_index {
-        fi if fi > 0 && fi == i + 1 -> True
-        _ -> False
-      }
-      #(
-        int.to_string(p.code),
-        h.li([a.role("option")], [
-          h.button(
-            [
-              a.classes([
-                #(class_combobox_choice_button, True),
-                #(class_combobox_focus_choice, is_focused),
-                #(class_combobox_unfocus_choice, !is_focused),
-              ]),
-              click_handler,
-            ],
-            [
-              h.text(indicator <> p.name),
-            ],
-          ),
-        ]),
-      )
-    })
-  // Event handler for the text input
-  let input_handler = ev.on_input(emit_msg.text_input) |> ev.debounce(200)
-  let focused_province = case focused_index - 1 {
-    fi if fi >= 0 -> {
-      filtered_provinces |> iv.get(fi) |> option.from_result
-    }
-    _ -> None
-  }
-  let keyup_handler = get_combobox_keyup_handler(emit_msg, focused_province)
-  h.div([a.id(id), a.class("relative")], [
-    // The Text Input of the combobox
-    h.input([
-      a.type_("search"),
-      a.class(class_combobox_input),
-      a.role("combobox"),
-      a.value(filter_text),
-      input_handler,
-      ev.on_focus(emit_msg.input_focus),
-      keyup_handler,
-    ]),
-    h.button(
-      [
-        a.class(class_combobox_close_button),
-        a.aria_label("Close"),
-        a.aria_hidden(True),
-        ev.on_click(emit_msg.clear_click),
-      ],
-      [
-        h.text("⨯"),
-      ],
-    ),
-    // We need some container div elements to make paddings and create scroll view for the dropdown.
-    h.div(
-      [
-        a.class(class_combobox_dropdown_container),
-        a.classes([#("hidden", !to_show)]),
-      ],
-      [
-        h.div([a.class("max-h-40 overflow-y-auto")], [
-          // The dropdown of the combobox
-          keyed.ul([a.class("pe-2"), a.role("listbox")], iv.to_list(li_items)),
-        ]),
-      ],
-    ),
-  ])
-}
-
-pub fn render_ward_combobox(
-  id: String,
-  state: ComboboxState(Ward),
-  emit_msg: ComboboxEmitMsg(msg, Ward),
-) {
-  let ComboboxState(
-    is_shown: to_show,
-    filter_text:,
-    filtered_items: filtered_wards,
-    selected_item: settled_ward,
-    focused_index:,
-  ) = state
-  let li_items =
-    filtered_wards
-    |> iv.index_map(fn(w, i) {
-      let click_handler =
-        ev.on("click", decode.success(emit_msg.choice_click(w)))
-      let indicator = case settled_ward {
-        Some(x) if x == w -> "✓ "
-        _ -> ""
-      }
-      let is_focused = case focused_index {
-        fi if fi > 0 && fi == i + 1 -> True
-        _ -> False
-      }
-      #(
-        int.to_string(w.code),
-        h.li([a.role("option")], [
-          h.button(
-            [
-              a.classes([
-                #(class_combobox_choice_button, True),
-                #(class_combobox_focus_choice, is_focused),
-                #(class_combobox_unfocus_choice, !is_focused),
-              ]),
-              click_handler,
-            ],
-            [
-              h.text(indicator <> w.name),
-            ],
-          ),
-        ]),
-      )
-    })
-  // Event handler for the text input
-  let input_handler = ev.on_input(emit_msg.text_input) |> ev.debounce(200)
-  let focused_ward = case focused_index - 1 {
-    fi if fi >= 0 -> {
-      filtered_wards |> iv.get(fi) |> option.from_result
-    }
-    _ -> None
-  }
-  let keyup_handler = get_combobox_keyup_handler(emit_msg, focused_ward)
-  h.div([a.id(id), a.class("relative")], [
-    // The Text Input of the combobox
-    h.input([
-      a.type_("search"),
-      a.class(class_combobox_input),
-      a.role("combobox"),
-      a.value(filter_text),
-      input_handler,
-      ev.on_focus(emit_msg.input_focus),
-      keyup_handler,
-    ]),
-    h.button(
-      [
-        a.class(class_combobox_close_button),
-        a.aria_label("Close"),
-        a.aria_hidden(True),
-        ev.on_click(emit_msg.clear_click),
-      ],
-      [
-        h.text("⨯"),
-      ],
-    ),
-    // We need some container div elements to make paddings and create scroll view for the dropdown.
-    h.div(
-      [
-        a.class(class_combobox_dropdown_container),
-        a.classes([#("hidden", !to_show)]),
-      ],
-      [
-        h.div([a.class("max-h-40 overflow-y-auto")], [
-          // The dropdown of the combobox
-          keyed.ul([a.class("pe-2"), a.role("listbox")], iv.to_list(li_items)),
-        ]),
-      ],
-    ),
-  ])
-}
-
-fn get_combobox_keyup_handler(
+pub fn get_combobox_keyup_handler(
   emit_msg: ComboboxEmitMsg(m, o),
   focused_item: Option(o),
 ) -> a.Attribute(m) {

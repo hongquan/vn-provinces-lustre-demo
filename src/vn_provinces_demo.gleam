@@ -13,6 +13,7 @@ import plinth/browser/document
 import plinth/browser/element as web_element
 import plinth/browser/event as web_event
 import updates
+import views/after_25
 
 import actions
 import common.{
@@ -24,10 +25,7 @@ import router.{type Route, parse_to_route}
 import types/core.{ComboboxState, create_empty_combobox_state}
 import types/province.{type Province}
 import types/ward.{type Ward}
-import views.{
-  render_province_combobox, render_ward_combobox, show_brief_info_province,
-  show_brief_info_ward,
-}
+import views
 
 const id_province_combobox = "province-combobox"
 
@@ -96,6 +94,29 @@ fn init(_args) -> #(Model, Effect(Msg)) {
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
+    OnRouteChange(new_route) -> {
+      case new_route {
+        router.Home -> {
+          let model =
+            Model(
+              ..model,
+              route: new_route,
+              wards: [],
+              // For province combobox
+              province_combobox_state: ComboboxState(
+                ..create_empty_combobox_state(),
+                filtered_items: iv.from_list(model.provinces),
+              ),
+              ward_combobox_state: create_empty_combobox_state(),
+            )
+          #(model, effect.none())
+        }
+        router.Province(p, w) -> {
+          handle_route_changed(new_route, p, w, model)
+        }
+      }
+    }
+
     common.ApiReturnedProvinces(Ok(provinces)) -> {
       handle_loaded_provinces(provinces, model)
     }
@@ -126,29 +147,6 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           ),
         )
       #(model, effect.none())
-    }
-
-    OnRouteChange(new_route) -> {
-      case new_route {
-        router.Home -> {
-          let model =
-            Model(
-              ..model,
-              route: new_route,
-              wards: [],
-              // For province combobox
-              province_combobox_state: ComboboxState(
-                ..create_empty_combobox_state(),
-                filtered_items: iv.from_list(model.provinces),
-              ),
-              ward_combobox_state: create_empty_combobox_state(),
-            )
-          #(model, effect.none())
-        }
-        router.Province(p, w) -> {
-          handle_route_changed(new_route, p, w, model)
-        }
-      }
     }
 
     PCombobox(mm) -> {
@@ -189,53 +187,17 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 }
 
 fn view(model: Model) -> Element(Msg) {
-  let selected_province = model.province_combobox_state.selected_item
-  let selected_ward = model.ward_combobox_state.selected_item
-  let cb_msg_1 =
-    views.ComboboxEmitMsg(
-      fn(s) { PCombobox(province.TextInput(s)) },
-      fn(p) { PCombobox(province.Selected(p)) },
-      PCombobox(province.Focus),
-      PCombobox(province.ClearClick),
-      fn(d) { PCombobox(province.Slide(d)) },
-    )
-
-  let province_combobox =
-    render_province_combobox(
-      id_province_combobox,
-      model.province_combobox_state,
-      cb_msg_1,
-    )
-  let cb_msg_2 =
-    views.ComboboxEmitMsg(
-      fn(s) { WCombobox(ward.TextInput(s)) },
-      fn(p) { WCombobox(ward.Selected(p)) },
-      WCombobox(ward.Focus),
-      WCombobox(ward.ClearClick),
-      fn(d) { WCombobox(ward.Slide(d)) },
-    )
-
-  let ward_combobox =
-    render_ward_combobox(id_ward_combobox, model.ward_combobox_state, cb_msg_2)
-  // Handle "click outside" for our combobox
-
+  let css_classes = views.get_default_combobox_css()
   h.section([a.class("grow")], [
-    h.div([a.class("space-y-8 sm:flex sm:flex-row sm:space-x-8 sm:space-y-0")], [
-      h.div([], [
-        h.label([a.class("text-lg")], [h.text("Tỉnh thành")]),
-        province_combobox,
-        selected_province
-          |> option.map(show_brief_info_province)
-          |> option.unwrap(element.none()),
-      ]),
-      h.div([], [
-        h.label([a.class("text-lg")], [h.text("Phường xã")]),
-        ward_combobox,
-        selected_ward
-          |> option.map(show_brief_info_ward)
-          |> option.unwrap(element.none()),
-      ]),
+    h.header([a.class("mb-4 border-b border-gray-500")], [
+      h.h2([a.class("text-2xl")], [h.text("Sau sáp nhập 2025")]),
     ]),
+    after_25.render_post_2025_provinces(
+      model,
+      id_province_combobox,
+      id_ward_combobox,
+      css_classes,
+    ),
   ])
 }
 
