@@ -287,40 +287,107 @@ pub fn render_post_2025_provinces(
             h.h3([a.class("text-lg font-semibold mb-4")], [
               h.text("Phường/Xã nguồn (trước sáp nhập 2025)"),
             ]),
-            h.table([a.class("min-w-full border-collapse border border-gray-400 dark:border-gray-600")], [
-              h.thead([a.class("bg-gray-100 dark:bg-gray-900")], [
-                h.tr([], [
-                  h.th([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2 text-left")], [
-                    h.text("Mã số"),
-                  ]),
-                  h.th([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2 text-left")], [
-                    h.text("Tên"),
-                  ]),
-                  h.th([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2 text-left")], [
-                    h.text("Mã huyện"),
-                  ]),
-                  h.th([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2 text-left")], [
-                    h.text("Mã tỉnh"),
+            h.table(
+              [
+                a.class(
+                  "min-w-full border-collapse border border-gray-400 dark:border-gray-600",
+                ),
+              ],
+              [
+                h.thead([a.class("bg-gray-100 dark:bg-gray-900")], [
+                  h.tr([], [
+                    h.th(
+                      [
+                        a.class(
+                          "border border-gray-300 dark:border-gray-600 px-4 py-2 text-left",
+                        ),
+                      ],
+                      [
+                        h.text("Mã số"),
+                      ],
+                    ),
+                    h.th(
+                      [
+                        a.class(
+                          "border border-gray-300 dark:border-gray-600 px-4 py-2 text-left",
+                        ),
+                      ],
+                      [
+                        h.text("Tên"),
+                      ],
+                    ),
+                    h.th(
+                      [
+                        a.class(
+                          "border border-gray-300 dark:border-gray-600 px-4 py-2 text-left",
+                        ),
+                      ],
+                      [
+                        h.text("Mã huyện"),
+                      ],
+                    ),
+                    h.th(
+                      [
+                        a.class(
+                          "border border-gray-300 dark:border-gray-600 px-4 py-2 text-left",
+                        ),
+                      ],
+                      [
+                        h.text("Mã tỉnh"),
+                      ],
+                    ),
                   ]),
                 ]),
-              ]),
-              h.tbody([a.class("bg-white dark:bg-gray-800")], wards |> list.map(fn(ward: SourceWard) {
-                h.tr([a.class("even:bg-gray-50 dark:even:bg-gray-700")], [
-                  h.td([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2")], [
-                    h.text(int.to_string(ward.code)),
-                  ]),
-                  h.td([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2")], [
-                    h.text(ward.name),
-                  ]),
-                  h.td([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2")], [
-                    h.text(int.to_string(ward.district_code)),
-                  ]),
-                  h.td([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2")], [
-                    h.text(int.to_string(ward.province_code)),
-                  ]),
-                ])
-              })),
-            ]),
+                h.tbody(
+                  [a.class("bg-white dark:bg-gray-800")],
+                  wards
+                    |> list.map(fn(ward: SourceWard) {
+                      h.tr([a.class("even:bg-gray-50 dark:even:bg-gray-700")], [
+                        h.td(
+                          [
+                            a.class(
+                              "border border-gray-300 dark:border-gray-600 px-4 py-2",
+                            ),
+                          ],
+                          [
+                            h.text(int.to_string(ward.code)),
+                          ],
+                        ),
+                        h.td(
+                          [
+                            a.class(
+                              "border border-gray-300 dark:border-gray-600 px-4 py-2",
+                            ),
+                          ],
+                          [
+                            h.text(ward.name),
+                          ],
+                        ),
+                        h.td(
+                          [
+                            a.class(
+                              "border border-gray-300 dark:border-gray-600 px-4 py-2",
+                            ),
+                          ],
+                          [
+                            h.text(int.to_string(ward.district_code)),
+                          ],
+                        ),
+                        h.td(
+                          [
+                            a.class(
+                              "border border-gray-300 dark:border-gray-600 px-4 py-2",
+                            ),
+                          ],
+                          [
+                            h.text(int.to_string(ward.province_code)),
+                          ],
+                        ),
+                      ])
+                    }),
+                ),
+              ],
+            ),
           ])
         }
       },
