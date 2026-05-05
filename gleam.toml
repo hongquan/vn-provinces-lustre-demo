@@ -31,7 +31,7 @@ filepath = ">= 1.1.2 and < 2.0.0"
 lustre_dev_tools = ">= 2.3.4 and < 3.0.0"
 
 [tools.lustre.build]
-outdir = "./priv/static"
+outdir = "./dist"
 minify = true
 
 [tools.lustre.html]
