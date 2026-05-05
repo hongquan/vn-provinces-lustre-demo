@@ -39,7 +39,8 @@ jobs:
       - name: Build project
         run: ERL_FLAGS="+B" gleam run -m lustre/dev build
       - name: Deploy to Netlify
-        run: netlify deploy --prod --dir=dist
+        run: |
+          netlify deploy --prod --dir=dist --message "Deploy: ${{ github.event.head_commit.message }}"
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
