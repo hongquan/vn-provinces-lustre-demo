@@ -1,4 +1,4 @@
-import types/core
+import mytype/core
 
 pub type Province {
   Province(name: String, code: Int)

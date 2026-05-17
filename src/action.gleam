@@ -5,8 +5,8 @@ import gleam/uri
 import lustre/effect.{type Effect}
 import rsvp
 
-import types/province.{Province}
-import types/ward.{SourceWard, Ward}
+import mytype/province.{Province}
+import mytype/ward.{SourceWard, Ward}
 
 const base_url = "https://provinces.open-api.vn/api"
 

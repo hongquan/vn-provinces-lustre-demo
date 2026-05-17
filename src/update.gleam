@@ -5,15 +5,15 @@ import gleam/uri
 import iv
 import lustre/effect.{type Effect}
 import modem
-import types/ward
+import mytype/ward
 
-import actions
+import action
 import common.{type Model, type Msg, Model}
+import mytype/core.{ComboboxState}
+import mytype/core.{SlideUp} as _core
+import mytype/province
 import router
-import types/core.{ComboboxState}
-import types/core.{SlideUp} as _core
-import types/province
-import views.{scroll_to_see_focused_item}
+import view.{scroll_to_see_focused_item}
 
 pub fn handle_province_combobox(
   msg: province.ComboboxMsg,
@@ -57,7 +57,7 @@ pub fn handle_province_combobox(
       // we show all provinces in the dropdown.
       let #(filtered_provinces, what_next) = case string.trim(s) {
         "" -> #(iv.from_list(provinces), effect.none())
-        q -> #(filtered_provinces, actions.search_provinces(q))
+        q -> #(filtered_provinces, action.search_provinces(q))
       }
       let model =
         Model(
@@ -131,7 +131,7 @@ pub fn handle_ward_combobox(
             selected_province
             |> option.map(fn(p) { p.code })
             |> option.unwrap(0)
-          #(filtered_wards, actions.search_wards(q, province_code))
+          #(filtered_wards, action.search_wards(q, province_code))
         }
       }
       let model =

@@ -1,4 +1,4 @@
-import types/core
+import mytype/core
 
 pub type Ward {
   Ward(name: String, code: Int, province_code: Int)

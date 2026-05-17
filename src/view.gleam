@@ -15,10 +15,10 @@ import plinth/browser/document
 import plinth/browser/element as web_element
 
 import ffi.{is_out_of_view, query_selector_all}
-import types/core.{type ComboboxState, ComboboxState}
-import types/core.{type SlideDir, SlideDown, SlideUp} as _core
-import types/province.{type Province}
-import types/ward.{type Ward}
+import mytype/core.{type ComboboxState, ComboboxState}
+import mytype/core.{type SlideDir, SlideDown, SlideUp} as _core
+import mytype/province.{type Province}
+import mytype/ward.{type Ward}
 
 const class_combobox_input = "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded"
 

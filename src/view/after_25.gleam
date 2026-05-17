@@ -10,10 +10,10 @@ import lustre/element/keyed
 import lustre/event as ev
 
 import common.{type Model, PCombobox, WCombobox}
-import types/core.{type ComboboxState, ComboboxState}
-import types/province.{type Province}
-import types/ward.{type SourceWard, type Ward}
-import views.{type ComboboxCss, type ComboboxEmitMsg, get_combobox_keyup_handler}
+import mytype/core.{type ComboboxState, ComboboxState}
+import mytype/province.{type Province}
+import mytype/ward.{type SourceWard, type Ward}
+import view.{type ComboboxCss, type ComboboxEmitMsg, get_combobox_keyup_handler}
 
 pub fn show_brief_info_province(province: Province) {
   h.dl([a.class("max-w-md mt-8")], [
@@ -232,7 +232,7 @@ pub fn render_post_2025_provinces(
   let selected_province = model.province_combobox_state.selected_item
   let selected_ward = model.ward_combobox_state.selected_item
   let cb_msg_1 =
-    views.ComboboxEmitMsg(
+    view.ComboboxEmitMsg(
       fn(s) { PCombobox(province.TextInput(s)) },
       fn(p) { PCombobox(province.Selected(p)) },
       PCombobox(province.Focus),
@@ -248,7 +248,7 @@ pub fn render_post_2025_provinces(
       css_classes,
     )
   let cb_msg_2 =
-    views.ComboboxEmitMsg(
+    view.ComboboxEmitMsg(
       fn(s) { WCombobox(ward.TextInput(s)) },
       fn(p) { WCombobox(ward.Selected(p)) },
       WCombobox(ward.Focus),

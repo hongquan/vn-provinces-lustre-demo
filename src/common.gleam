@@ -1,9 +1,9 @@
 import rsvp
 
 import router.{type Route}
-import types/core.{type ComboboxState}
-import types/province.{type Province} as p
-import types/ward.{type SourceWard, type Ward} as w
+import mytype/core.{type ComboboxState}
+import mytype/province.{type Province} as p
+import mytype/ward.{type SourceWard, type Ward} as w
 
 pub type Model {
   Model(

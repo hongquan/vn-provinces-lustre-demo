@@ -12,20 +12,20 @@ import modem
 import plinth/browser/document
 import plinth/browser/element as web_element
 import plinth/browser/event as web_event
-import updates
-import views/after_25
+import update
+import view/after_25
 
-import actions
+import action
 import common.{
   type Model, type Msg, ApiReturnedSearchedProvinces, ApiReturnedSearchedWards,
   ApiReturnedSourceWards, ApiReturnedWards, Model, OnRouteChange, PCombobox,
   UserClickedOutside, WCombobox,
 }
+import mytype/core.{ComboboxState, create_empty_combobox_state}
+import mytype/province.{type Province}
+import mytype/ward.{type Ward}
 import router.{type Route, parse_to_route}
-import types/core.{ComboboxState, create_empty_combobox_state}
-import types/province.{type Province}
-import types/ward.{type Ward}
-import views
+import view
 
 const id_province_combobox = "province-combobox"
 
@@ -86,7 +86,7 @@ fn init(_args) -> #(Model, Effect(Msg)) {
       source_wards: [],
     )
   let effects =
-    effect.batch([modem.init(on_url_change), actions.load_provinces()])
+    effect.batch([modem.init(on_url_change), action.load_provinces()])
   // At initial, we will load provinces from API.
   // We also check the browser URL, if it:
   // - points to a province, we check if the province code is valid, and load wards
@@ -163,11 +163,11 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
 
     PCombobox(mm) -> {
-      updates.handle_province_combobox(mm, model, id_province_combobox)
+      update.handle_province_combobox(mm, model, id_province_combobox)
     }
 
     WCombobox(mm) -> {
-      updates.handle_ward_combobox(mm, model, id_ward_combobox)
+      update.handle_ward_combobox(mm, model, id_ward_combobox)
     }
 
     UserClickedOutside(position) -> {
@@ -200,7 +200,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 }
 
 fn view(model: Model) -> Element(Msg) {
-  let css_classes = views.get_default_combobox_css()
+  let css_classes = view.get_default_combobox_css()
   h.section([a.class("grow")], [
     h.header([a.class("mb-4 border-b border-gray-500")], [
       h.h2([a.class("text-2xl")], [h.text("Sau sáp nhập 2025")]),
@@ -235,7 +235,7 @@ fn handle_loaded_provinces(
     router.Province(i, _v) -> {
       case list.find(provinces, fn(p) { p.code == i }) {
         Ok(p) -> {
-          #(Some(p), actions.load_wards(p.code))
+          #(Some(p), action.load_wards(p.code))
         }
         _ -> #(None, effect.none())
       }
@@ -277,7 +277,7 @@ fn handle_loaded_wards(wards: List(Ward), model: Model) {
   }
   // If a ward is selected in the route, load legacy ward sources
   let whatnext = case selected_ward {
-    Some(w) -> actions.load_legacy_ward_sources(w.code)
+    Some(w) -> action.load_legacy_ward_sources(w.code)
     _ -> effect.none()
   }
   let model =
@@ -331,11 +331,11 @@ fn handle_route_changed(
   let whatnext = case should_load_wards, queried_ward {
     Some(p_code), Some(w) ->
       effect.batch([
-        actions.load_wards(p_code),
-        actions.load_legacy_ward_sources(w.code),
+        action.load_wards(p_code),
+        action.load_legacy_ward_sources(w.code),
       ])
-    None, Some(w) -> actions.load_legacy_ward_sources(w.code)
-    Some(p_code), None -> actions.load_wards(p_code)
+    None, Some(w) -> action.load_legacy_ward_sources(w.code)
+    Some(p_code), None -> action.load_wards(p_code)
     _, _ -> effect.none()
   }
   let ward_text =
