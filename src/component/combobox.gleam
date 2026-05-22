@@ -1,9 +1,12 @@
+import ffi.{is_out_of_view, query_selector_all}
 import gleam/bool
 import gleam/dynamic/decode
 import gleam/int
+import gleam/javascript/array
 import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/result
 import gleam/string
 import iv
 import lustre
@@ -14,6 +17,9 @@ import lustre/element.{type Element}
 import lustre/element/html as h
 import lustre/element/keyed
 import lustre/event as ev
+import on
+import plinth/browser/document
+import plinth/browser/element as web_element
 import youid/uuid
 
 pub type Item {
@@ -187,15 +193,16 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(a)) {
       #(model, emit(ClearClicked))
     }
     UserNavigate(direction) -> {
-      let Model(focused_index:, filtered_choices:, ..) = model
+      let Model(id:, focused_index:, filtered_choices:, ..) = model
       let i = case direction {
         // The lower item has higher index, so pressing ↑ means to go to lower index.
         SlideUp -> focused_index - 1
         SlideDown -> focused_index + 1
       }
       let focused_index = int.clamp(i, 0, iv.size(filtered_choices))
+      let scroll_effect = scroll_to_see_focused_item(id, focused_index)
       let model = Model(..model, focused_index:)
-      #(model, effect.none())
+      #(model, scroll_effect)
     }
     ParentSetId(id) -> #(Model(..model, id:), effect.none())
   }
@@ -312,4 +319,41 @@ fn build_li_elements(
       ]),
     )
   })
+}
+
+/// Scroll the focused list item into view if it is out of the scrollable container.
+fn scroll_to_see_focused_item(combobox_id: String, focused_index: Int) {
+  // The focused_index is 1-based, so we return early if it is <= 0
+  use <- bool.guard(focused_index <= 0, effect.none())
+  use _dispatch, _root_element <- effect.after_paint
+
+  // Convert focused_index to 0-based.
+  let index = focused_index - 1
+  let combobox_el = document.get_element_by_id(combobox_id)
+  let focused_list_item =
+    combobox_el
+    |> result.map(query_selector_all(_, "li"))
+    |> result.try(array.get(_, index))
+
+  let containers = case combobox_el, focused_list_item {
+    Ok(_cb), Ok(li) -> {
+      // Find the nearest scrollable ancestor (the dropdown's inner div with overflow-y-auto)
+      // li > ul > div.overflow-y-auto
+      web_element.parent_element(li)
+      |> result.map(web_element.parent_element)
+      |> result.flatten
+      |> option.from_result
+      |> option.map(fn(cont) { #(cont, li) })
+    }
+    _, _ -> None
+  }
+  case containers {
+    Some(#(container, li)) -> {
+      use <- on.true(is_out_of_view(li, container))
+      web_element.scroll_into_view(li)
+      True
+    }
+    None -> False
+  }
+  Nil
 }

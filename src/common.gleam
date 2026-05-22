@@ -27,12 +27,12 @@ pub type Msg {
   PCombobox(p.ComboboxMsg)
   WCombobox(w.ComboboxMsg)
   // This is the API response for all provinces
-  ApiReturnedProvinces(Result(List(Province), rsvp.Error))
+  ApiReturnedProvinces(Result(List(Province), rsvp.Error(String)))
   // This is the API response for searched provinces
-  ApiReturnedSearchedProvinces(Result(List(Province), rsvp.Error))
-  ApiReturnedWards(Result(List(Ward), rsvp.Error))
-  ApiReturnedSourceWards(Result(List(SourceWard), rsvp.Error))
-  ApiReturnedSearchedWards(Result(List(Ward), rsvp.Error))
+  ApiReturnedSearchedProvinces(Result(List(Province), rsvp.Error(String)))
+  ApiReturnedWards(Result(List(Ward), rsvp.Error(String)))
+  ApiReturnedSourceWards(Result(List(SourceWard), rsvp.Error(String)))
+  ApiReturnedSearchedWards(Result(List(Ward), rsvp.Error(String)))
   OnRouteChange(router.Route)
   UserClickedOutside(OutsideObject)
 }
