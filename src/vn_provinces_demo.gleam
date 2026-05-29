@@ -1,3 +1,4 @@
+import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
@@ -12,20 +13,22 @@ import modem
 import plinth/browser/document
 import plinth/browser/element as web_element
 import plinth/browser/event as web_event
-import update
-import view/after_25
 
 import action
 import common.{
-  type Model, type Msg, ApiReturnedSearchedProvinces, ApiReturnedSearchedWards,
-  ApiReturnedSourceWards, ApiReturnedWards, Model, OnRouteChange, PCombobox,
-  UserClickedOutside, WCombobox,
+  type Model, type Msg, ApiReturnedProvinces, ApiReturnedSearchedProvinces,
+  ApiReturnedSearchedWards, ApiReturnedSourceWards, ApiReturnedWards, Model,
+  OnRouteChange, PCombobox, UserClickedOutside, UserFocusedProvinceCbx,
+  UserSelectedProvince, WCombobox,
 }
+import component/combobox
 import mytype/core.{ComboboxState, create_empty_combobox_state}
 import mytype/province.{type Province}
 import mytype/ward.{type Ward}
 import router.{type Route, parse_to_route}
+import update
 import view
+import view/after_25
 
 const id_province_combobox = "province-combobox"
 
@@ -33,6 +36,8 @@ const id_ward_combobox = "ward-combobox"
 
 pub fn main() -> Nil {
   let app = lustre.application(init, update, view)
+  // Register Web Component for combobox.
+  let assert Ok(_) = combobox.register()
   let assert Ok(runtime) = lustre.start(app, "#app", Nil)
   document.add_event_listener("click", fn(lev) {
     case get_message_for_document_click(lev) {
@@ -83,6 +88,7 @@ fn init(_args) -> #(Model, Effect(Msg)) {
       // For province combobox
       province_combobox_state: create_empty_combobox_state(),
       ward_combobox_state: create_empty_combobox_state(),
+      selected_province_code: 0,
       source_wards: [],
     )
   let effects =
@@ -119,9 +125,11 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
     }
 
-    common.ApiReturnedProvinces(Ok(provinces)) -> {
+    ApiReturnedProvinces(Ok(provinces)) -> {
       handle_loaded_provinces(provinces, model)
     }
+
+    ApiReturnedProvinces(Error(_e)) -> #(model, effect.none())
 
     ApiReturnedSearchedProvinces(Ok(provinces)) -> {
       let model =
@@ -134,10 +142,12 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         )
       #(model, effect.none())
     }
+    ApiReturnedSearchedProvinces(Error(_e)) -> #(model, effect.none())
 
     ApiReturnedWards(Ok(wards)) -> {
       handle_loaded_wards(wards, model)
     }
+    ApiReturnedWards(Error(_e)) -> #(model, effect.none())
 
     ApiReturnedSearchedWards(Ok(wards)) -> {
       let model =
@@ -150,6 +160,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         )
       #(model, effect.none())
     }
+    ApiReturnedSearchedWards(Error(_e)) -> #(model, effect.none())
 
     ApiReturnedSourceWards(Ok(wards)) -> {
       echo wards
@@ -161,6 +172,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       let model = Model(..model, source_wards:)
       #(model, effect.none())
     }
+    ApiReturnedSourceWards(Error(_e)) -> #(model, effect.none())
 
     PCombobox(mm) -> {
       update.handle_province_combobox(mm, model, id_province_combobox)
@@ -195,7 +207,13 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         )
       #(model, effect.none())
     }
-    _ -> #(model, effect.none())
+    UserFocusedProvinceCbx -> {
+      #(model, effect.none())
+    }
+    UserSelectedProvince(code) -> {
+      let query_string = uri.query_to_string([#("p", int.to_string(code))])
+      #(model, modem.push("", Some(query_string), None))
+    }
   }
 }
 
@@ -205,12 +223,7 @@ fn view(model: Model) -> Element(Msg) {
     h.header([a.class("mb-4 border-b border-gray-500")], [
       h.h2([a.class("text-2xl")], [h.text("Sau sáp nhập 2025")]),
     ]),
-    after_25.render_post_2025_provinces(
-      model,
-      id_province_combobox,
-      id_ward_combobox,
-      css_classes,
-    ),
+    after_25.view(model, id_province_combobox, id_ward_combobox, css_classes),
   ])
 }
 

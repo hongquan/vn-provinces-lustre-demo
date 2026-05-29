@@ -1,7 +1,16 @@
+import gleam/json
 import mytype/core
 
 pub type Province {
   Province(name: String, code: Int)
+}
+
+pub fn province_to_json(province: Province) -> json.Json {
+  let Province(name:, code:) = province
+  json.object([
+    #("name", json.string(name)),
+    #("code", json.int(code)),
+  ])
 }
 
 // Legacy (pre-2025) province

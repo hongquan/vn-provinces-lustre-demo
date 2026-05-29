@@ -20,10 +20,27 @@ import lustre/event as ev
 import on
 import plinth/browser/document
 import plinth/browser/element as web_element
-import youid/uuid
+import typeid
+
+// This component will be used as `<combo-box>`
+const component_name = "combo-box"
 
 pub type Item {
   Item(name: String, code: Int)
+}
+
+fn item_decoder() -> decode.Decoder(Item) {
+  use name <- decode.field("name", decode.string)
+  use code <- decode.field("code", decode.int)
+  decode.success(Item(name:, code:))
+}
+
+pub fn item_to_json(item: Item) -> json.Json {
+  let Item(name:, code:) = item
+  json.object([
+    #("name", json.string(name)),
+    #("code", json.int(code)),
+  ])
 }
 
 type Model {
@@ -42,6 +59,8 @@ type Model {
     // 1-based index of the item to focus when navigating with keyboard.
     // Zero means no one is focused.
     focused_index: Int,
+    // Preselected item code (used when choices arrive later)
+    preselect_code: Option(Int),
   )
 }
 
@@ -58,6 +77,8 @@ type Message {
   UserPickedChoice(Item)
   UserWroteText(String)
   ParentSetId(String)
+  ParentChangedChoices(List(Item))
+  ParentPreselectedItem(Int)
 }
 
 // Message that we will emit to parent
@@ -68,9 +89,9 @@ pub type EmitMessage {
   ClearClicked
 }
 
-const component_name = "combo-box"
-
 const payload_name = "detail"
+
+const attr_preselect_code = "preselect-code"
 
 const class_input = "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded"
 
@@ -92,12 +113,25 @@ pub fn register() -> Result(Nil, lustre.Error) {
   let component =
     lustre.component(init, update, view, [
       component.on_attribute_change("id", fn(value) { Ok(ParentSetId(value)) }),
+      component.on_attribute_change(attr_preselect_code, fn(value) {
+        echo attr_preselect_code <> "changed to " <> value
+        int.parse(value) |> result.map(ParentPreselectedItem)
+      }),
+      component.on_property_change("choices", {
+        item_decoder() |> decode.list |> decode.map(ParentChangedChoices)
+      }),
     ])
   lustre.register(component, component_name)
 }
 
 pub fn element(attributes: List(Attribute(m))) -> Element(m) {
   element.element(component_name, attributes, [])
+}
+
+// -- Shortcuts to let parent element set attributes / properties to pass data
+
+pub fn preselect_code(code: Int) -> Attribute(m) {
+  a.attribute(attr_preselect_code, int.to_string(code))
 }
 
 // -- Shortcuts to let parent element easily register event handlers --
@@ -150,9 +184,10 @@ fn get_message_name(message: EmitMessage) {
 }
 
 fn init(_) -> #(Model, effect.Effect(Message)) {
+  let assert Ok(id) = typeid.new("cbox")
   let model =
     Model(
-      id: uuid.v4() |> uuid.to_base64,
+      id: typeid.to_string(id),
       choices: [],
       is_input_focused: False,
       filter_text: "",
@@ -160,6 +195,7 @@ fn init(_) -> #(Model, effect.Effect(Message)) {
       filtered_choices: iv.new(),
       selected_item: None,
       focused_index: 0,
+      preselect_code: None,
     )
   #(model, effect.none())
 }
@@ -205,7 +241,33 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(a)) {
       #(model, scroll_effect)
     }
     ParentSetId(id) -> #(Model(..model, id:), effect.none())
+    ParentChangedChoices(choices) -> {
+      let model = Model(..model, choices:)
+      // If there's a pending preselect_code, apply it now that choices are available
+      case model.preselect_code {
+        Some(code) -> apply_preselection(code, model)
+        None -> #(model, effect.none())
+      }
+    }
+    ParentPreselectedItem(code) -> {
+      let model = Model(..model, preselect_code: Some(code))
+      // If choices are already available, apply immediately
+      case model.choices {
+        [] -> #(model, effect.none())
+        _ -> apply_preselection(code, model)
+      }
+    }
   }
+}
+
+fn apply_preselection(code: Int, model: Model) -> #(Model, effect.Effect(a)) {
+  let selected_item =
+    list.find(model.choices, fn(it) { it.code == code })
+    |> option.from_result
+  let filter_text =
+    selected_item |> option.map(fn(it) { it.name }) |> option.unwrap("")
+  let model = Model(..model, selected_item:, filter_text:)
+  #(model, effect.none())
 }
 
 fn view(model: Model) -> Element(Message) {

@@ -1,5 +1,6 @@
 import gleam/dynamic/decode
 import gleam/int
+import gleam/json
 import gleam/list
 import gleam/option.{None, Some}
 import iv
@@ -9,7 +10,10 @@ import lustre/element/html as h
 import lustre/element/keyed
 import lustre/event as ev
 
-import common.{type Model, PCombobox, WCombobox}
+import common.{
+  type Model, PCombobox, UserFocusedProvinceCbx, UserSelectedProvince, WCombobox,
+}
+import component/combobox
 import mytype/core.{type ComboboxState, ComboboxState}
 import mytype/province.{type Province}
 import mytype/ward.{type SourceWard, type Ward}
@@ -223,7 +227,66 @@ pub fn render_ward_combobox(
   ])
 }
 
-pub fn render_post_2025_provinces(
+pub fn view(
+  model: Model,
+  id_province_combobox: String,
+  id_ward_combobox: String,
+  css_classes: ComboboxCss,
+) {
+  let classic_part =
+    view_classic(model, id_province_combobox, id_ward_combobox, css_classes)
+  // Comboboxes implemented by Lustre component
+  let component_part =
+    view_with_component(
+      model,
+      id_province_combobox,
+      id_ward_combobox,
+      css_classes,
+    )
+  h.div([], [classic_part, component_part])
+}
+
+fn render_source_ward(ward: SourceWard) {
+  h.tr([a.class("even:bg-gray-50 dark:even:bg-gray-700")], [
+    h.td(
+      [
+        a.class("border border-gray-300 dark:border-gray-600 px-4 py-2"),
+      ],
+      [
+        h.text(int.to_string(ward.code)),
+      ],
+    ),
+    h.td(
+      [
+        a.class("border border-gray-300 dark:border-gray-600 px-4 py-2"),
+      ],
+      [
+        h.text(ward.name),
+      ],
+    ),
+    h.td([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2")], [
+      h.text(int.to_string(ward.district_code)),
+    ]),
+    h.td([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2")], [
+      h.text(int.to_string(ward.province_code)),
+    ]),
+  ])
+}
+
+pub fn render_source_wards_table_header() {
+  let css_class =
+    "border border-gray-300 dark:border-gray-600 px-4 py-2 text-left"
+  h.thead([a.class("bg-gray-100 dark:bg-gray-900")], [
+    h.tr([], [
+      h.th([a.class(css_class)], [h.text("Mã số")]),
+      h.th([a.class(css_class)], [h.text("Tên")]),
+      h.th([a.class(css_class)], [h.text("Mã huyện")]),
+      h.th([a.class(css_class)], [h.text("Mã tỉnh")]),
+    ]),
+  ])
+}
+
+fn view_classic(
   model: Model,
   id_province_combobox: String,
   id_ward_combobox: String,
@@ -294,97 +357,11 @@ pub fn render_post_2025_provinces(
                 ),
               ],
               [
-                h.thead([a.class("bg-gray-100 dark:bg-gray-900")], [
-                  h.tr([], [
-                    h.th(
-                      [
-                        a.class(
-                          "border border-gray-300 dark:border-gray-600 px-4 py-2 text-left",
-                        ),
-                      ],
-                      [
-                        h.text("Mã số"),
-                      ],
-                    ),
-                    h.th(
-                      [
-                        a.class(
-                          "border border-gray-300 dark:border-gray-600 px-4 py-2 text-left",
-                        ),
-                      ],
-                      [
-                        h.text("Tên"),
-                      ],
-                    ),
-                    h.th(
-                      [
-                        a.class(
-                          "border border-gray-300 dark:border-gray-600 px-4 py-2 text-left",
-                        ),
-                      ],
-                      [
-                        h.text("Mã huyện"),
-                      ],
-                    ),
-                    h.th(
-                      [
-                        a.class(
-                          "border border-gray-300 dark:border-gray-600 px-4 py-2 text-left",
-                        ),
-                      ],
-                      [
-                        h.text("Mã tỉnh"),
-                      ],
-                    ),
-                  ]),
-                ]),
+                render_source_wards_table_header(),
                 h.tbody(
                   [a.class("bg-white dark:bg-gray-800")],
                   wards
-                    |> list.map(fn(ward: SourceWard) {
-                      h.tr([a.class("even:bg-gray-50 dark:even:bg-gray-700")], [
-                        h.td(
-                          [
-                            a.class(
-                              "border border-gray-300 dark:border-gray-600 px-4 py-2",
-                            ),
-                          ],
-                          [
-                            h.text(int.to_string(ward.code)),
-                          ],
-                        ),
-                        h.td(
-                          [
-                            a.class(
-                              "border border-gray-300 dark:border-gray-600 px-4 py-2",
-                            ),
-                          ],
-                          [
-                            h.text(ward.name),
-                          ],
-                        ),
-                        h.td(
-                          [
-                            a.class(
-                              "border border-gray-300 dark:border-gray-600 px-4 py-2",
-                            ),
-                          ],
-                          [
-                            h.text(int.to_string(ward.district_code)),
-                          ],
-                        ),
-                        h.td(
-                          [
-                            a.class(
-                              "border border-gray-300 dark:border-gray-600 px-4 py-2",
-                            ),
-                          ],
-                          [
-                            h.text(int.to_string(ward.province_code)),
-                          ],
-                        ),
-                      ])
-                    }),
+                    |> list.map(render_source_ward),
                 ),
               ],
             ),
@@ -395,7 +372,25 @@ pub fn render_post_2025_provinces(
   ])
 }
 
-pub fn render_source_wards(wards: List(SourceWard)) {
-  // Split to two smaller list
-  todo
+fn view_with_component(
+  model: Model,
+  _id_province_combobox: String,
+  _id_ward_combobox: String,
+  _css_classes: ComboboxCss,
+) {
+  let choices = model.provinces |> json.array(province.province_to_json)
+  let preselect_attr = case model.province_combobox_state.selected_item {
+    Some(p) -> [combobox.preselect_code(p.code)]
+    None -> []
+  }
+  h.div([a.class("mt-4")], [
+    combobox.element(
+      [
+        a.property("choices", choices),
+        combobox.on_focused(UserFocusedProvinceCbx),
+        combobox.on_selected(UserSelectedProvince),
+      ]
+      |> list.append(preselect_attr),
+    ),
+  ])
 }
