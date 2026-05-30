@@ -1,4 +1,4 @@
-import ffi.{is_out_of_view, query_selector_all}
+import ffi.{add_outside_click_listener, is_out_of_view, query_selector_all}
 import gleam/bool
 import gleam/dynamic/decode
 import gleam/int
@@ -18,7 +18,6 @@ import lustre/element/html as h
 import lustre/element/keyed
 import lustre/event as ev
 import on
-import plinth/browser/document
 import plinth/browser/element as web_element
 import typeid
 
@@ -61,6 +60,8 @@ type Model {
     focused_index: Int,
     // Preselected item code (used when choices arrive later)
     preselect_code: Option(Int),
+    // Track if we've registered the outside-click listener already
+    has_outside_listener: Bool,
   )
 }
 
@@ -72,6 +73,7 @@ pub type SlideDir {
 type Message {
   UserFocusedInput
   UserClickedClear
+  UserClickedOutside
   UserNavigate(SlideDir)
   // Pick an item in suggested list, either via click or "Enter"
   UserPickedChoice(Item)
@@ -196,15 +198,27 @@ fn init(_) -> #(Model, effect.Effect(Message)) {
       selected_item: None,
       focused_index: 0,
       preselect_code: None,
+      has_outside_listener: False,
     )
   #(model, effect.none())
 }
 
-fn update(model: Model, message: Message) -> #(Model, effect.Effect(a)) {
+fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
   case message {
     UserFocusedInput -> {
-      let model = Model(..model, is_input_focused: True, is_list_shown: True)
-      #(model, emit(Focused))
+      let new_model =
+        Model(
+          ..model,
+          is_input_focused: True,
+          is_list_shown: True,
+          has_outside_listener: True,
+        )
+      let listener_effect = case model.has_outside_listener {
+        True -> effect.none()
+        False -> register_outside_click_listener(model.id)
+      }
+      let effect = effect.batch([emit(Focused), listener_effect])
+      #(new_model, effect)
     }
     UserPickedChoice(it) -> {
       let model =
@@ -227,6 +241,17 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(a)) {
     }
     UserClickedClear -> {
       #(model, emit(ClearClicked))
+    }
+    UserClickedOutside -> {
+      #(
+        Model(
+          ..model,
+          is_input_focused: False,
+          is_list_shown: False,
+          focused_index: 0,
+        ),
+        effect.none(),
+      )
     }
     UserNavigate(direction) -> {
       let Model(id:, focused_index:, filtered_choices:, ..) = model
@@ -284,11 +309,10 @@ fn view(model: Model) -> Element(Message) {
     use <- bool.guard(when: focused_index < 1, return: None)
     model.filtered_choices |> iv.get(focused_index - 1) |> option.from_result
   }
-  h.div([a.class("relative")], [
+  h.div([a.class("relative"), a.id(id)], [
     // The Text Input of the combobox
     h.input([
       a.type_("search"),
-      a.id(id),
       a.class(class_input),
       a.role("combobox"),
       a.value(filter_text),
@@ -384,30 +408,35 @@ fn build_li_elements(
 }
 
 /// Scroll the focused list item into view if it is out of the scrollable container.
-fn scroll_to_see_focused_item(combobox_id: String, focused_index: Int) {
+fn scroll_to_see_focused_item(_combobox_id: String, focused_index: Int) {
   // The focused_index is 1-based, so we return early if it is <= 0
   use <- bool.guard(focused_index <= 0, effect.none())
-  use _dispatch, _root_element <- effect.after_paint
+  use _dispatch, root_element_dynamic <- effect.after_paint
+
+  // Cast the root element to web_element.Element
+  let root_result = web_element.cast(root_element_dynamic)
 
   // Convert focused_index to 0-based.
   let index = focused_index - 1
-  let combobox_el = document.get_element_by_id(combobox_id)
-  let focused_list_item =
-    combobox_el
-    |> result.map(query_selector_all(_, "li"))
-    |> result.try(array.get(_, index))
 
-  let containers = case combobox_el, focused_list_item {
-    Ok(_cb), Ok(li) -> {
-      // Find the nearest scrollable ancestor (the dropdown's inner div with overflow-y-auto)
-      // li > ul > div.overflow-y-auto
-      web_element.parent_element(li)
-      |> result.map(web_element.parent_element)
-      |> result.flatten
-      |> option.from_result
-      |> option.map(fn(cont) { #(cont, li) })
+  let containers = case root_result {
+    Error(_) -> None
+    Ok(root_element) -> {
+      let list_items = query_selector_all(root_element, "li")
+      let focused_list_item = array.get(list_items, index)
+      case focused_list_item {
+        Error(_) -> None
+        Ok(li) -> {
+          // Find the nearest scrollable ancestor (the dropdown's inner div with overflow-y-auto)
+          // li > ul > div.overflow-y-auto
+          web_element.parent_element(li)
+          |> result.map(web_element.parent_element)
+          |> result.flatten
+          |> option.from_result
+          |> option.map(fn(cont) { #(cont, li) })
+        }
+      }
     }
-    _, _ -> None
   }
   case containers {
     Some(#(container, li)) -> {
@@ -417,5 +446,16 @@ fn scroll_to_see_focused_item(combobox_id: String, focused_index: Int) {
     }
     None -> False
   }
+  Nil
+}
+
+/// Register a document-level click listener that closes the dropdown when
+/// clicking outside the component.
+fn register_outside_click_listener(_combobox_id: String) {
+  // `root` is the component's ShadowRoot (a Dynamic). We pass it straight to the
+  // FFI: casting it to a plinth Element fails (a ShadowRoot is not an Element),
+  // which previously left the listener unregistered.
+  use dispatch, root <- effect.after_paint
+  add_outside_click_listener(root, fn() { dispatch(UserClickedOutside) })
   Nil
 }
