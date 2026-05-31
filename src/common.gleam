@@ -31,6 +31,7 @@ pub type Msg {
   UserFocusedProvinceCbx
   // User selected a province from the combobox component
   UserSelectedProvince(Int)
+  UserClickedClearOnProvinceCbx
   // This is the API response for all provinces
   ApiReturnedProvinces(Result(List(Province), rsvp.Error(String)))
   // This is the API response for searched provinces

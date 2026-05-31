@@ -18,8 +18,8 @@ import action
 import common.{
   type Model, type Msg, ApiReturnedProvinces, ApiReturnedSearchedProvinces,
   ApiReturnedSearchedWards, ApiReturnedSourceWards, ApiReturnedWards, Model,
-  OnRouteChange, PCombobox, UserClickedOutside, UserFocusedProvinceCbx,
-  UserSelectedProvince, WCombobox,
+  OnRouteChange, PCombobox, UserClickedClearOnProvinceCbx, UserClickedOutside,
+  UserFocusedProvinceCbx, UserSelectedProvince, WCombobox,
 }
 import component/combobox
 import mytype/core.{ComboboxState, create_empty_combobox_state}
@@ -209,6 +209,9 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
     UserFocusedProvinceCbx -> {
       #(model, effect.none())
+    }
+    UserClickedClearOnProvinceCbx -> {
+      #(model, modem.push(".", Some(""), None))
     }
     UserSelectedProvince(code) -> {
       let query_string = uri.query_to_string([#("p", int.to_string(code))])

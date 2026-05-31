@@ -240,6 +240,8 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
       #(model, whatnext)
     }
     UserClickedClear -> {
+      let model =
+        Model(..model, filter_text: "", selected_item: None, is_list_shown: False)
       #(model, emit(ClearClicked))
     }
     UserClickedOutside -> {

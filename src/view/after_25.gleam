@@ -11,7 +11,8 @@ import lustre/element/keyed
 import lustre/event as ev
 
 import common.{
-  type Model, PCombobox, UserFocusedProvinceCbx, UserSelectedProvince, WCombobox,
+  type Model, PCombobox, UserClickedClearOnProvinceCbx, UserFocusedProvinceCbx,
+  UserSelectedProvince, WCombobox,
 }
 import component/combobox
 import mytype/core.{type ComboboxState, ComboboxState}
@@ -389,6 +390,7 @@ fn view_with_component(
         a.property("choices", choices),
         combobox.on_focused(UserFocusedProvinceCbx),
         combobox.on_selected(UserSelectedProvince),
+        combobox.on_clear_clicked(UserClickedClearOnProvinceCbx),
       ]
       |> list.append(preselect_attr),
     ),
