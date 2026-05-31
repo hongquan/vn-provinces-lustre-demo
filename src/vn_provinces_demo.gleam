@@ -18,8 +18,9 @@ import action
 import common.{
   type Model, type Msg, ApiReturnedProvinces, ApiReturnedSearchedProvinces,
   ApiReturnedSearchedWards, ApiReturnedSourceWards, ApiReturnedWards, Model,
-  OnRouteChange, PCombobox, UserClickedClearOnProvinceCbx, UserClickedOutside,
-  UserFocusedProvinceCbx, UserSelectedProvince, WCombobox,
+  OnRouteChange, PCombobox, UserClickedClearOnProvinceCbx,
+  UserClickedClearOnWardCbx, UserClickedOutside, UserFocusedProvinceCbx,
+  UserFocusedWardCbx, UserSelectedProvince, UserSelectedWard, WCombobox,
 }
 import component/combobox
 import mytype/core.{ComboboxState, create_empty_combobox_state}
@@ -216,6 +217,25 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     UserSelectedProvince(code) -> {
       let query_string = uri.query_to_string([#("p", int.to_string(code))])
       #(model, modem.push("", Some(query_string), None))
+    }
+    UserFocusedWardCbx -> {
+      #(model, effect.none())
+    }
+    UserClickedClearOnWardCbx -> {
+      let q = case model.route {
+        router.Province(p, _) ->
+          Some(uri.query_to_string([#("p", int.to_string(p))]))
+        _ -> None
+      }
+      #(model, modem.push(".", q, None))
+    }
+    UserSelectedWard(code) -> {
+      let new_w = #("w", int.to_string(code))
+      let new_query = case model.route {
+        router.Province(p, _) -> [#("p", int.to_string(p)), new_w]
+        _ -> [new_w]
+      }
+      #(model, modem.push("", Some(uri.query_to_string(new_query)), None))
     }
   }
 }

@@ -26,12 +26,16 @@ pub type OutsideObject {
 }
 
 pub type Msg {
+  // For classic combobox. Deprecated.
   PCombobox(p.ComboboxMsg)
   WCombobox(w.ComboboxMsg)
+  // For combobox component.
   UserFocusedProvinceCbx
-  // User selected a province from the combobox component
   UserSelectedProvince(Int)
   UserClickedClearOnProvinceCbx
+  UserFocusedWardCbx
+  UserSelectedWard(Int)
+  UserClickedClearOnWardCbx
   // This is the API response for all provinces
   ApiReturnedProvinces(Result(List(Province), rsvp.Error(String)))
   // This is the API response for searched provinces

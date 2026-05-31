@@ -1,7 +1,16 @@
+import gleam/json
 import mytype/core
 
 pub type Ward {
   Ward(name: String, code: Int, province_code: Int)
+}
+
+pub fn ward_to_json(ward: Ward) -> json.Json {
+  let Ward(name:, code:, ..) = ward
+  json.object([
+    #("name", json.string(name)),
+    #("code", json.int(code)),
+  ])
 }
 
 // Legacy (pre-2025) ward

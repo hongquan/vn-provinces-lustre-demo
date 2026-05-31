@@ -11,8 +11,9 @@ import lustre/element/keyed
 import lustre/event as ev
 
 import common.{
-  type Model, PCombobox, UserClickedClearOnProvinceCbx, UserFocusedProvinceCbx,
-  UserSelectedProvince, WCombobox,
+  type Model, PCombobox, UserClickedClearOnProvinceCbx,
+  UserClickedClearOnWardCbx, UserFocusedProvinceCbx, UserFocusedWardCbx,
+  UserSelectedProvince, UserSelectedWard, WCombobox,
 }
 import component/combobox
 import mytype/core.{type ComboboxState, ComboboxState}
@@ -379,20 +380,43 @@ fn view_with_component(
   _id_ward_combobox: String,
   _css_classes: ComboboxCss,
 ) {
-  let choices = model.provinces |> json.array(province.province_to_json)
-  let preselect_attr = case model.province_combobox_state.selected_item {
+  let province_choices = model.provinces |> json.array(province.province_to_json)
+  let province_preselect = case model.province_combobox_state.selected_item {
     Some(p) -> [combobox.preselect_code(p.code)]
     None -> []
   }
-  h.div([a.class("mt-4")], [
-    combobox.element(
-      [
-        a.property("choices", choices),
-        combobox.on_focused(UserFocusedProvinceCbx),
-        combobox.on_selected(UserSelectedProvince),
-        combobox.on_clear_clicked(UserClickedClearOnProvinceCbx),
-      ]
-      |> list.append(preselect_attr),
-    ),
-  ])
+  let ward_choices = model.wards |> json.array(ward.ward_to_json)
+  let ward_preselect = case model.ward_combobox_state.selected_item {
+    Some(w) -> [combobox.preselect_code(w.code)]
+    None -> []
+  }
+  h.div(
+    [a.class("mt-4 space-y-8 sm:flex sm:flex-row sm:space-x-8 sm:space-y-0")],
+    [
+      h.div([], [
+        h.label([a.class("text-lg")], [h.text("Tỉnh thành")]),
+        combobox.element(
+          [
+            a.property("choices", province_choices),
+            combobox.on_focused(UserFocusedProvinceCbx),
+            combobox.on_selected(UserSelectedProvince),
+            combobox.on_clear_clicked(UserClickedClearOnProvinceCbx),
+          ]
+          |> list.append(province_preselect),
+        ),
+      ]),
+      h.div([], [
+        h.label([a.class("text-lg")], [h.text("Phường xã")]),
+        combobox.element(
+          [
+            a.property("choices", ward_choices),
+            combobox.on_focused(UserFocusedWardCbx),
+            combobox.on_selected(UserSelectedWard),
+            combobox.on_clear_clicked(UserClickedClearOnWardCbx),
+          ]
+          |> list.append(ward_preselect),
+        ),
+      ]),
+    ],
+  )
 }
