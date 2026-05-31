@@ -1,11 +1,25 @@
+/**
+ * @param {Element} element
+ * @param {string} selector
+ * @returns {Element[]}
+ */
 export function querySelectorAll(element, selector) {
   return Array.from(element.querySelectorAll(selector));
 }
 
+/**
+ * @param {Element} element
+ * @returns {boolean}
+ */
 export function checkVisibility(element) {
   return element.checkVisibility()
 }
 
+/**
+ * @param {Element} element
+ * @param {Element} scrolledContainer
+ * @returns {boolean}
+ */
 export function isOutOfView(element, scrolledContainer) {
   const elmRec = element.getBoundingClientRect()
   const conRec = scrolledContainer.getBoundingClientRect()
@@ -18,6 +32,11 @@ export function isOutOfView(element, scrolledContainer) {
   return isBelow || isAbove
 }
 
+/**
+ * @param {ShadowRoot | Element} root
+ * @param {() => void} callback
+ * @returns {void}
+ */
 export function addOutsideClickListener(root, callback) {
   // `root` is the component's ShadowRoot (Lustre passes the shadow root to
   // after_paint for components), or a plain Element for non-component apps.
