@@ -7,7 +7,6 @@ import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
-import gleam/string
 import iv
 import lustre
 import lustre/attribute.{type Attribute} as a
@@ -225,19 +224,14 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
         Model(
           ..model,
           selected_item: Some(it),
-          // If an item is picked, close the suggestion list
+          filter_text: it.name,
           is_list_shown: False,
         )
       #(model, emit(Selected(it.code)))
     }
     UserWroteText(text) -> {
-      let Model(choices:, filtered_choices:, ..) = model
-      let #(filtered_choices, whatnext) = case string.trim(text) {
-        "" -> #(iv.from_list(choices), effect.none())
-        value -> #(filtered_choices, emit(TextInput(value)))
-      }
-      let model = Model(..model, filtered_choices:)
-      #(model, whatnext)
+      let model = Model(..model, filter_text: text)
+      #(model, emit(TextInput(text)))
     }
     UserClickedClear -> {
       let model =
@@ -269,7 +263,7 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
     }
     ParentSetId(id) -> #(Model(..model, id:), effect.none())
     ParentChangedChoices(choices) -> {
-      let model = Model(..model, choices:)
+      let model = Model(..model, choices:, filtered_choices: iv.from_list(choices))
       // If there's a pending preselect_code, apply it now that choices are available
       case model.preselect_code {
         Some(code) -> apply_preselection(code, model)
@@ -293,7 +287,7 @@ fn apply_preselection(code: Int, model: Model) -> #(Model, effect.Effect(a)) {
     |> option.from_result
   let filter_text =
     selected_item |> option.map(fn(it) { it.name }) |> option.unwrap("")
-  let model = Model(..model, selected_item:, filter_text:)
+  let model = Model(..model, selected_item:, filter_text:, preselect_code: None)
   #(model, effect.none())
 }
 
@@ -320,7 +314,7 @@ fn view(model: Model) -> Element(Message) {
       a.value(filter_text),
       // Event handlers
       ev.on_focus(UserFocusedInput),
-      ev.on_input(UserWroteText) |> ev.debounce(200),
+      ev.on_input(UserWroteText),
       setup_keyup_handler(focused_item),
     ]),
     h.button(

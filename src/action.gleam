@@ -1,6 +1,7 @@
 import common.{type Message}
 import gleam/dynamic/decode
 import gleam/int
+import gleam/string
 import gleam/uri
 import lustre/effect.{type Effect}
 import rsvp
@@ -24,8 +25,8 @@ pub fn load_provinces() -> Effect(Message) {
 
 pub fn search_provinces(search: String) -> Effect(Message) {
   let url =
-    "https://provinces.open-api.vn/api/v2/p/?"
-    <> uri.query_to_string([#("search", search)])
+    "https://provinces.open-api.vn/api/v2/p/?{}"
+    |> string.replace("{}", uri.query_to_string([#("search", search)]))
   let decoder = {
     use name <- decode.field("name", decode.string)
     use code <- decode.field("code", decode.int)
@@ -33,6 +34,24 @@ pub fn search_provinces(search: String) -> Effect(Message) {
   }
   let handler =
     rsvp.expect_json(decode.list(decoder), common.ApiReturnedSearchedProvinces)
+  rsvp.get(url, handler)
+}
+
+pub fn search_wards(search: String, province_code: Int) -> Effect(Message) {
+  let url =
+    "https://provinces.open-api.vn/api/v2/w/?{}"
+    |> string.replace("{}", uri.query_to_string([
+      #("search", search),
+      #("province", int.to_string(province_code)),
+    ]))
+  let decoder = {
+    use name <- decode.field("name", decode.string)
+    use code <- decode.field("code", decode.int)
+    use province_code <- decode.field("province_code", decode.int)
+    decode.success(Ward(name, code, province_code))
+  }
+  let handler =
+    rsvp.expect_json(decode.list(decoder), common.ApiReturnedSearchedWards)
   rsvp.get(url, handler)
 }
 
@@ -49,24 +68,6 @@ pub fn load_wards(p: Int) -> Effect(Message) {
     decode.success(wards)
   }
   let handler = rsvp.expect_json(decoder, common.ApiReturnedWards)
-  rsvp.get(url, handler)
-}
-
-pub fn search_wards(search: String, province_code: Int) -> Effect(Message) {
-  let url =
-    "https://provinces.open-api.vn/api/v2/w/?"
-    <> uri.query_to_string([
-      #("search", search),
-      #("province", int.to_string(province_code)),
-    ])
-  let decoder = {
-    use name <- decode.field("name", decode.string)
-    use code <- decode.field("code", decode.int)
-    use province_code <- decode.field("province_code", decode.int)
-    decode.success(Ward(name, code, province_code))
-  }
-  let handler =
-    rsvp.expect_json(decode.list(decoder), common.ApiReturnedSearchedWards)
   rsvp.get(url, handler)
 }
 

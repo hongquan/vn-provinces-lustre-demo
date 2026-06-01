@@ -1,5 +1,4 @@
 import gleam/json
-import mytype/core
 
 pub type Ward {
   Ward(name: String, code: Int, province_code: Int)
@@ -16,12 +15,4 @@ pub fn ward_to_json(ward: Ward) -> json.Json {
 // Legacy (pre-2025) ward
 pub type SourceWard {
   SourceWard(name: String, code: Int, district_code: Int, province_code: Int)
-}
-
-pub type ComboboxMsg {
-  Focus
-  ClearClick
-  TextInput(String)
-  Slide(core.SlideDir)
-  Selected(Ward)
 }
