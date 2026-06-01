@@ -40,10 +40,13 @@ pub fn search_provinces(search: String) -> Effect(Message) {
 pub fn search_wards(search: String, province_code: Int) -> Effect(Message) {
   let url =
     "https://provinces.open-api.vn/api/v2/w/?{}"
-    |> string.replace("{}", uri.query_to_string([
-      #("search", search),
-      #("province", int.to_string(province_code)),
-    ]))
+    |> string.replace(
+      "{}",
+      uri.query_to_string([
+        #("search", search),
+        #("province", int.to_string(province_code)),
+      ]),
+    )
   let decoder = {
     use name <- decode.field("name", decode.string)
     use code <- decode.field("code", decode.int)

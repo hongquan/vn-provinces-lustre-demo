@@ -19,7 +19,4 @@ pub fn is_out_of_view(element: Element, scrolled_container: Element) -> Bool
 // a ShadowRoot is not `instanceof Element`, so the cast would fail and the
 // listener would never be registered. The JS side derives the host element.
 @external(javascript, "./element.ffi.mjs", "addOutsideClickListener")
-pub fn add_outside_click_listener(
-  root: Dynamic,
-  callback: fn() -> Nil,
-) -> Nil
+pub fn add_outside_click_listener(root: Dynamic, callback: fn() -> Nil) -> Nil

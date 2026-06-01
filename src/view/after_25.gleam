@@ -6,7 +6,11 @@ import lustre/attribute as a
 import lustre/element.{type Element}
 import lustre/element/html as h
 
-import common.{type Model, UserClickedClearOnProvinceCbx, UserClickedClearOnWardCbx, UserFocusedProvinceCbx, UserFocusedWardCbx, UserSelectedProvince, UserSelectedWard, UserTextInputProvince, UserTextInputWard}
+import common.{
+  type Model, UserClickedClearOnProvinceCbx, UserClickedClearOnWardCbx,
+  UserFocusedProvinceCbx, UserFocusedWardCbx, UserSelectedProvince,
+  UserSelectedWard, UserTextInputProvince, UserTextInputWard,
+}
 import component/combobox
 import mytype/province.{type Province}
 import mytype/ward.{type SourceWard, type Ward}
@@ -36,7 +40,8 @@ pub fn show_brief_info_ward(ward: Ward) {
 }
 
 pub fn view(model: Model) -> Element(common.Message) {
-  let province_choices = model.filtered_provinces |> json.array(province.province_to_json)
+  let province_choices =
+    model.filtered_provinces |> json.array(province.province_to_json)
   let province_preselect = case model.selected_province {
     Some(p) -> [combobox.preselect_code(p.code)]
     None -> []
@@ -109,22 +114,18 @@ pub fn view(model: Model) -> Element(common.Message) {
 
 fn render_source_ward(ward: SourceWard) {
   h.tr([a.class("even:bg-gray-50 dark:even:bg-gray-700")], [
-    h.td(
-      [a.class("border border-gray-300 dark:border-gray-600 px-4 py-2")],
-      [h.text(int.to_string(ward.code))],
-    ),
-    h.td(
-      [a.class("border border-gray-300 dark:border-gray-600 px-4 py-2")],
-      [h.text(ward.name)],
-    ),
-    h.td(
-      [a.class("border border-gray-300 dark:border-gray-600 px-4 py-2")],
-      [h.text(int.to_string(ward.district_code))],
-    ),
-    h.td(
-      [a.class("border border-gray-300 dark:border-gray-600 px-4 py-2")],
-      [h.text(int.to_string(ward.province_code))],
-    ),
+    h.td([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2")], [
+      h.text(int.to_string(ward.code)),
+    ]),
+    h.td([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2")], [
+      h.text(ward.name),
+    ]),
+    h.td([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2")], [
+      h.text(int.to_string(ward.district_code)),
+    ]),
+    h.td([a.class("border border-gray-300 dark:border-gray-600 px-4 py-2")], [
+      h.text(int.to_string(ward.province_code)),
+    ]),
   ])
 }
 

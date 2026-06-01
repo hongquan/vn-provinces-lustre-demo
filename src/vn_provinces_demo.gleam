@@ -61,8 +61,13 @@ fn update(model: Model, message: Message) -> #(Model, Effect(Message)) {
       case new_route {
         router.Home -> {
           let model =
-            Model(..model, route: new_route, wards: [], filtered_wards: [],
-              source_wards: [], selected_ward: None,
+            Model(
+              ..model,
+              route: new_route,
+              wards: [],
+              filtered_wards: [],
+              source_wards: [],
+              selected_ward: None,
             )
           #(model, effect.none())
         }
@@ -108,9 +113,15 @@ fn update(model: Model, message: Message) -> #(Model, Effect(Message)) {
       #(model, action.search_provinces(value))
     }
     UserClickedClearOnProvinceCbx -> {
-      let model = Model(..model, selected_province: None, selected_ward: None,
-        wards: [], filtered_wards: [], source_wards: [],
-      )
+      let model =
+        Model(
+          ..model,
+          selected_province: None,
+          selected_ward: None,
+          wards: [],
+          filtered_wards: [],
+          source_wards: [],
+        )
       #(model, modem.push(".", Some(""), None))
     }
     UserSelectedProvince(code) -> {
@@ -178,8 +189,14 @@ fn handle_loaded_provinces(
     _ -> #(None, effect.none())
   }
   let model =
-    Model(..model, provinces:, filtered_provinces: provinces, wards: [],
-      source_wards: [], selected_province:, selected_ward: None,
+    Model(
+      ..model,
+      provinces:,
+      filtered_provinces: provinces,
+      wards: [],
+      source_wards: [],
+      selected_province:,
+      selected_ward: None,
     )
   #(model, whatnext)
 }
@@ -196,7 +213,11 @@ fn handle_loaded_wards(wards: List(Ward), model: Model) {
     _ -> effect.none()
   }
   let model =
-    Model(..model, wards:, filtered_wards: wards, selected_ward:,
+    Model(
+      ..model,
+      wards:,
+      filtered_wards: wards,
+      selected_ward:,
       source_wards: [],
     )
   #(model, whatnext)

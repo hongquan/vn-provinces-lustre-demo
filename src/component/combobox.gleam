@@ -235,7 +235,12 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
     }
     UserClickedClear -> {
       let model =
-        Model(..model, filter_text: "", selected_item: None, is_list_shown: False)
+        Model(
+          ..model,
+          filter_text: "",
+          selected_item: None,
+          is_list_shown: False,
+        )
       #(model, emit(ClearClicked))
     }
     UserClickedOutside -> {
@@ -263,7 +268,8 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
     }
     ParentSetId(id) -> #(Model(..model, id:), effect.none())
     ParentChangedChoices(choices) -> {
-      let model = Model(..model, choices:, filtered_choices: iv.from_list(choices))
+      let model =
+        Model(..model, choices:, filtered_choices: iv.from_list(choices))
       // If there's a pending preselect_code, apply it now that choices are available
       case model.preselect_code {
         Some(code) -> apply_preselection(code, model)
