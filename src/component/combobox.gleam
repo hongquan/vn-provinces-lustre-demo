@@ -1,9 +1,12 @@
+import ffi.{add_outside_click_listener, is_out_of_view, query_selector_all}
 import gleam/bool
 import gleam/dynamic/decode
 import gleam/int
+import gleam/javascript/array
 import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/result
 import iv
 import lustre
 import lustre/attribute.{type Attribute} as a
@@ -13,24 +16,51 @@ import lustre/element.{type Element}
 import lustre/element/html as h
 import lustre/element/keyed
 import lustre/event as ev
+import on
+import plinth/browser/element as web_element
+import typeid
+
+// This component will be used as `<combo-box>`
+const component_name = "combo-box"
 
 pub type Item {
   Item(name: String, code: Int)
 }
 
+fn item_decoder() -> decode.Decoder(Item) {
+  use name <- decode.field("name", decode.string)
+  use code <- decode.field("code", decode.int)
+  decode.success(Item(name:, code:))
+}
+
+pub fn item_to_json(item: Item) -> json.Json {
+  let Item(name:, code:) = item
+  json.object([
+    #("name", json.string(name)),
+    #("code", json.int(code)),
+  ])
+}
+
 type Model {
   Model(
+    // The HTML `id` attribute. We need it to find the node in real DOM,
+    // then do `scrollIntoView`
+    id: String,
     choices: List(Item),
     is_input_focused: Bool,
     filter_text: String,
     // Should be updated to `True` if the input is focused.
     // TODO: Is it duplicate with `is_input_focused`?
-    is_list_container_shown: Bool,
+    is_list_shown: Bool,
     filtered_choices: iv.Array(Item),
     selected_item: Option(Item),
     // 1-based index of the item to focus when navigating with keyboard.
     // Zero means no one is focused.
     focused_index: Int,
+    // Preselected item code (used when choices arrive later)
+    preselect_code: Option(Int),
+    // Track if we've registered the outside-click listener already
+    has_outside_listener: Bool,
   )
 }
 
@@ -42,19 +72,27 @@ pub type SlideDir {
 type Message {
   UserFocusedInput
   UserClickedClear
+  UserClickedOutside
   UserNavigate(SlideDir)
   // Pick an item in suggested list, either via click or "Enter"
   UserPickedChoice(Item)
-  UserTypedText(String)
+  UserWroteText(String)
+  ParentSetId(String)
+  ParentChangedChoices(List(Item))
+  ParentPreselectedItem(Int)
 }
 
 // Message that we will emit to parent
 pub type EmitMessage {
   Focused
   Selected(Int)
+  TextInput(String)
+  ClearClicked
 }
 
-const component_name = "combo-box"
+const payload_name = "detail"
+
+const attr_preselect_code = "preselect-code"
 
 const class_input = "border focus-visible:outline-none focus-visible:ring-1 ps-2 pe-6 py-1 w-full rounded"
 
@@ -72,12 +110,18 @@ const class_close_button = "absolute end-0 px-2 text-xl hover:text-red-400 focus
 
 const class_dropdown_container = "absolute z-1 top-10 start-0 end-0 sm:-end-4 py-2 ps-2 bg-neutral-50 dark:bg-neutral-800 rounded shadow"
 
-fn default_model() {
-  Model([], False, "", False, iv.new(), None, 0)
-}
-
 pub fn register() -> Result(Nil, lustre.Error) {
-  let component = lustre.component(init, update, view, [])
+  let component =
+    lustre.component(init, update, view, [
+      component.on_attribute_change("id", fn(value) { Ok(ParentSetId(value)) }),
+      component.on_attribute_change(attr_preselect_code, fn(value) {
+        echo attr_preselect_code <> "changed to " <> value
+        int.parse(value) |> result.map(ParentPreselectedItem)
+      }),
+      component.on_property_change("choices", {
+        item_decoder() |> decode.list |> decode.map(ParentChangedChoices)
+      }),
+    ])
   lustre.register(component, component_name)
 }
 
@@ -85,52 +129,183 @@ pub fn element(attributes: List(Attribute(m))) -> Element(m) {
   element.element(component_name, attributes, [])
 }
 
+// -- Shortcuts to let parent element set attributes / properties to pass data
+
+pub fn preselect_code(code: Int) -> Attribute(m) {
+  a.attribute(attr_preselect_code, int.to_string(code))
+}
+
+// -- Shortcuts to let parent element easily register event handlers --
+
+pub fn on_focused(message: message) -> Attribute(message) {
+  ev.on(get_message_name(Focused), {
+    use _detail <- decode.field(payload_name, decode.optional(decode.bool))
+    decode.success(message)
+  })
+}
+
+pub fn on_selected(handler: fn(Int) -> message) -> Attribute(message) {
+  ev.on(get_message_name(Selected(0)), {
+    use code <- decode.field(payload_name, decode.int)
+    decode.success(handler(code))
+  })
+}
+
+pub fn on_text_input(handler: fn(String) -> message) -> Attribute(message) {
+  ev.on(get_message_name(TextInput("")), {
+    use value <- decode.field(payload_name, decode.string)
+    decode.success(handler(value))
+  })
+}
+
+pub fn on_clear_clicked(message: message) -> Attribute(message) {
+  ev.on(get_message_name(ClearClicked), {
+    use _detail <- decode.field(payload_name, decode.optional(decode.bool))
+    decode.success(message)
+  })
+}
+
 fn emit(message: EmitMessage) {
+  let name = get_message_name(message)
   case message {
-    Focused -> ev.emit("focused", json.null())
-    Selected(code) -> ev.emit("selected", json.int(code))
+    Focused -> ev.emit(name, json.null())
+    Selected(code) -> ev.emit(name, json.int(code))
+    TextInput(value) -> ev.emit(name, json.string(value))
+    ClearClicked -> ev.emit(name, json.null())
   }
 }
 
-fn init(_: a) -> #(Model, effect.Effect(Message)) {
-  #(default_model(), effect.none())
+fn get_message_name(message: EmitMessage) {
+  case message {
+    Focused -> "focused"
+    Selected(_) -> "selected"
+    TextInput(_) -> "text-input"
+    ClearClicked -> "clear-clicked"
+  }
 }
 
-fn update(model: Model, message: Message) -> #(Model, effect.Effect(a)) {
+fn init(_) -> #(Model, effect.Effect(Message)) {
+  let assert Ok(id) = typeid.new("cbox")
+  let model =
+    Model(
+      id: typeid.to_string(id),
+      choices: [],
+      is_input_focused: False,
+      filter_text: "",
+      is_list_shown: False,
+      filtered_choices: iv.new(),
+      selected_item: None,
+      focused_index: 0,
+      preselect_code: None,
+      has_outside_listener: False,
+    )
+  #(model, effect.none())
+}
+
+fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
   case message {
     UserFocusedInput -> {
-      let model =
-        Model(..model, is_input_focused: True, is_list_container_shown: True)
-      #(model, emit(Focused))
+      let new_model =
+        Model(
+          ..model,
+          is_input_focused: True,
+          is_list_shown: True,
+          has_outside_listener: True,
+        )
+      let listener_effect = case model.has_outside_listener {
+        True -> effect.none()
+        False -> register_outside_click_listener(model.id)
+      }
+      let effect = effect.batch([emit(Focused), listener_effect])
+      #(new_model, effect)
     }
     UserPickedChoice(it) -> {
       let model =
         Model(
           ..model,
           selected_item: Some(it),
-          // If an item is picked, close the suggestion list
-          is_list_container_shown: False,
+          filter_text: it.name,
+          is_list_shown: False,
         )
       #(model, emit(Selected(it.code)))
     }
-    _ -> #(model, effect.none())
+    UserWroteText(text) -> {
+      let model = Model(..model, filter_text: text)
+      #(model, emit(TextInput(text)))
+    }
+    UserClickedClear -> {
+      let model =
+        Model(..model, filter_text: "", selected_item: None, is_list_shown: False)
+      #(model, emit(ClearClicked))
+    }
+    UserClickedOutside -> {
+      #(
+        Model(
+          ..model,
+          is_input_focused: False,
+          is_list_shown: False,
+          focused_index: 0,
+        ),
+        effect.none(),
+      )
+    }
+    UserNavigate(direction) -> {
+      let Model(id:, focused_index:, filtered_choices:, ..) = model
+      let i = case direction {
+        // The lower item has higher index, so pressing ↑ means to go to lower index.
+        SlideUp -> focused_index - 1
+        SlideDown -> focused_index + 1
+      }
+      let focused_index = int.clamp(i, 0, iv.size(filtered_choices))
+      let scroll_effect = scroll_to_see_focused_item(id, focused_index)
+      let model = Model(..model, focused_index:)
+      #(model, scroll_effect)
+    }
+    ParentSetId(id) -> #(Model(..model, id:), effect.none())
+    ParentChangedChoices(choices) -> {
+      let model = Model(..model, choices:, filtered_choices: iv.from_list(choices))
+      // If there's a pending preselect_code, apply it now that choices are available
+      case model.preselect_code {
+        Some(code) -> apply_preselection(code, model)
+        None -> #(model, effect.none())
+      }
+    }
+    ParentPreselectedItem(code) -> {
+      let model = Model(..model, preselect_code: Some(code))
+      // If choices are already available, apply immediately
+      case model.choices {
+        [] -> #(model, effect.none())
+        _ -> apply_preselection(code, model)
+      }
+    }
   }
+}
+
+fn apply_preselection(code: Int, model: Model) -> #(Model, effect.Effect(a)) {
+  let selected_item =
+    list.find(model.choices, fn(it) { it.code == code })
+    |> option.from_result
+  let filter_text =
+    selected_item |> option.map(fn(it) { it.name }) |> option.unwrap("")
+  let model = Model(..model, selected_item:, filter_text:, preselect_code: None)
+  #(model, effect.none())
 }
 
 fn view(model: Model) -> Element(Message) {
   let Model(
+    id:,
     choices:,
     filter_text:,
     focused_index:,
     selected_item:,
-    is_list_container_shown: to_show_list_container,
+    is_list_shown: to_show_list,
     ..,
   ) = model
   let focused_item = {
     use <- bool.guard(when: focused_index < 1, return: None)
     model.filtered_choices |> iv.get(focused_index - 1) |> option.from_result
   }
-  h.div([a.class("relative")], [
+  h.div([a.class("relative"), a.id(id)], [
     // The Text Input of the combobox
     h.input([
       a.type_("search"),
@@ -139,7 +314,7 @@ fn view(model: Model) -> Element(Message) {
       a.value(filter_text),
       // Event handlers
       ev.on_focus(UserFocusedInput),
-      ev.on_input(UserTypedText) |> ev.debounce(200),
+      ev.on_input(UserWroteText),
       setup_keyup_handler(focused_item),
     ]),
     h.button(
@@ -156,7 +331,7 @@ fn view(model: Model) -> Element(Message) {
     h.div(
       [
         a.class(class_dropdown_container),
-        a.classes([#("hidden", !to_show_list_container)]),
+        a.classes([#("hidden", !to_show_list)]),
       ],
       [
         h.div([a.class("max-h-40 overflow-y-auto")], [
@@ -226,4 +401,57 @@ fn build_li_elements(
       ]),
     )
   })
+}
+
+/// Scroll the focused list item into view if it is out of the scrollable container.
+fn scroll_to_see_focused_item(_combobox_id: String, focused_index: Int) {
+  // The focused_index is 1-based, so we return early if it is <= 0
+  use <- bool.guard(focused_index <= 0, effect.none())
+  use _dispatch, root_element_dynamic <- effect.after_paint
+
+  // Cast the root element to web_element.Element
+  let root_result = web_element.cast(root_element_dynamic)
+
+  // Convert focused_index to 0-based.
+  let index = focused_index - 1
+
+  let containers = case root_result {
+    Error(_) -> None
+    Ok(root_element) -> {
+      let list_items = query_selector_all(root_element, "li")
+      let focused_list_item = array.get(list_items, index)
+      case focused_list_item {
+        Error(_) -> None
+        Ok(li) -> {
+          // Find the nearest scrollable ancestor (the dropdown's inner div with overflow-y-auto)
+          // li > ul > div.overflow-y-auto
+          web_element.parent_element(li)
+          |> result.map(web_element.parent_element)
+          |> result.flatten
+          |> option.from_result
+          |> option.map(fn(cont) { #(cont, li) })
+        }
+      }
+    }
+  }
+  case containers {
+    Some(#(container, li)) -> {
+      use <- on.true(is_out_of_view(li, container))
+      web_element.scroll_into_view(li)
+      True
+    }
+    None -> False
+  }
+  Nil
+}
+
+/// Register a document-level click listener that closes the dropdown when
+/// clicking outside the component.
+fn register_outside_click_listener(_combobox_id: String) {
+  // `root` is the component's ShadowRoot (a Dynamic). We pass it straight to the
+  // FFI: casting it to a plinth Element fails (a ShadowRoot is not an Element),
+  // which previously left the listener unregistered.
+  use dispatch, root <- effect.after_paint
+  add_outside_click_listener(root, fn() { dispatch(UserClickedOutside) })
+  Nil
 }

@@ -1,38 +1,40 @@
+import gleam/option.{type Option}
+
 import rsvp
 
+import mytype/province.{type Province}
+import mytype/ward.{type SourceWard, type Ward}
 import router.{type Route}
-import mytype/core.{type ComboboxState}
-import mytype/province.{type Province} as p
-import mytype/ward.{type SourceWard, type Ward} as w
 
 pub type Model {
   Model(
     route: Route,
     provinces: List(Province),
+    filtered_provinces: List(Province),
     wards: List(Ward),
-    // For province combobox
-    province_combobox_state: ComboboxState(Province),
-    ward_combobox_state: ComboboxState(Ward),
+    filtered_wards: List(Ward),
+    selected_province: Option(Province),
+    selected_ward: Option(Ward),
     source_wards: List(SourceWard),
   )
 }
 
-pub type OutsideObject {
-  OutBoth
-  OutProvince
-  OutWard
-}
-
-pub type Msg {
-  PCombobox(p.ComboboxMsg)
-  WCombobox(w.ComboboxMsg)
+pub type Message {
+  // For combobox component.
+  UserFocusedProvinceCbx
+  UserTextInputProvince(String)
+  UserSelectedProvince(Int)
+  UserClickedClearOnProvinceCbx
+  UserFocusedWardCbx
+  UserTextInputWard(String)
+  UserSelectedWard(Int)
+  UserClickedClearOnWardCbx
   // This is the API response for all provinces
-  ApiReturnedProvinces(Result(List(Province), rsvp.Error))
+  ApiReturnedProvinces(Result(List(Province), rsvp.Error(String)))
   // This is the API response for searched provinces
-  ApiReturnedSearchedProvinces(Result(List(Province), rsvp.Error))
-  ApiReturnedWards(Result(List(Ward), rsvp.Error))
-  ApiReturnedSourceWards(Result(List(SourceWard), rsvp.Error))
-  ApiReturnedSearchedWards(Result(List(Ward), rsvp.Error))
+  ApiReturnedSearchedProvinces(Result(List(Province), rsvp.Error(String)))
+  ApiReturnedWards(Result(List(Ward), rsvp.Error(String)))
+  ApiReturnedSourceWards(Result(List(SourceWard), rsvp.Error(String)))
+  ApiReturnedSearchedWards(Result(List(Ward), rsvp.Error(String)))
   OnRouteChange(router.Route)
-  UserClickedOutside(OutsideObject)
 }
