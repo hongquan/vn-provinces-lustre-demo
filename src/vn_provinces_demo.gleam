@@ -16,7 +16,7 @@ import plinth/browser/event as web_event
 
 import action
 import common.{
-  type Model, type Msg, ApiReturnedProvinces, ApiReturnedSearchedProvinces,
+  type Message, type Model, ApiReturnedProvinces, ApiReturnedSearchedProvinces,
   ApiReturnedSearchedWards, ApiReturnedSourceWards, ApiReturnedWards, Model,
   OnRouteChange, PCombobox, UserClickedClearOnProvinceCbx,
   UserClickedClearOnWardCbx, UserClickedOutside, UserFocusedProvinceCbx,
@@ -50,7 +50,7 @@ pub fn main() -> Nil {
   })
 }
 
-fn get_message_for_document_click(lev: web_event.Event(Msg)) {
+fn get_message_for_document_click(lev: web_event.Event(Message)) {
   use clicked_elm <- result.try(web_element.cast(web_event.target(lev)))
   let outside_province_cbb =
     document.get_element_by_id(id_province_combobox)
@@ -72,7 +72,7 @@ fn get_message_for_document_click(lev: web_event.Event(Msg)) {
   Ok(msg)
 }
 
-fn init(_args) -> #(Model, Effect(Msg)) {
+fn init(_args) -> #(Model, Effect(Message)) {
   let query =
     modem.initial_uri()
     |> option.from_result
@@ -100,8 +100,8 @@ fn init(_args) -> #(Model, Effect(Msg)) {
   #(model, effects)
 }
 
-fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
-  case msg {
+fn update(model: Model, message: Message) -> #(Model, Effect(Message)) {
+  case message {
     OnRouteChange(new_route) -> {
       case new_route {
         router.Home -> {
@@ -240,7 +240,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   }
 }
 
-fn view(model: Model) -> Element(Msg) {
+fn view(model: Model) -> Element(Message) {
   let css_classes = view.get_default_combobox_css()
   h.section([a.class("grow")], [
     h.header([a.class("mb-4 border-b border-gray-500")], [
@@ -250,7 +250,7 @@ fn view(model: Model) -> Element(Msg) {
   ])
 }
 
-pub fn on_url_change(uri: uri.Uri) -> Msg {
+pub fn on_url_change(uri: uri.Uri) -> Message {
   let route =
     uri.query
     |> option.map(fn(q) { option.from_result(uri.parse_query(q)) })
@@ -263,7 +263,7 @@ pub fn on_url_change(uri: uri.Uri) -> Msg {
 fn handle_loaded_provinces(
   provinces: List(Province),
   model: Model,
-) -> #(Model, Effect(Msg)) {
+) -> #(Model, Effect(Message)) {
   // Check the browser URL, if it points to a province, we :
   // - Set the combobox value to that province.
   // - Load the wards for that province.
@@ -335,7 +335,7 @@ fn handle_route_changed(
   queried_ward: Option(Int),
   model: Model,
   new_route: Route,
-) -> #(Model, Effect(Msg)) {
+) -> #(Model, Effect(Message)) {
   let Model(provinces:, wards:, route: current_route, ..) = model
   // If queried_province != current_province, we will load new wards.
   // If queried_province == current_province and queried_ward != current_ward, we update model.

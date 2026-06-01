@@ -25,7 +25,7 @@ pub type OutsideObject {
   OutWard
 }
 
-pub type Msg {
+pub type Message {
   // For classic combobox. Deprecated.
   PCombobox(p.ComboboxMsg)
   WCombobox(w.ComboboxMsg)

@@ -8,7 +8,7 @@ import modem
 import mytype/ward
 
 import action
-import common.{type Model, type Msg, Model}
+import common.{type Message, type Model, Model}
 import mytype/core.{ComboboxState}
 import mytype/core.{SlideUp} as _core
 import mytype/province
@@ -19,7 +19,7 @@ pub fn handle_province_combobox(
   msg: province.ComboboxMsg,
   model: Model,
   element_id: String,
-) -> #(Model, Effect(Msg)) {
+) -> #(Model, Effect(Message)) {
   case msg {
     province.Focus -> {
       let model =
@@ -96,7 +96,7 @@ pub fn handle_ward_combobox(
   msg: ward.ComboboxMsg,
   model: Model,
   element_id: String,
-) -> #(Model, Effect(Msg)) {
+) -> #(Model, Effect(Message)) {
   echo msg
   case msg {
     ward.Focus -> {
